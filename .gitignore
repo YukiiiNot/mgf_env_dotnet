@@ -1,0 +1,41 @@
+﻿## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+bin/
+obj/
+[Bb]uild[Ll]og.*
+[Mm]igrationBackup/
+
+## VS Code
+.vscode/
+
+## NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+packages/
+.nuget/
+
+## Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+## Rider
+.idea/
+*.sln.iml
+
+## Logs
+*.log
+
+## Runtime
+runtime/
+TestResults/
+
+## OS
+Thumbs.db
+.DS_Store
