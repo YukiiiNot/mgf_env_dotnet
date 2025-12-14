@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+scope_key,text,True,False,,False,,,,CHECK (scope_key ~ '^[a-z0-9_]+$'),Registry,controlled,True,internal,Machine-readable slug scope key,notion_page,"Suggested keys: project, client, notion_page, delivery, invoice."
+display_name,text,False,False,,False,,,,,Registry,editable,False,internal,Human-friendly scope name,Notion Page,
+sort_order,int,False,False,0,False,,,,,Registry,editable,False,internal,Ordering value,30,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T00:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-10T00:00:00Z,

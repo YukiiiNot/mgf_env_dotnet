@@ -1,0 +1,13 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+person_id,text,TRUE,FALSE,,FALSE,,,,CHECK (person_id ~ '^per_[0-9a-hjkmnp-tv-z]{26}$'),Supabase,immutable,TRUE,internal,System-generated primary identifier for the person,per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+first_name,text,FALSE,FALSE,,FALSE,,,,,MGFilms Pro,editable,TRUE,internal,Person's first name,Ermano,
+last_name,text,FALSE,FALSE,,FALSE,,,,,MGFilms Pro,editable,TRUE,internal,Person's last name,Cayard,
+display_name,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Optional preferred display name (fallback to first+last),Ermano C.,
+initials,text,FALSE,TRUE,,FALSE,,,,CHECK (char_length(initials) BETWEEN 1 AND 8),MGFilms Pro,editable,FALSE,internal,Short initials used in UI labels,EC,Length 1–8; can be derived by UI but stored for consistency.
+status_key,text,FALSE,FALSE,,FALSE,,person_statuses.status_key,person_statuses,FOREIGN KEY,Workflow,controlled,TRUE,internal,Lifecycle status of the person record,active,
+timezone,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,IANA timezone identifier,America/New_York,You can validate in API; DB CHECK can be added later if desired.
+default_host_key,text,FALSE,TRUE,,FALSE,,host_keys.host_key,,FOREIGN KEY,Infrastructure,controlled,TRUE,internal,Default logical host/environment for this person,nas_home,
+notes,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Internal notes about the person,Preferred editor for client work.,
+data_profile,text,FALSE,FALSE,,FALSE,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,TRUE,internal,Indicates whether this row is real/dummy/fixture,real,
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Timestamp when the person record was created,2025-01-01T12:00:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Timestamp when the person record was last updated,2025-01-10T09:30:00Z,

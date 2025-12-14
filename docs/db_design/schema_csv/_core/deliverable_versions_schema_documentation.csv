@@ -1,0 +1,14 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+deliverable_version_id,text,True,False,,False,,,,CHECK (deliverable_version_id ~ '^dlvv_[A-Za-z0-9]+$'),Supabase,immutable,True,internal,Surrogate primary key for deliverable version,dlvv_01HFVER123,Could be uuid/ulid; text keeps consistency with other ids.
+deliverable_id,text,False,False,,False,,deliverables.deliverable_id,,FOREIGN KEY,Supabase,immutable,True,internal,Deliverable this version belongs to,dlv_01h9x3k7m2p4r6t8v0w1y2z3ab,
+version_tag,text,False,False,,False,,,,CHECK (char_length(version_tag) BETWEEN 1 AND 50),Workflow,controlled,True,internal,"Version label/tag (v1, v2, revA, etc.)",v2,"Add UNIQUE (deliverable_id, version_tag) to prevent duplicates."
+file_path,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,"Legacy/transitional storage path for this version (e.g., Dropbox relative path)",Clients/Acme/ProjectX/Deliveries/MainEdit_v2.mp4,V1 can store legacy string; later normalize into storage objects.
+delivery_link,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,"Optional per-version review link (Frame.io, Dropbox file link, etc.)",https://frame.io/review/abcd1234,
+uploaded_by_person_id,text,False,False,,False,,people.person_id,,FOREIGN KEY,MGFilms Pro,controlled,True,internal,Person who uploaded this version,per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+uploaded_at,timestamptz,False,False,,False,,,,,Workflow,controlled,True,internal,Timestamp when this version was uploaded,2025-02-24T12:00:00Z,
+client_reviewed_at,timestamptz,False,True,,False,,,,,Workflow,system,True,internal,Timestamp when client reviewed this version,2025-02-25T14:00:00Z,
+client_feedback,text,False,True,,False,,,,,Workflow,editable,False,internal,Client feedback for this specific version,Looks great — please trim the intro by 3 seconds.,
+is_approved,boolean,False,False,false,False,,,,,Workflow,system,True,internal,Whether this version was approved,true,"If true, approved_at must be NOT NULL (CHECK constraint)."
+approved_at,timestamptz,False,True,,False,,,,,Workflow,system,True,internal,Timestamp when this version was approved,2025-03-01T18:00:00Z,
+approved_by_person_id,text,False,True,,False,,people.person_id,,FOREIGN KEY,Workflow,system,False,internal,Optional internal approver person_id (or later: client contact),per_01APPROVER,"If approvals are client-driven, add approved_by_client_contact_id later."
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp for the version record,2025-02-24T12:00:01Z,

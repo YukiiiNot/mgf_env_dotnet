@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+status_key,text,True,False,,False,,,,CHECK (status_key ~ '^[a-z0-9_]+$'),Workflow,controlled,True,internal,Machine-readable client status key,prospect,"Suggested keys: active, inactive, prospect, archived."
+display_name,text,False,False,,False,,,,,Workflow,editable,False,internal,Human-friendly status name,Prospect,
+sort_order,int,False,False,0,False,,,,,Workflow,editable,False,internal,Ordering value for UI dropdowns and reports,10,
+is_terminal,boolean,False,True,false,False,,,,,Workflow,editable,False,internal,Whether this status represents an end state,true,Optional but helpful for filtering and automation.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

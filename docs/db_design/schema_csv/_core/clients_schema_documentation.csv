@@ -1,0 +1,11 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+client_id,text,TRUE,FALSE,,FALSE,,,,CHECK (client_id ~ '^cli_[0-9a-hjkmnp-tv-z]{26}$'),Supabase,immutable,TRUE,internal,System-generated primary identifier for the client account,cli_01h9x3k7m2p4r6t8v0w1y2z3ab,
+display_name,text,FALSE,FALSE,,FALSE,,,,,MGFilms Pro,editable,TRUE,internal,Client-facing account name shown in lists,Acme Marketing LLC,
+client_type_key,text,FALSE,FALSE,,FALSE,,client_types.type_key,client_types,FOREIGN KEY,Workflow,controlled,TRUE,internal,Client type classification,organization,Controlled vocabulary via client_types lookup table.
+status_key,text,FALSE,FALSE,,FALSE,,client_statuses.status_key,client_statuses,FOREIGN KEY,Workflow,controlled,TRUE,internal,Lifecycle status of the client account,active,
+primary_contact_person_id,text,FALSE,TRUE,,FALSE,,people.person_id,,FOREIGN KEY,MGFilms Pro,controlled,TRUE,internal,Convenience pointer to the primary contact person for this client,per_01ABCD,Still store all contacts in client_contacts; this is just a shortcut.
+account_owner_person_id,text,FALSE,TRUE,,FALSE,,people.person_id,,FOREIGN KEY,MGFilms Pro,controlled,TRUE,internal,"Internal owner of the account (e.g., you/Martin)",per_01OWNER,
+notes,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Internal notes about the client account,Prefers email communication; invoice Net 30.,
+data_profile,text,FALSE,FALSE,,FALSE,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,TRUE,internal,Indicates whether this row is real/dummy/fixture,real,
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Timestamp when the client account was created,2025-01-01T12:00:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Timestamp when the client account was last updated,2025-01-10T09:30:00Z,

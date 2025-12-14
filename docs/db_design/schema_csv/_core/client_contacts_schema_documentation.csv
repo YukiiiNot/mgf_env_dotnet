@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+client_id,text,False,False,,False,,clients.client_id,,FOREIGN KEY,Supabase,immutable,True,internal,Client account the contact is associated with,cli_01h9x3k7m2p4r6t8v0w1y2z3ab,
+person_id,text,False,False,,False,,people.person_id,,FOREIGN KEY,MGFilms Pro,controlled,True,internal,Person who is a contact for the client,per_01ABCD,NOT NULL enforced; placeholders should be modeled as leads instead.
+role_key,text,False,True,,False,,roles.role_key,roles,FOREIGN KEY,Workflow,editable,False,internal,Role of the person relative to the client account,marketing,
+notes,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Optional notes about this contact relationship,Handles approvals and creative feedback.,
+is_primary,boolean,False,False,false,False,,,,,MGFilms Pro,controlled,True,internal,Marks this contact as the primary contact for the client,true,Recommend partial unique index: one primary per client.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Timestamp when the contact association was created,2025-01-02T14:22:00Z,

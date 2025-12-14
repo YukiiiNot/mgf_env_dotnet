@@ -1,0 +1,5 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+prefix,text,True,False,,False,,,,"PRIMARY KEY (prefix, year_2)",Registry,controlled,True,internal,Company/project code prefix,MGF,
+year_2,smallint,True,False,,False,,,,"PRIMARY KEY (prefix, year_2)",Registry,controlled,True,internal,"2-digit year for code allocation (e.g., 25)",25,
+next_seq,integer,False,False,,False,,,,CHECK (next_seq >= 0 AND next_seq <= 9999),Registry,system,False,internal,"Next sequence number to allocate for this (prefix, year_2)",42,Used transactionally: lock row → read next_seq → increment → format code.
+updated_at,timestamptz,False,False,now(),True,system,,,,Supabase,system,True,internal,Timestamp last updated,2025-01-02T12:00:00Z,

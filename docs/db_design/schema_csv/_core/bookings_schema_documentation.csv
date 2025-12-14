@@ -1,0 +1,28 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+booking_id,text,True,False,,False,,,,CHECK (booking_id ~ '^bkg_[0-9a-hjkmnp-tv-z]{26}$'),Supabase,immutable,True,internal,System-generated primary identifier for the booking,bkg_01h9x3k7m2p4r6t8v0w1y2z3ab,
+project_id,text,False,False,,False,,projects.project_id,,FOREIGN KEY,Supabase,immutable,True,internal,Project this booking is tied to,prj_01HF9ABC123,"Recommend index on (project_id, start_at) for timeline views."
+title,text,False,False,,False,,,,,MGFilms Pro,editable,True,internal,Booking title (shoot/meeting/edit session/etc.),Client shoot — Day 1,
+status_key,text,False,False,pending,False,,booking_statuses.status_key,booking_statuses,FOREIGN KEY,Workflow,frequent,True,internal,Booking status,pending,
+phase_key,text,False,False,scheduling,False,,booking_phases.phase_key,booking_phases,FOREIGN KEY,Workflow,frequent,True,internal,Booking phase,shoot,
+start_at,timestamptz,False,False,,False,,,,,Workflow,controlled,True,internal,Start time for the booking,2025-03-10T14:00:00Z,
+end_at,timestamptz,False,False,,False,,,,CHECK (end_at > start_at),Workflow,controlled,True,internal,End time for the booking,2025-03-10T18:00:00Z,
+timezone,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,IANA timezone identifier (optional),America/New_York,timestamptz stores absolute time; timezone is for display/UX.
+prep_time_minutes,int,False,False,90,False,,,,CHECK (prep_time_minutes >= 0),MGFilms Pro,editable,False,internal,Prep buffer minutes for planning,90,
+travel_time_minutes,int,False,False,90,False,,,,CHECK (travel_time_minutes >= 0),MGFilms Pro,editable,False,internal,Travel buffer minutes for planning,60,
+wrap_time_minutes,int,False,False,90,False,,,,CHECK (wrap_time_minutes >= 0),MGFilms Pro,editable,False,internal,Wrap buffer minutes for planning,45,
+ingest_time_minutes,int,False,False,90,False,,,,CHECK (ingest_time_minutes >= 0),MGFilms Pro,editable,False,internal,Ingest buffer minutes for planning,120,
+location_name,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Location name/label,Client HQ,
+location_line1,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Location address line 1,123 Main St,
+location_line2,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Location address line 2,Suite 400,
+location_city,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Location city,New York,
+location_region,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Location region/state/province,NY,
+location_postal_code,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Location postal code,10001,
+location_country,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Location country code or name,US,
+location_notes,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Additional location notes,Load-in via side entrance; parking in rear lot.,
+notes,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Internal notes for the booking,"Bring 2 lavs, 1 boom; confirm release forms.",
+created_by_person_id,text,False,True,,False,,people.person_id,,FOREIGN KEY,MGFilms Pro,controlled,True,internal,Person who created the booking,per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-03-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-03-05T09:30:00Z,
+data_profile,text,False,False,,False,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,True,internal,Indicates whether this row is real/dummy/fixture,real,
+google_event_id,text,False,True,,False,,,,,Google Calendar,system,True,internal,External Google Calendar event id (NOT a FK),6q3k1m2n3o4p5q6r7s8t9u0v1w,Optional UNIQUE to prevent duplicates from sync.
+metadata,jsonb,False,False,'{}'::jsonb,False,,,,,MGFilms Pro,editable,False,internal,Optional freeform metadata for future-proofing,"{""shoot_type"":""interview"",""gear"":""A-cam""}",

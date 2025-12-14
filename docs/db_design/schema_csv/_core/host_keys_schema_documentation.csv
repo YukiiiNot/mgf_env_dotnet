@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+host_key,text,True,False,,False,,,,CHECK (host_key ~ '^[a-z0-9_]+$'),Infrastructure,controlled,True,internal,Machine-readable host/environment key,nas_home,"Examples: nas_home, dropbox_remote, local_machine"
+display_name,text,False,False,,False,,,,,Infrastructure,editable,False,internal,Human-friendly host name,NAS (Home),
+host_type_key,text,False,True,,False,,,,CHECK (host_type_key IS NULL OR host_type_key ~ '^[a-z0-9_]+$'),Infrastructure,editable,False,internal,Optional host type classification,nas,Optional: you can normalize into host_types later if needed.
+metadata,jsonb,False,True,{},False,,,,,Infrastructure,controlled,False,internal,Optional host metadata (non-secret),"{""description"":""Main NAS share for editors""}",
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+invoice_id,text,True,False,,False,,invoices.invoice_id,,"PRIMARY KEY, FOREIGN KEY",Supabase,immutable,True,internal,Invoice this Square integration record belongs to (1:1),inv_01h9x3k7m2p4r6t8v0w1y2z3ab,
+square_invoice_id,text,False,True,,False,,,,UNIQUE,Square,controlled,True,internal,External Square invoice identifier,sqi_9F3K2L1M0N,
+square_customer_id,text,False,True,,False,,,,,Square,controlled,False,internal,External Square customer identifier,CUST_8QX3J9ZP8Y,External id; not a FK (Square is system of record).
+last_synced_at,timestamptz,False,True,,False,,,,,Square,system,True,internal,Timestamp of last successful sync with Square,2025-02-10T10:45:00Z,
+sync_status_key,text,False,True,,False,,integration_sync_statuses.status_key,integration_sync_statuses,FOREIGN KEY,Square,system,True,internal,Current sync status for this integration record,ok,Optional lookup; can omit if you want ultra-simple v1.

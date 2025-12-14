@@ -1,0 +1,15 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+activity_id,text,True,False,,False,,,,CHECK (activity_id ~ '^evt_[0-9a-hjkmnp-tv-z]{26}$'),Supabase,immutable,True,internal,Append-only activity/audit event identifier,evt_01h9x3k7m2p4r6t8v0w1y2z3ab,
+topic_key,text,False,False,,False,,activity_topics.topic_key,activity_topics,FOREIGN KEY,Workflow,controlled,True,internal,"Topic/category for this activity (projects, invoices, daemon.sync, etc.)",projects,
+entity_key,text,False,False,,False,,,,,Workflow,controlled,True,internal,Polymorphic entity key this activity relates to (not a FK),prj_01HF9ABC123,Use with topic_key; keep flexible rather than forcing many FKs.
+entity_type_key,text,False,True,,False,,,,CHECK (entity_type_key ~ '^[a-z0-9_]+$'),Workflow,editable,False,internal,Optional polymorphic entity type key to disambiguate entity_key,project,
+op_key,text,False,False,,False,,activity_ops.op_key,activity_ops,FOREIGN KEY,Workflow,controlled,True,internal,"Operation performed (created, updated, synced, failed, etc.)",created,
+source,text,False,True,,False,,,,,MGFilms Pro,editable,True,internal,Origin system/source for the activity,system/daemon.sync,"Examples: dropbox, notion, square, system/daemon.sync, manual_entry."
+occurred_at,timestamptz,False,False,,False,,,,,Workflow,immutable,True,internal,Timestamp when the activity occurred,2025-03-10T15:00:00Z,
+occurred_at_local,text,False,True,,False,,,,,Workflow,editable,False,internal,Optional local-time string (legacy field),2025-03-10 11:00 AM EDT,Keep only if you need the original string for paper trail.
+status_key,text,False,True,,False,,activity_statuses.status_key,activity_statuses,FOREIGN KEY,Workflow,editable,True,internal,Optional severity/status for the log entry (info/warn/error),info,
+priority_key,text,False,False,normal,False,,activity_priorities.priority_key,activity_priorities,FOREIGN KEY,Workflow,editable,True,internal,Priority of this activity entry,normal,
+payload,jsonb,False,False,'{}'::jsonb,False,,,,,System,system,False,internal,"Structured payload (details, metadata, diffs, ids, etc.)","{""project_id"":""prj_..."",""by"":""per_...""}",
+created_by_actor,text,False,True,,False,,,,,MGFilms Pro,editable,True,internal,Actor that caused this activity (per_... or system/...),per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+retry_count,integer,False,False,0,False,,,,CHECK (retry_count >= 0),System,system,False,internal,Optional legacy counter; do not use as queue retry source-of-truth,0,Retries belong in jobs.attempt_count; keep for backwards compatibility only.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-03-10T15:00:01Z,

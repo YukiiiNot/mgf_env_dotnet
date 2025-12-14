@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+currency_code,text,True,False,,False,,,,CHECK (currency_code ~ '^[A-Z]{3}$'),Billing,controlled,True,internal,ISO 4217 currency code,USD,
+display_name,text,False,True,,False,,,,,Billing,editable,False,internal,Human-friendly currency name,US Dollar,
+symbol,text,False,True,,False,,,,,Billing,editable,False,internal,Currency symbol,$,
+minor_units,smallint,False,True,,False,,,,CHECK (minor_units IS NULL OR minor_units BETWEEN 0 AND 6),Billing,editable,False,internal,Number of decimal minor units used by this currency (usually 2),2,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

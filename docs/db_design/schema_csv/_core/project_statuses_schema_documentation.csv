@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+status_key,text,TRUE,FALSE,,FALSE,,,,CHECK (status_key ~ '^[a-z0-9_]+$'),Workflow,controlled,TRUE,internal,Machine-readable status key used by projects.status_key,active,Use lowercase snake_case; keep stable once used.
+display_name,text,FALSE,FALSE,,FALSE,,,,,Workflow,editable,FALSE,internal,Human-friendly name for the status,Active,
+sort_order,int,FALSE,FALSE,0,FALSE,,,,,Workflow,editable,FALSE,internal,Ordering value for UI dropdowns and reports,10,
+is_terminal,boolean,FALSE,TRUE,FALSE,FALSE,,,,,Workflow,editable,FALSE,internal,"Whether this status represents an end state (e.g., Archived/Cancelled)",TRUE,Optional but helpful for filtering and automation.
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Row update timestamp,2025-01-05T09:30:00Z,

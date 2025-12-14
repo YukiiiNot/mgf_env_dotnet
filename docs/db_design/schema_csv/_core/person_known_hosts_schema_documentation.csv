@@ -1,0 +1,4 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+person_id,text,False,False,,False,,people.person_id,,FOREIGN KEY,Supabase,controlled,True,internal,Person who has access to/uses the host,per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+host_key,text,False,False,,False,,host_keys.host_key,host_keys,FOREIGN KEY,Infrastructure,controlled,True,internal,Logical host/environment known to the person,nas_home,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Timestamp when the known-host link was created,2025-01-02T14:22:00Z,"Composite PK should be (person_id, host_key)."

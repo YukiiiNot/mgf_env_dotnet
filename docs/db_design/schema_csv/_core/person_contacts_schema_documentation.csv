@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+person_id,text,True,False,,False,,people.person_id,,"PRIMARY KEY, FOREIGN KEY",Supabase,immutable,True,internal,Person this contact info belongs to (1:1),per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+email,text,False,True,,False,,,,,MGFilms Pro,editable,True,pii,Primary email address for the person,dormeusermano@gmail.com,Optional UNIQUE if you plan to map email → auth user later.
+phone,text,False,True,,False,,,,,MGFilms Pro,editable,False,pii,Primary phone number for the person,+1-555-123-4567,
+discord_handle,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Discord handle,dormeusermano#1234,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Timestamp when contact info was last updated,2025-02-10T09:15:00Z,

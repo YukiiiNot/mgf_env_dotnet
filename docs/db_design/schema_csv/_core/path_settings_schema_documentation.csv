@@ -1,0 +1,4 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+settings_id,int,True,False,,False,,,,CHECK (settings_id = 1),System,immutable,True,internal,Singleton row id (always 1),1,Alternative: settings_key text PK. This keeps it simple.
+default_project_root_key,text,False,True,,False,,path_templates.path_key,path_templates,FOREIGN KEY,System,editable,False,internal,Default path_key to use as the project root key,project_root,Replaces file-level default_root_key. Can be null if determined elsewhere.
+updated_at,timestamptz,False,False,now(),True,system,,,,Supabase,system,True,internal,Row update timestamp,2025-01-10T00:00:00Z,

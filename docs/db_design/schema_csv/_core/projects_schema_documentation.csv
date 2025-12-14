@@ -1,0 +1,15 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+project_id,text,TRUE,FALSE,,FALSE,,,,CHECK (project_id ~ '^prj_[A-Za-z0-9]+$'),Supabase,immutable,TRUE,internal,System-generated primary identifier for the project,prj_01HF9ABC123,Primary key
+project_code,text,FALSE,FALSE,,FALSE,,,,"UNIQUE, CHECK (project_code ~ '^MGF[0-9]{2}-[0-9]{4}$')",MGFilms Pro,rare,TRUE,internal,Human-friendly project code,MGF25-0001,Unique business identifier
+client_id,text,FALSE,FALSE,,FALSE,,clients.client_id,,FOREIGN KEY,CRM,controlled,TRUE,internal,Client associated with the project,cli_01ABCD,
+name,text,FALSE,FALSE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Project display name,Spring Campaign Video,
+status_key,text,FALSE,FALSE,,FALSE,,project_statuses.status_key,project_statuses,FOREIGN KEY,Workflow,frequent,TRUE,internal,Current status of the project,active,Must be Archived if archived_at is set
+phase_key,text,FALSE,FALSE,,FALSE,,project_phases.phase_key,project_phases,FOREIGN KEY,Workflow,frequent,TRUE,internal,Lifecycle phase of the project,production,
+priority_key,text,FALSE,TRUE,,FALSE,,project_priorities.priority_key,project_priorities,FOREIGN KEY,Workflow,occasional,FALSE,internal,Priority classification,high,
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,NOT NULL,Supabase,immutable,TRUE,internal,Timestamp when the project was created,2025-01-01T12:00:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Last update timestamp,2025-01-05T09:30:00Z,
+due_date,date,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Target completion date,3/15/2025,
+archived_at,timestamptz,FALSE,TRUE,,FALSE,,,,CHECK (archived_at IS NULL OR status_key = 'archived'),Workflow,system,FALSE,internal,Timestamp when the project was archived,2026-01-01T00:00:00Z,
+data_profile,text,FALSE,FALSE,,FALSE,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,TRUE,internal,"Indicates whether data is real, dummy, or fixture",real,
+current_invoice_id,text,FALSE,TRUE,,FALSE,,invoices.invoice_id,,FOREIGN KEY,Billing,occasional,FALSE,financial,Most recent invoice associated with the project,inv_01XYZ,Optional relationship
+metadata,jsonb,FALSE,FALSE,{},FALSE,,,,,MGFilms Pro,flexible,FALSE,internal,Flexible metadata for project-specific attributes,"{""shoot_days"": 3}",Use sparingly

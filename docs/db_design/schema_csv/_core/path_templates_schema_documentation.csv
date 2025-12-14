@@ -1,0 +1,11 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+path_key,text,True,False,,False,,,,CHECK (path_key ~ '^[a-z0-9_]+$'),Workflow,controlled,True,internal,Logical path template key used by apps/daemons,deliveries_root,
+path_type_key,text,False,False,,False,,path_types.type_key,path_types,FOREIGN KEY,Workflow,editable,True,internal,Category/type of path (used for grouping and automation),deliveries,"If you want v1 free text, drop FK and keep as path_type text."
+anchor_key,text,False,False,dropbox_root,False,,path_anchors.anchor_key,path_anchors,FOREIGN KEY,Workflow,editable,True,internal,Anchor base for resolving relpath (dropbox_root vs project_root),project_root,
+relpath,text,False,False,,False,,,,CHECK (relpath !~ '^(\/|[A-Za-z]:\\)' AND relpath !~ '\\' AND relpath !~ '(?:^|/)\.\.(?:/|$)'),Workflow,editable,False,internal,"Relative path segment from the anchor (no absolute paths, no '..', no backslashes)",Deliveries/Main Edit,Constraint shown is a practical regex check; you can harden it further if needed.
+exists_required,boolean,False,False,false,False,,,,,Workflow,editable,True,internal,Whether this path must exist (daemon should verify/provision),true,
+writable,boolean,False,False,true,False,,,,,Workflow,editable,False,internal,Whether automation/users should be able to write into this path,true,
+description,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Optional description of the path key intent,Primary delivery folder for exports sent to client.,
+is_active,boolean,False,False,true,False,,,,,Workflow,editable,True,internal,Whether this template is currently active/used,true,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T00:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-10T00:00:00Z,

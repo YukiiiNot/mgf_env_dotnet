@@ -1,0 +1,4 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+lead_id,text,FALSE,FALSE,,FALSE,,leads.lead_id,,FOREIGN KEY,Supabase,immutable,TRUE,internal,Lead to tag,lead_01h9x3k7m2p4r6t8v0w1y2z3ab,"Composite PK should be (lead_id, tag_key)."
+tag_key,text,FALSE,FALSE,,FALSE,,tags.tag_key,tags,FOREIGN KEY,Workflow,controlled,TRUE,internal,Tag applied to the lead,warm_lead,
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Row creation timestamp,2025-03-01T12:05:00Z,

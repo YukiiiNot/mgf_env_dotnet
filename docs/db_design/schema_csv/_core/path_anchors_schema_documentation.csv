@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+anchor_key,text,True,False,,False,,,,CHECK (anchor_key ~ '^[a-z0-9_]+$'),Workflow,controlled,True,internal,Machine-readable anchor key,project_root,"Suggested keys: dropbox_root, project_root."
+display_name,text,False,False,,False,,,,,Workflow,editable,False,internal,Human-friendly anchor name,Project Root,
+sort_order,int,False,False,0,False,,,,,Workflow,editable,False,internal,Ordering value for UI dropdowns,10,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T00:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-10T00:00:00Z,

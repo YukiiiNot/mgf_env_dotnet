@@ -1,0 +1,21 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+lead_id,text,True,False,,False,,,,CHECK (lead_id ~ '^lead_[0-9a-hjkmnp-tv-z]{26}$'),Supabase,immutable,True,internal,System-generated primary identifier for the lead/prospect,lead_01h9x3k7m2p4r6t8v0w1y2z3ab,
+stage_key,text,False,False,new,False,,lead_stages.stage_key,lead_stages,FOREIGN KEY,Workflow,frequent,True,internal,Lead pipeline stage,qualified,
+priority_key,text,False,False,normal,False,,lead_priorities.priority_key,lead_priorities,FOREIGN KEY,Workflow,frequent,True,internal,Lead priority,high,
+outcome_key,text,False,False,open,False,,lead_outcomes.outcome_key,lead_outcomes,FOREIGN KEY,Workflow,frequent,True,internal,Lead outcome (open/won/lost/closed),open,
+source_key,text,False,True,,False,,lead_sources.source_key,lead_sources,FOREIGN KEY,MGFilms Pro,editable,True,internal,How the lead was acquired (optional controlled vocab),referral,"If you prefer v1 free text, replace with source_text and drop FK."
+campaign,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Optional campaign identifier/name,IG-Reels-Feb2025,
+company_name,text,False,True,,False,,,,,MGFilms Pro,editable,True,internal,Company/organization name (if applicable),Acme Marketing LLC,
+budget_estimate_amount,"numeric(12,2)",False,True,,False,,,,CHECK (budget_estimate_amount >= 0),Sales,editable,False,financial,Estimated budget for the lead,5000.00,
+interested_package_key,text,False,True,,False,,service_packages.package_key,service_packages,FOREIGN KEY,Sales,editable,True,internal,Optional referenced service package of interest,MGF_EDIT_STARTER,"If packages are fluid, use free text instead."
+notes,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Internal notes about the lead,Asked for 3 short-form edits + one hero video.,
+data_profile,text,False,False,,False,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,True,internal,Indicates whether this row is real/dummy/fixture,real,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Timestamp when the lead was created,2025-03-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Timestamp when the lead was last updated,2025-03-05T09:30:00Z,
+converted_at,timestamptz,False,True,,False,,,,,Workflow,system,True,internal,Timestamp when the lead was converted (won),2025-03-10T15:00:00Z,CHECK: if converted_at is not null → converted_client_id must be not null.
+converted_client_id,text,False,True,,False,,clients.client_id,,FOREIGN KEY,Workflow,system,True,internal,Client created/linked when lead is won,cli_01h9x3k7m2p4r6t8v0w1y2z3ab,CHECK: if stage_key='won' then converted_at and converted_client_id must be NOT NULL.
+converted_project_id,text,False,True,,False,,projects.project_id,,FOREIGN KEY,Workflow,system,True,internal,Optional project created/linked on conversion,prj_01HF9ABC123,
+contact_person_id,text,False,True,,False,,people.person_id,,FOREIGN KEY,Sales,controlled,True,internal,Optional link to a person record (if already created),per_01h9x3k7m2p4r6t8v0w1y2z3ab,"If null, require contact_display_name OR contact_email (CHECK + API)."
+contact_display_name,text,False,True,,False,,,,,Sales,editable,True,internal,Contact name snapshot (if no person record exists yet),Jamie Rivera,
+contact_email,text,False,True,,False,,,,,Sales,editable,True,pii,Contact email snapshot (if no person record exists yet),jamie@acme.com,
+contact_phone,text,False,True,,False,,,,,Sales,editable,False,pii,Contact phone snapshot (if no person record exists yet),+1-555-987-6543,

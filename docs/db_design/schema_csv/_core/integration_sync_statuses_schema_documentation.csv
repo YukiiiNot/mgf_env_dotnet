@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+status_key,text,TRUE,FALSE,,FALSE,,,,CHECK (status_key ~ '^[a-z0-9_]+$'),Infrastructure,controlled,TRUE,internal,Machine-readable sync status key,ok,"Suggested keys: ok, pending, error, disabled."
+display_name,text,FALSE,FALSE,,FALSE,,,,,Infrastructure,editable,FALSE,internal,Human-friendly sync status name,OK,
+sort_order,int,FALSE,FALSE,0,FALSE,,,,,Infrastructure,editable,FALSE,internal,Ordering value for UI dropdowns and reports,10,
+is_terminal,boolean,FALSE,TRUE,FALSE,FALSE,,,,,Infrastructure,editable,FALSE,internal,Whether this status is terminal,TRUE,Usually false except disabled; keep if useful.
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Row update timestamp,2025-01-05T09:30:00Z,

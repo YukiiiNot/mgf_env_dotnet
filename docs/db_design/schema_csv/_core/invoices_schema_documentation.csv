@@ -1,0 +1,20 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+invoice_id,text,TRUE,FALSE,,FALSE,,,,CHECK (invoice_id ~ '^inv_[0-9a-hjkmnp-tv-z]{26}$'),Supabase,immutable,TRUE,internal,System-generated primary identifier for the invoice,inv_01h9x3k7m2p4r6t8v0w1y2z3ab,
+invoice_number,text,FALSE,FALSE,,FALSE,,,,"UNIQUE, CHECK (invoice_number ~ '^MGF-INV-[0-9]{2}-[0-9]{6}$')",MGFilms Pro,system,TRUE,internal,Human-readable invoice number,MGF-INV-25-000123,Allocated via invoice_number_counters in a transaction; 6 digits gives room per year.
+project_id,text,FALSE,FALSE,,FALSE,,projects.project_id,,FOREIGN KEY,Supabase,controlled,TRUE,internal,Project this invoice is associated with,prj_01HF9ABC123,
+client_id,text,FALSE,FALSE,,FALSE,,clients.client_id,,FOREIGN KEY,Supabase,controlled,TRUE,internal,Client billed on this invoice,cli_01h9x3k7m2p4r6t8v0w1y2z3ab,
+currency_code,text,FALSE,FALSE,USD,FALSE,,currencies.currency_code,currencies,FOREIGN KEY,Billing,controlled,TRUE,internal,Currency for all amounts on this invoice,USD,
+status_key,text,FALSE,FALSE,unpaid,FALSE,,invoice_statuses.status_key,invoice_statuses,FOREIGN KEY,Workflow,frequent,TRUE,internal,Invoice payment status,unpaid,
+subtotal_amount,"numeric(12,2)",FALSE,FALSE,,FALSE,,,,CHECK (subtotal_amount >= 0),Billing,system,FALSE,financial,Subtotal before tax/discount rollups (should match items),1500,Enforce item rollup in API; triggers later if desired.
+tax_rate,"numeric(5,4)",FALSE,TRUE,,FALSE,,,,CHECK (tax_rate BETWEEN 0 AND 1),Billing,editable,FALSE,financial,"Tax rate as decimal (e.g., 0.08875)",0.0888,
+tax_amount,"numeric(12,2)",FALSE,TRUE,,FALSE,,,,CHECK (tax_amount >= 0),Billing,system,FALSE,financial,Calculated tax amount,133.12,
+total_amount,"numeric(12,2)",FALSE,FALSE,,FALSE,,,,CHECK (total_amount >= 0),Billing,system,TRUE,financial,Total invoice amount due,1633.12,
+issued_at,timestamptz,FALSE,FALSE,,FALSE,,,,,Billing,controlled,TRUE,internal,Timestamp when invoice was issued to the client,2025-02-01T14:00:00Z,
+due_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Billing,editable,TRUE,internal,Timestamp when invoice is due,2025-03-03T23:59:59Z,
+paid_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Billing,system,TRUE,internal,Timestamp when invoice was fully paid,2025-02-15T16:20:00Z,
+refunded_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Billing,system,FALSE,internal,Timestamp when invoice was fully refunded (if applicable),2025-02-20T11:05:00Z,
+payment_method_key,text,FALSE,TRUE,,FALSE,,payment_methods.method_key,payment_methods,FOREIGN KEY,Billing,controlled,TRUE,internal,Payment method used to pay this invoice,square,
+notes,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Internal notes for this invoice,Rush fee included; Net 30 agreed.,
+data_profile,text,FALSE,FALSE,,FALSE,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,TRUE,internal,Indicates whether this row is real/dummy/fixture,real,
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Row creation timestamp,2025-02-01T14:00:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Row update timestamp,2025-02-10T09:30:00Z,

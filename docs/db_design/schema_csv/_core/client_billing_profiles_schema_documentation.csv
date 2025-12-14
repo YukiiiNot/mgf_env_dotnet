@@ -1,0 +1,13 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+client_id,text,TRUE,FALSE,,FALSE,,clients.client_id,,"PRIMARY KEY, FOREIGN KEY",Supabase,immutable,TRUE,internal,Client account this billing profile belongs to (1:1),cli_01h9x3k7m2p4r6t8v0w1y2z3ab,
+billing_email,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Billing email address for invoicing,ap@acme.com,
+billing_phone,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Billing phone number,-5244,
+tax_id,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,controlled,FALSE,financial,Tax identifier for the client (if applicable),12-3456789,Consider additional masking/access controls if needed.
+address_line1,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Billing address line 1,123 Main St,
+address_line2,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Billing address line 2,Suite 400,
+address_city,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Billing city,New York,
+address_region,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Billing state/region/province,NY,
+address_postal_code,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Billing postal code,10001,
+address_country,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Billing country code or name,US,
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Timestamp when the billing profile was created,2025-01-02T14:22:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Timestamp when the billing profile was last updated,2025-02-10T09:15:00Z,

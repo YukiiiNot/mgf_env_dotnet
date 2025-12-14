@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+priority_key,text,True,False,,False,,,,CHECK (priority_key ~ '^[a-z0-9_]+$'),Workflow,controlled,True,internal,Machine-readable work item priority key,high,"Suggested keys: low, normal, high, urgent."
+display_name,text,False,False,,False,,,,,Workflow,editable,False,internal,Human-friendly priority name,High,
+sort_order,int,False,False,0,False,,,,,Workflow,editable,False,internal,Ordering value,30,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T00:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-10T00:00:00Z,

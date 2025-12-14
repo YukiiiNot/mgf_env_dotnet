@@ -1,0 +1,4 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+activity_id,text,False,False,,False,,activity_log.activity_id,,FOREIGN KEY,Supabase,immutable,True,internal,Activity being acknowledged,evt_01h9x3k7m2p4r6t8v0w1y2z3ab,"Composite PK should be (activity_id, acknowledged_by_actor)."
+acknowledged_by_actor,text,False,False,,False,,,,,MGFilms Pro,controlled,True,internal,Actor acknowledging the activity (per_... or system/...),per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+acknowledged_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Timestamp when acknowledgement happened,2025-03-10T16:00:00Z,

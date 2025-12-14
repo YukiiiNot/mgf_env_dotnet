@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+permission_key,text,True,False,,False,,,,CHECK (permission_key ~ '^[a-z0-9_.]+$'),Workflow,controlled,True,internal,Machine-readable permission key (capability),projects.create,"Examples: projects.create, invoices.view, admin.all"
+description,text,False,True,,False,,,,,Workflow,editable,False,internal,Description of what this permission allows,Can create new projects,
+sort_order,int,False,False,0,False,,,,,Workflow,editable,False,internal,Ordering value for UI and reports,10,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

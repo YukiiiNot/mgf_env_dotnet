@@ -1,0 +1,18 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+deliverable_id,text,TRUE,FALSE,,FALSE,,,,CHECK (deliverable_id ~ '^dlv_[0-9a-hjkmnp-tv-z]{26}$'),Supabase,immutable,TRUE,internal,System-generated primary identifier for the deliverable,dlv_01h9x3k7m2p4r6t8v0w1y2z3ab,
+project_id,text,FALSE,FALSE,,FALSE,,projects.project_id,,FOREIGN KEY,Supabase,immutable,TRUE,internal,Project this deliverable belongs to,prj_01HF9ABC123,
+invoice_id,text,FALSE,TRUE,,FALSE,,invoices.invoice_id,,FOREIGN KEY,Billing,controlled,TRUE,internal,Optional invoice gating this deliverable (if payment required),inv_01h9x3k7m2p4r6t8v0w1y2z3ab,
+delivery_method_key,text,FALSE,FALSE,,FALSE,,delivery_methods.method_key,delivery_methods,FOREIGN KEY,Workflow,controlled,TRUE,internal,Delivery method used (Dropbox/Frame.io/etc.),dropbox,
+delivery_link,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Primary delivery link for the deliverable (folder or latest review link),https://www.dropbox.com/s/abcd1234/main-edit?dl=0,URI string; may point to latest version review link or a folder.
+delivery_note,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Optional delivery note to client/internal,Main edit v2 uploaded for review.,
+status_key,text,FALSE,FALSE,,FALSE,,deliverable_statuses.status_key,deliverable_statuses,FOREIGN KEY,Workflow,frequent,TRUE,internal,Current deliverable status,in_review,
+payment_required,boolean,FALSE,FALSE,FALSE,FALSE,,,,,Billing,controlled,TRUE,internal,Whether payment is required before this deliverable is accessible,TRUE,
+is_locked,boolean,FALSE,FALSE,FALSE,FALSE,,,,,Workflow,system,TRUE,internal,Whether deliverable access is locked (often due to unpaid invoice),TRUE,Recommended API rule: if payment_required and invoice unpaid → locked.
+approved_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Workflow,system,TRUE,internal,Timestamp when this deliverable was approved,2025-03-01T18:00:00Z,Replaces bare approved boolean with more informative timestamp.
+approved_version_id,text,FALSE,TRUE,,FALSE,,deliverable_versions.deliverable_version_id,,FOREIGN KEY,Workflow,system,TRUE,internal,Version that was approved (if tracking approval at version level),dlvv_01HFVER123,
+created_at,timestamptz,FALSE,FALSE,,FALSE,,,,,Workflow,immutable,TRUE,internal,Timestamp when the deliverable was created (maps from delivery uploaded_at),2025-02-20T12:00:00Z,
+created_by_person_id,text,FALSE,FALSE,,FALSE,,people.person_id,,FOREIGN KEY,MGFilms Pro,controlled,TRUE,internal,Person who created/uploaded the initial deliverable entry,per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+client_last_reviewed_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Workflow,system,TRUE,internal,Convenience timestamp for last client review across versions,2025-02-25T14:00:00Z,Optional denormalized convenience; source of truth is version rows.
+client_last_feedback,text,FALSE,TRUE,,FALSE,,,,,Workflow,system,FALSE,internal,Convenience latest client feedback across versions,Please adjust color and lower music volume.,Optional denormalized convenience; source of truth is version rows.
+data_profile,text,FALSE,FALSE,,FALSE,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,TRUE,internal,Indicates whether this row is real/dummy/fixture,real,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Timestamp when deliverable record was last updated,2025-02-26T09:30:00Z,

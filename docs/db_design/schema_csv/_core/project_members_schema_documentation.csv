@@ -1,0 +1,9 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+project_member_id,text,TRUE,FALSE,,FALSE,,,,CHECK (project_member_id ~ '^prm_[A-Za-z0-9]+$'),Supabase,immutable,TRUE,internal,Surrogate primary key for project member assignment,prm_01HF9XYZ123,Preferred over composite PK for flexibility
+project_id,text,FALSE,FALSE,,FALSE,,projects.project_id,,FOREIGN KEY,Supabase,immutable,TRUE,internal,Project to which the person is assigned,prj_01HF9ABC123,
+person_id,text,FALSE,FALSE,,FALSE,,people.person_id,,FOREIGN KEY,HR,controlled,TRUE,internal,Person assigned to the project,per_01ABCD,
+role_key,text,FALSE,FALSE,,FALSE,,roles.role_key,roles,FOREIGN KEY,Workflow,frequent,TRUE,internal,Role the person has on the project,director,
+notes,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Optional notes about the assignment,Primary contact for client,
+assigned_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Workflow,system,TRUE,internal,Timestamp when the person was assigned to the project,2025-01-02T10:00:00Z,
+released_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Workflow,system,FALSE,internal,Timestamp when the person was released from the project,2025-06-01T18:00:00Z,
+is_active,boolean,FALSE,FALSE,TRUE,FALSE,,,,CHECK (is_active = true OR released_at IS NOT NULL),Workflow,system,TRUE,internal,Whether the assignment is currently active,TRUE,Supports partial unique index on active assignments

@@ -1,0 +1,9 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+project_storage_root_id,text,TRUE,FALSE,,FALSE,,,,CHECK (project_storage_root_id ~ '^psr_[A-Za-z0-9]+$'),Supabase,immutable,TRUE,internal,Primary identifier for a project storage root record,psr_01HF9STOR123,Could also be uuid; text keeps consistency with other ids
+project_id,text,FALSE,FALSE,,FALSE,,projects.project_id,,FOREIGN KEY,Supabase,immutable,TRUE,internal,Project that this storage root belongs to,prj_01HF9ABC123,
+storage_provider_key,text,FALSE,FALSE,,FALSE,,storage_providers.provider_key,storage_providers,FOREIGN KEY,Infrastructure,rare,TRUE,internal,"Storage provider key (e.g., dropbox, nas, supabase_storage)",dropbox,
+root_key,text,FALSE,FALSE,,FALSE,paths_root_key,,,NOT NULL,MGFilms Pro,controlled,TRUE,internal,Logical root key for storage (formerly paths_root_key),NAS_MAIN,Maps to a provider-specific base path
+folder_relpath,text,FALSE,FALSE,,FALSE,folder_relpath,,,CHECK (folder_relpath !~ '(^/|\\\\|\.\.)'),MGFilms Pro,controlled,FALSE,internal,Relative folder path under the provider root,Clients/Acme/2025/MGF25-0001_SpringCampaign,Prevents absolute paths and traversal; adjust regex to your existing rule
+share_url,text,FALSE,TRUE,,FALSE,dropbox_url,,,,Dropbox,editable,FALSE,internal,Share URL for remote access (formerly dropbox_url),https://www.dropbox.com/s/abcd1234/project-root?dl=0,Optional; may exist only for some providers
+is_primary,boolean,FALSE,FALSE,TRUE,FALSE,,,,,MGFilms Pro,controlled,TRUE,internal,Marks the default storage root to use for the project,TRUE,Recommend partial unique index: one primary per project
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,NOT NULL,Supabase,immutable,TRUE,internal,Timestamp when this storage root record was created,2025-01-01T12:00:00Z,

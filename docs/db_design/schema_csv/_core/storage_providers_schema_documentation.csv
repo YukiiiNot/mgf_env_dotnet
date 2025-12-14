@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+provider_key,text,TRUE,FALSE,,FALSE,,,,CHECK (provider_key ~ '^[a-z0-9_]+$'),Infrastructure,controlled,TRUE,internal,Machine-readable storage provider key used by project_storage_roots.storage_provider_key,dropbox,Use lowercase snake_case; keep stable once used.
+display_name,text,FALSE,FALSE,,FALSE,,,,,Infrastructure,editable,FALSE,internal,Human-friendly provider name,Dropbox,
+sort_order,int,FALSE,FALSE,0,FALSE,,,,,Infrastructure,editable,FALSE,internal,Ordering value for UI dropdowns and reports,10,Optional but useful.
+config,jsonb,FALSE,TRUE,,FALSE,,,,,Infrastructure,controlled,FALSE,internal,"Optional provider configuration (e.g., root mapping, bucket names, base URLs)","{""base_url"":""https://www.dropbox.com""}",Keep non-secret settings here; secrets should live in Vault/env vars.
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Row update timestamp,2025-01-05T09:30:00Z,

@@ -1,0 +1,10 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+invoice_item_id,text,True,False,,False,,,,CHECK (invoice_item_id ~ '^ini_[A-Za-z0-9]+$'),Supabase,immutable,True,internal,Surrogate primary key for invoice line item,ini_01HFITEM123,Could be uuid; text keeps consistency with other ids.
+invoice_id,text,False,False,,False,,invoices.invoice_id,,FOREIGN KEY,Supabase,immutable,True,internal,Invoice this line item belongs to,inv_01h9x3k7m2p4r6t8v0w1y2z3ab,
+line_number,integer,False,False,,False,,,,CHECK (line_number >= 1),Billing,controlled,True,internal,1-based ordering for line items within an invoice,1,"Add UNIQUE (invoice_id, line_number) to preserve ordering safely."
+name,text,False,False,,False,,,,,Billing,editable,False,internal,Line item name/title,Video Editing (Day Rate),
+description,text,False,True,,False,,,,,Billing,editable,False,internal,Optional line item description/details,Editing services for Feb 1–3 (3 days).,
+quantity,"numeric(12,3)",False,False,,False,,,,CHECK (quantity >= 0),Billing,editable,False,financial,Quantity of units for this line item,3.000,
+unit_price_amount,"numeric(12,2)",False,False,,False,,,,CHECK (unit_price_amount >= 0),Billing,editable,False,financial,Unit price for this line item,500.00,
+discount_amount,"numeric(12,2)",False,True,,False,,,,CHECK (discount_amount >= 0),Billing,editable,False,financial,Optional discount applied to this line item,50.00,
+line_total_amount,"numeric(12,2)",False,False,,False,,,,CHECK (line_total_amount >= 0),Billing,system,False,financial,Total for this line item (quantity * unit_price - discount),1450.00,Typically computed in API; triggers later if desired.

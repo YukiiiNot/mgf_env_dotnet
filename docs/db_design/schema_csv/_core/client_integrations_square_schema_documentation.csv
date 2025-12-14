@@ -1,0 +1,10 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+client_id,text,True,False,,False,,clients.client_id,,"PRIMARY KEY, FOREIGN KEY",Supabase,immutable,True,internal,Client account this Square integration record belongs to (1:1),cli_01h9x3k7m2p4r6t8v0w1y2z3ab,
+square_customer_id,text,False,True,,False,,,,UNIQUE,Square,controlled,True,internal,Square customer id for this client,CUST_8QX3J9ZP8Y,
+creation_source_key,text,False,True,,False,,square_customer_creation_sources.source_key,square_customer_creation_sources,FOREIGN KEY,Square,controlled,False,internal,How the Square customer record was created,import,
+first_visit_at,timestamptz,False,True,,False,,,,,Square,system,False,internal,Timestamp of first recorded visit/activity in Square,2024-11-10T15:00:00Z,
+last_visit_at,timestamptz,False,True,,False,,,,,Square,system,False,internal,Timestamp of most recent recorded visit/activity in Square,2025-02-01T18:30:00Z,
+transaction_count,integer,False,True,,False,,,,CHECK (transaction_count >= 0),Square,system,False,internal,Count of transactions recorded for this customer,12,
+lifetime_spend_cents,integer,False,True,,False,,,,CHECK (lifetime_spend_cents >= 0),Square,system,False,financial,Total spend in minor units (cents) across all transactions,250000,
+currency_code,text,False,True,,False,,,,,Square,controlled,False,internal,Currency code for lifetime spend (ISO 4217),USD,Optional FK to currencies table if you add one later.
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Timestamp when the Square integration record was last updated,2025-02-10T09:15:00Z,

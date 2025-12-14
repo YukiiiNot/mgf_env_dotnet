@@ -1,0 +1,19 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+payment_id,text,TRUE,FALSE,,FALSE,,,,CHECK (payment_id ~ '^pay_[0-9a-hjkmnp-tv-z]{26}$'),Supabase,immutable,TRUE,internal,System-generated primary identifier for the payment record,pay_01h9x3k7m2p4r6t8v0w1y2z3ab,
+invoice_id,text,FALSE,FALSE,,FALSE,,invoices.invoice_id,,FOREIGN KEY,Supabase,immutable,TRUE,internal,Invoice this payment applies to,inv_01h9x3k7m2p4r6t8v0w1y2z3ab,
+recorded_by_person_id,text,FALSE,TRUE,,FALSE,,people.person_id,,FOREIGN KEY,MGFilms Pro,controlled,TRUE,internal,Person who recorded/entered this payment (manual/import),per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+amount,"numeric(12,2)",FALSE,FALSE,,FALSE,,,,CHECK (amount > 0),Billing,controlled,TRUE,financial,Payment amount (capture/charge),500,
+currency_code,text,FALSE,FALSE,USD,FALSE,,currencies.currency_code,currencies,FOREIGN KEY,Billing,controlled,TRUE,internal,Currency for this payment,USD,
+status_key,text,FALSE,FALSE,,FALSE,,payment_statuses.status_key,payment_statuses,FOREIGN KEY,Workflow,frequent,TRUE,internal,Payment lifecycle status,captured,Use CHECK constraints to require captured_at/refunded_at based on status.
+method_key,text,FALSE,TRUE,,FALSE,,payment_methods.method_key,payment_methods,FOREIGN KEY,Billing,controlled,TRUE,internal,Payment instrument/method used,card,
+processor_key,text,FALSE,TRUE,,FALSE,,payment_processors.processor_key,payment_processors,FOREIGN KEY,Billing,controlled,TRUE,internal,Processor that handled the payment (or manual),square,
+processor_payment_id,text,FALSE,TRUE,,FALSE,,,,,Square,controlled,TRUE,internal,External processor payment identifier (NOT a FK),sq_payment_9F3K2L1M0N,
+processor_refund_id,text,FALSE,TRUE,,FALSE,,,,,Square,controlled,FALSE,internal,External processor refund identifier (NOT a FK),sq_refund_2AAABBBCCC,
+captured_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Billing,system,TRUE,internal,Timestamp when payment was captured/settled,2025-02-15T16:20:00Z,
+refunded_amount,"numeric(12,2)",FALSE,TRUE,,FALSE,,,,CHECK (refunded_amount >= 0 AND refunded_amount <= amount),Billing,system,FALSE,financial,Amount refunded (supports partial refunds),100,"If present, enforce <= amount; can keep NULL when no refund."
+refunded_at,timestamptz,FALSE,TRUE,,FALSE,,,,,Billing,system,TRUE,internal,Timestamp when refund was processed (full or partial),2025-02-20T11:05:00Z,"If status_key='refunded', refunded_at should be NOT NULL."
+source,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Origin of this record (webhook/manual/import),square_webhook,
+notes,text,FALSE,TRUE,,FALSE,,,,,MGFilms Pro,editable,FALSE,internal,Internal notes about the payment,Client paid via Square link; partial refund for overcharge.,
+data_profile,text,FALSE,FALSE,,FALSE,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,TRUE,internal,Indicates whether this row is real/dummy/fixture,real,
+created_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,immutable,TRUE,internal,Row creation timestamp,2025-02-15T16:20:00Z,
+updated_at,timestamptz,FALSE,TRUE,,TRUE,system,,,,Supabase,system,FALSE,internal,Row update timestamp,2025-02-20T11:06:00Z,

@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+profile_key,text,True,False,,False,,,,"CHECK (profile_key IN ('real','dummy','fixture'))",Governance,controlled,True,internal,Data profile classification used by projects.data_profile,real,"If you want fully editable, remove IN() constraint and enforce via rows only."
+display_name,text,False,False,,False,,,,,Governance,editable,False,internal,Human-friendly name for the profile,Real,
+sort_order,int,False,False,0,False,,,,,Governance,editable,False,internal,Ordering value for UI dropdowns and reports,10,Optional but convenient.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

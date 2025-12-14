@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+source_key,text,True,False,,False,,,,CHECK (source_key ~ '^[a-z0-9_]+$'),Square,controlled,True,internal,Machine-readable creation source key for Square customers,instant_profile,"Suggested keys: import, directory, third_party, merge, manual, instant_profile."
+display_name,text,False,False,,False,,,,,Square,editable,False,internal,Human-friendly name for the creation source,Instant Profile,
+sort_order,int,False,False,0,False,,,,,Square,editable,False,internal,Ordering value for UI dropdowns and reports,60,Optional but useful.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

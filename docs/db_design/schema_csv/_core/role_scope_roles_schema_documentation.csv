@@ -1,0 +1,4 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+scope_key,text,False,False,,False,,role_scopes.scope_key,role_scopes,FOREIGN KEY,Workflow,controlled,True,internal,Scope that the role applies to,project,
+role_key,text,False,False,,False,,roles.role_key,roles,FOREIGN KEY,Workflow,controlled,True,internal,Role that is allowed within the scope,editor,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T00:00:00Z,"Composite PK should be (scope_key, role_key)."

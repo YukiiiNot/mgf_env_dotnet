@@ -1,0 +1,9 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+scope_key,text,True,False,,False,,slug_scopes.scope_key,slug_scopes,"PRIMARY KEY (scope_key, slug)",Registry,controlled,True,internal,Reservation scope (project/client/notion_page/etc.),project,"Composite PK should be (scope_key, slug)."
+slug,text,True,False,,False,,,,"CHECK (slug ~ '^[a-z0-9_-]{3,}$')",Registry,controlled,True,internal,Reserved slug value (lowercase url/folder-safe),acme-spring-campaign,
+reserved_by_person_id,text,False,False,,False,,people.person_id,,FOREIGN KEY,MGFilms Pro,system,True,internal,Person who reserved the slug,per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+reserved_at,timestamptz,False,False,now(),True,system,,,,Supabase,system,True,internal,When the slug was reserved,2025-01-02T12:00:00Z,
+expires_at,timestamptz,False,True,,False,,,,,Registry,editable,True,internal,Optional expiration timestamp for cleanup,2025-01-09T12:00:00Z,Index on expires_at is helpful for cleanup jobs.
+notes,text,False,True,,False,,,,,MGFilms Pro,editable,False,internal,Optional notes about the reservation,Reserved for Notion page title slug.,
+data_profile,text,False,False,,False,,data_profiles.profile_key,data_profiles,FOREIGN KEY,Governance,rare,True,internal,Indicates whether this row is real/dummy/fixture,real,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-02T12:00:00Z,

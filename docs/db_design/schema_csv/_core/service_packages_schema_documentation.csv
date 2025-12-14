@@ -1,0 +1,8 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+package_key,text,True,False,,False,,,,CHECK (package_key ~ '^[A-Z0-9_\-]+$'),Sales,controlled,True,internal,Machine-readable service package key (SKU-like),MGF_EDIT_STARTER,Uppercase SKU style makes it easy to reference in proposals.
+display_name,text,False,False,,False,,,,,Sales,editable,False,internal,Human-friendly package name,Editing Starter Package,
+default_price,"numeric(12,2)",False,True,,False,,,,CHECK (default_price IS NULL OR default_price >= 0),Sales,editable,False,financial,Optional default price for the package,1500.00,
+is_active,boolean,False,False,true,False,,,,,Sales,editable,False,internal,Whether this package is currently offered,true,
+sort_order,int,False,False,0,False,,,,,Sales,editable,False,internal,Ordering value for UI dropdowns,10,Optional but convenient.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

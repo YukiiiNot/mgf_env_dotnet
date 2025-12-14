@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+stage_key,text,True,False,,False,,,,CHECK (stage_key ~ '^[a-z0-9_]+$'),Workflow,controlled,True,internal,Machine-readable lead stage key,proposal_sent,"Suggested keys: new, contacted, qualified, proposal_sent, negotiation, won, lost, closed."
+display_name,text,False,False,,False,,,,,Workflow,editable,False,internal,Human-friendly stage name,Proposal Sent,
+sort_order,int,False,False,0,False,,,,,Workflow,editable,False,internal,Ordering value for pipeline UI,40,
+is_terminal,boolean,False,True,false,False,,,,,Workflow,editable,False,internal,Whether this stage represents an end state,true,Won/Lost/Closed are typically terminal.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

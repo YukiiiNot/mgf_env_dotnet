@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+source_key,text,True,False,,False,,,,CHECK (source_key ~ '^[a-z0-9_]+$'),Sales,controlled,True,internal,Machine-readable lead source key,instagram,"Suggested keys: instagram, website, referral, cold_email, upwork, other."
+display_name,text,False,False,,False,,,,,Sales,editable,False,internal,Human-friendly lead source name,Instagram,
+sort_order,int,False,False,0,False,,,,,Sales,editable,False,internal,Ordering value for UI dropdowns,10,Optional but convenient.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

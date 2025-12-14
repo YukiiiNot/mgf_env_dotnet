@@ -1,0 +1,4 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+person_id,text,False,False,,False,,people.person_id,,FOREIGN KEY,Supabase,controlled,True,internal,Person granted the permission,per_01h9x3k7m2p4r6t8v0w1y2z3ab,
+permission_key,text,False,False,,False,,permissions.permission_key,permissions,FOREIGN KEY,Workflow,controlled,True,internal,Permission granted to the person,projects.create,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Timestamp when the permission grant was created,2025-01-02T14:22:00Z,"Composite PK should be (person_id, permission_key)."

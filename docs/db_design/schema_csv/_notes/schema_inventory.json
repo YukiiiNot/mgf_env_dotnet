@@ -1,0 +1,5345 @@
+{
+  "generated_at_utc": "2025-12-14 19:07:40Z",
+  "table_count": 75,
+  "fk_count": 104,
+  "tables": [
+    {
+      "table_name": "activity_acknowledgements",
+      "csv_path": "_core/activity_acknowledgements_schema_documentation.csv",
+      "primary_key_fields": [
+        "activity_id",
+        "acknowledged_by_actor"
+      ],
+      "columns": [
+        {
+          "name": "activity_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "acknowledged_by_actor",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "acknowledged_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "activity_id",
+          "fk_target_table": "activity_log",
+          "fk_target_column": "activity_id"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "activity_log",
+      "csv_path": "_core/activity_log_schema_documentation.csv",
+      "primary_key_fields": [
+        "activity_id"
+      ],
+      "columns": [
+        {
+          "name": "activity_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "topic_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "entity_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "entity_type_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "op_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "occurred_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "occurred_at_local",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": "normal"
+        },
+        {
+          "name": "payload",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb"
+        },
+        {
+          "name": "created_by_actor",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "retry_count",
+          "type": "integer",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "topic_key",
+          "fk_target_table": "activity_topics",
+          "fk_target_column": "topic_key"
+        },
+        {
+          "column": "op_key",
+          "fk_target_table": "activity_ops",
+          "fk_target_column": "op_key"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "activity_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "priority_key",
+          "fk_target_table": "activity_priorities",
+          "fk_target_column": "priority_key"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "activity_acknowledgements",
+          "from_column": "activity_id"
+        },
+        {
+          "from_table": "jobs",
+          "from_column": "activity_id"
+        },
+        {
+          "from_table": "work_items",
+          "from_column": "source_activity_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "activity_ops",
+      "csv_path": "_core/activity_ops_schema_documentation.csv",
+      "primary_key_fields": [
+        "op_key"
+      ],
+      "columns": [
+        {
+          "name": "op_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "activity_log",
+          "from_column": "op_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "activity_priorities",
+      "csv_path": "_core/activity_priorities_schema_documentation.csv",
+      "primary_key_fields": [
+        "priority_key"
+      ],
+      "columns": [
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "activity_log",
+          "from_column": "priority_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "activity_statuses",
+      "csv_path": "_core/activity_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "activity_log",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "activity_topics",
+      "csv_path": "_core/activity_topics_schema_documentation.csv",
+      "primary_key_fields": [
+        "topic_key"
+      ],
+      "columns": [
+        {
+          "name": "topic_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "activity_log",
+          "from_column": "topic_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "booking_attendees",
+      "csv_path": "_core/booking_attendees_schema_documentation.csv",
+      "primary_key_fields": [
+        "booking_attendee_id"
+      ],
+      "columns": [
+        {
+          "name": "booking_attendee_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "booking_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "role_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "call_time",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "release_time",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "booking_id",
+          "fk_target_table": "bookings",
+          "fk_target_column": "booking_id"
+        },
+        {
+          "column": "person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "role_key",
+          "fk_target_table": "roles",
+          "fk_target_column": "role_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "booking_phases",
+      "csv_path": "_core/booking_phases_schema_documentation.csv",
+      "primary_key_fields": [
+        "phase_key"
+      ],
+      "columns": [
+        {
+          "name": "phase_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "bookings",
+          "from_column": "phase_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "booking_statuses",
+      "csv_path": "_core/booking_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "bookings",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "bookings",
+      "csv_path": "_core/bookings_schema_documentation.csv",
+      "primary_key_fields": [
+        "booking_id"
+      ],
+      "columns": [
+        {
+          "name": "booking_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "project_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": "pending"
+        },
+        {
+          "name": "phase_key",
+          "type": "text",
+          "nullable": false,
+          "default": "scheduling"
+        },
+        {
+          "name": "start_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "end_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "timezone",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "prep_time_minutes",
+          "type": "int",
+          "nullable": false,
+          "default": "90"
+        },
+        {
+          "name": "travel_time_minutes",
+          "type": "int",
+          "nullable": false,
+          "default": "90"
+        },
+        {
+          "name": "wrap_time_minutes",
+          "type": "int",
+          "nullable": false,
+          "default": "90"
+        },
+        {
+          "name": "ingest_time_minutes",
+          "type": "int",
+          "nullable": false,
+          "default": "90"
+        },
+        {
+          "name": "location_name",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "location_line1",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "location_line2",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "location_city",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "location_region",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "location_postal_code",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "location_country",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "location_notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_by_person_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "google_event_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "metadata",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "project_id",
+          "fk_target_table": "projects",
+          "fk_target_column": "project_id"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "booking_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "phase_key",
+          "fk_target_table": "booking_phases",
+          "fk_target_column": "phase_key"
+        },
+        {
+          "column": "created_by_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "booking_attendees",
+          "from_column": "booking_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "client_billing_profiles",
+      "csv_path": "_core/client_billing_profiles_schema_documentation.csv",
+      "primary_key_fields": [
+        "client_id"
+      ],
+      "columns": [
+        {
+          "name": "client_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "billing_email",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "billing_phone",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "tax_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "address_line1",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "address_line2",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "address_city",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "address_region",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "address_postal_code",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "address_country",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "client_id",
+          "fk_target_table": "clients",
+          "fk_target_column": "client_id"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "client_contacts",
+      "csv_path": "_core/client_contacts_schema_documentation.csv",
+      "primary_key_fields": [],
+      "columns": [
+        {
+          "name": "client_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "role_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "is_primary",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "client_id",
+          "fk_target_table": "clients",
+          "fk_target_column": "client_id"
+        },
+        {
+          "column": "person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "role_key",
+          "fk_target_table": "roles",
+          "fk_target_column": "role_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "client_integrations_square",
+      "csv_path": "_core/client_integrations_square_schema_documentation.csv",
+      "primary_key_fields": [
+        "client_id"
+      ],
+      "columns": [
+        {
+          "name": "client_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "square_customer_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "creation_source_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "first_visit_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "last_visit_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "transaction_count",
+          "type": "integer",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "lifetime_spend_cents",
+          "type": "integer",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "currency_code",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "client_id",
+          "fk_target_table": "clients",
+          "fk_target_column": "client_id"
+        },
+        {
+          "column": "creation_source_key",
+          "fk_target_table": "square_customer_creation_sources",
+          "fk_target_column": "source_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "client_statuses",
+      "csv_path": "_core/client_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "clients",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "client_types",
+      "csv_path": "_core/client_types_schema_documentation.csv",
+      "primary_key_fields": [
+        "type_key"
+      ],
+      "columns": [
+        {
+          "name": "type_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "clients",
+          "from_column": "client_type_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "clients",
+      "csv_path": "_core/clients_schema_documentation.csv",
+      "primary_key_fields": [
+        "client_id"
+      ],
+      "columns": [
+        {
+          "name": "client_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "client_type_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "primary_contact_person_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "account_owner_person_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "client_type_key",
+          "fk_target_table": "client_types",
+          "fk_target_column": "type_key"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "client_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "primary_contact_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "account_owner_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "client_billing_profiles",
+          "from_column": "client_id"
+        },
+        {
+          "from_table": "client_contacts",
+          "from_column": "client_id"
+        },
+        {
+          "from_table": "client_integrations_square",
+          "from_column": "client_id"
+        },
+        {
+          "from_table": "invoices",
+          "from_column": "client_id"
+        },
+        {
+          "from_table": "leads",
+          "from_column": "converted_client_id"
+        },
+        {
+          "from_table": "projects",
+          "from_column": "client_id"
+        },
+        {
+          "from_table": "work_items",
+          "from_column": "client_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "currencies",
+      "csv_path": "_core/currencies_schema_documentation.csv",
+      "primary_key_fields": [
+        "currency_code"
+      ],
+      "columns": [
+        {
+          "name": "currency_code",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "symbol",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "minor_units",
+          "type": "smallint",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "invoices",
+          "from_column": "currency_code"
+        },
+        {
+          "from_table": "payments",
+          "from_column": "currency_code"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "data_profiles",
+      "csv_path": "_core/data_profiles_schema_documentation.csv",
+      "primary_key_fields": [
+        "profile_key"
+      ],
+      "columns": [
+        {
+          "name": "profile_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "bookings",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "clients",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "deliverables",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "invoices",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "leads",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "payments",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "people",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "projects",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "slug_reservations",
+          "from_column": "data_profile"
+        },
+        {
+          "from_table": "work_items",
+          "from_column": "data_profile"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "deliverable_statuses",
+      "csv_path": "_core/deliverable_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "deliverables",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "deliverable_versions",
+      "csv_path": "_core/deliverable_versions_schema_documentation.csv",
+      "primary_key_fields": [
+        "deliverable_version_id"
+      ],
+      "columns": [
+        {
+          "name": "deliverable_version_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "deliverable_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "version_tag",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "file_path",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "delivery_link",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "uploaded_by_person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "uploaded_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "client_reviewed_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "client_feedback",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "is_approved",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false"
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "approved_by_person_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "deliverable_id",
+          "fk_target_table": "deliverables",
+          "fk_target_column": "deliverable_id"
+        },
+        {
+          "column": "uploaded_by_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "approved_by_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "deliverables",
+          "from_column": "approved_version_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "deliverables",
+      "csv_path": "_core/deliverables_schema_documentation.csv",
+      "primary_key_fields": [
+        "deliverable_id"
+      ],
+      "columns": [
+        {
+          "name": "deliverable_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "project_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "invoice_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "delivery_method_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "delivery_link",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "delivery_note",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "payment_required",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false"
+        },
+        {
+          "name": "is_locked",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false"
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "approved_version_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_by_person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "client_last_reviewed_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "client_last_feedback",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "project_id",
+          "fk_target_table": "projects",
+          "fk_target_column": "project_id"
+        },
+        {
+          "column": "invoice_id",
+          "fk_target_table": "invoices",
+          "fk_target_column": "invoice_id"
+        },
+        {
+          "column": "delivery_method_key",
+          "fk_target_table": "delivery_methods",
+          "fk_target_column": "method_key"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "deliverable_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "approved_version_id",
+          "fk_target_table": "deliverable_versions",
+          "fk_target_column": "deliverable_version_id"
+        },
+        {
+          "column": "created_by_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "deliverable_versions",
+          "from_column": "deliverable_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "delivery_methods",
+      "csv_path": "_core/delivery_methods_schema_documentation.csv",
+      "primary_key_fields": [
+        "method_key"
+      ],
+      "columns": [
+        {
+          "name": "method_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "deliverables",
+          "from_column": "delivery_method_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "host_keys",
+      "csv_path": "_core/host_keys_schema_documentation.csv",
+      "primary_key_fields": [
+        "host_key"
+      ],
+      "columns": [
+        {
+          "name": "host_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "host_type_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "metadata",
+          "type": "jsonb",
+          "nullable": true,
+          "default": "{}"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "people",
+          "from_column": "default_host_key"
+        },
+        {
+          "from_table": "person_known_hosts",
+          "from_column": "host_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "integration_sync_statuses",
+      "csv_path": "_core/integration_sync_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "FALSE"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "invoice_integrations_square",
+          "from_column": "sync_status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "invoice_integrations_square",
+      "csv_path": "_core/invoice_integrations_square_schema_documentation.csv",
+      "primary_key_fields": [
+        "invoice_id"
+      ],
+      "columns": [
+        {
+          "name": "invoice_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "square_invoice_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "square_customer_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "last_synced_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "sync_status_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "invoice_id",
+          "fk_target_table": "invoices",
+          "fk_target_column": "invoice_id"
+        },
+        {
+          "column": "sync_status_key",
+          "fk_target_table": "integration_sync_statuses",
+          "fk_target_column": "status_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "invoice_items",
+      "csv_path": "_core/invoice_items_schema_documentation.csv",
+      "primary_key_fields": [
+        "invoice_item_id"
+      ],
+      "columns": [
+        {
+          "name": "invoice_item_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "invoice_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "line_number",
+          "type": "integer",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "quantity",
+          "type": "numeric(12,3)",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "unit_price_amount",
+          "type": "numeric(12,2)",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "discount_amount",
+          "type": "numeric(12,2)",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "line_total_amount",
+          "type": "numeric(12,2)",
+          "nullable": false,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "invoice_id",
+          "fk_target_table": "invoices",
+          "fk_target_column": "invoice_id"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "invoice_number_counters",
+      "csv_path": "_core/invoice_number_counters_schema_documentation.csv",
+      "primary_key_fields": [
+        "prefix",
+        "year_2"
+      ],
+      "columns": [
+        {
+          "name": "prefix",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "year_2",
+          "type": "smallint",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "next_seq",
+          "type": "integer",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "invoice_statuses",
+      "csv_path": "_core/invoice_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "invoices",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "invoices",
+      "csv_path": "_core/invoices_schema_documentation.csv",
+      "primary_key_fields": [
+        "invoice_id"
+      ],
+      "columns": [
+        {
+          "name": "invoice_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "invoice_number",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "project_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "client_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "currency_code",
+          "type": "text",
+          "nullable": false,
+          "default": "USD"
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": "unpaid"
+        },
+        {
+          "name": "subtotal_amount",
+          "type": "numeric(12,2)",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "tax_rate",
+          "type": "numeric(5,4)",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "tax_amount",
+          "type": "numeric(12,2)",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "total_amount",
+          "type": "numeric(12,2)",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "issued_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "due_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "paid_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "refunded_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "payment_method_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "project_id",
+          "fk_target_table": "projects",
+          "fk_target_column": "project_id"
+        },
+        {
+          "column": "client_id",
+          "fk_target_table": "clients",
+          "fk_target_column": "client_id"
+        },
+        {
+          "column": "currency_code",
+          "fk_target_table": "currencies",
+          "fk_target_column": "currency_code"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "invoice_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "payment_method_key",
+          "fk_target_table": "payment_methods",
+          "fk_target_column": "method_key"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "deliverables",
+          "from_column": "invoice_id"
+        },
+        {
+          "from_table": "invoice_integrations_square",
+          "from_column": "invoice_id"
+        },
+        {
+          "from_table": "invoice_items",
+          "from_column": "invoice_id"
+        },
+        {
+          "from_table": "payments",
+          "from_column": "invoice_id"
+        },
+        {
+          "from_table": "projects",
+          "from_column": "current_invoice_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "job_priorities",
+      "csv_path": "_core/job_priorities_schema_documentation.csv",
+      "primary_key_fields": [
+        "priority_key"
+      ],
+      "columns": [
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "jobs",
+          "from_column": "priority_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "job_statuses",
+      "csv_path": "_core/job_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "jobs",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "job_types",
+      "csv_path": "_core/job_types_schema_documentation.csv",
+      "primary_key_fields": [
+        "job_type_key"
+      ],
+      "columns": [
+        {
+          "name": "job_type_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "handler",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": "true"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "jobs",
+          "from_column": "job_type_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "jobs",
+      "csv_path": "_core/jobs_schema_documentation.csv",
+      "primary_key_fields": [
+        "job_id"
+      ],
+      "columns": [
+        {
+          "name": "job_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "job_type_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "topic_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "entity_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "entity_type_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": "queued"
+        },
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": "normal"
+        },
+        {
+          "name": "payload",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "'{}'::jsonb"
+        },
+        {
+          "name": "attempt_count",
+          "type": "integer",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "max_attempts",
+          "type": "integer",
+          "nullable": false,
+          "default": "10"
+        },
+        {
+          "name": "run_after",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "locked_by",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "locked_until",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "last_error",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "started_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "finished_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_by_actor",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "activity_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "job_type_key",
+          "fk_target_table": "job_types",
+          "fk_target_column": "job_type_key"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "job_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "priority_key",
+          "fk_target_table": "job_priorities",
+          "fk_target_column": "priority_key"
+        },
+        {
+          "column": "activity_id",
+          "fk_target_table": "activity_log",
+          "fk_target_column": "activity_id"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "lead_outcomes",
+      "csv_path": "_core/lead_outcomes_schema_documentation.csv",
+      "primary_key_fields": [
+        "outcome_key"
+      ],
+      "columns": [
+        {
+          "name": "outcome_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "leads",
+          "from_column": "outcome_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "lead_priorities",
+      "csv_path": "_core/lead_priorities_schema_documentation.csv",
+      "primary_key_fields": [
+        "priority_key"
+      ],
+      "columns": [
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "leads",
+          "from_column": "priority_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "lead_sources",
+      "csv_path": "_core/lead_sources_schema_documentation.csv",
+      "primary_key_fields": [
+        "source_key"
+      ],
+      "columns": [
+        {
+          "name": "source_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "leads",
+          "from_column": "source_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "lead_stages",
+      "csv_path": "_core/lead_stages_schema_documentation.csv",
+      "primary_key_fields": [
+        "stage_key"
+      ],
+      "columns": [
+        {
+          "name": "stage_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "leads",
+          "from_column": "stage_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "lead_tags",
+      "csv_path": "_core/lead_tags_schema_documentation.csv",
+      "primary_key_fields": [
+        "lead_id",
+        "tag_key"
+      ],
+      "columns": [
+        {
+          "name": "lead_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "tag_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "lead_id",
+          "fk_target_table": "leads",
+          "fk_target_column": "lead_id"
+        },
+        {
+          "column": "tag_key",
+          "fk_target_table": "tags",
+          "fk_target_column": "tag_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": true,
+      "association_entity": false
+    },
+    {
+      "table_name": "leads",
+      "csv_path": "_core/leads_schema_documentation.csv",
+      "primary_key_fields": [
+        "lead_id"
+      ],
+      "columns": [
+        {
+          "name": "lead_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "stage_key",
+          "type": "text",
+          "nullable": false,
+          "default": "new"
+        },
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": "normal"
+        },
+        {
+          "name": "outcome_key",
+          "type": "text",
+          "nullable": false,
+          "default": "open"
+        },
+        {
+          "name": "source_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "campaign",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "company_name",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "budget_estimate_amount",
+          "type": "numeric(12,2)",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "interested_package_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "converted_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "converted_client_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "converted_project_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "contact_person_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "contact_display_name",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "contact_email",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "contact_phone",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "stage_key",
+          "fk_target_table": "lead_stages",
+          "fk_target_column": "stage_key"
+        },
+        {
+          "column": "priority_key",
+          "fk_target_table": "lead_priorities",
+          "fk_target_column": "priority_key"
+        },
+        {
+          "column": "outcome_key",
+          "fk_target_table": "lead_outcomes",
+          "fk_target_column": "outcome_key"
+        },
+        {
+          "column": "source_key",
+          "fk_target_table": "lead_sources",
+          "fk_target_column": "source_key"
+        },
+        {
+          "column": "interested_package_key",
+          "fk_target_table": "service_packages",
+          "fk_target_column": "package_key"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        },
+        {
+          "column": "converted_client_id",
+          "fk_target_table": "clients",
+          "fk_target_column": "client_id"
+        },
+        {
+          "column": "converted_project_id",
+          "fk_target_table": "projects",
+          "fk_target_column": "project_id"
+        },
+        {
+          "column": "contact_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "lead_tags",
+          "from_column": "lead_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "path_anchors",
+      "csv_path": "_core/path_anchors_schema_documentation.csv",
+      "primary_key_fields": [
+        "anchor_key"
+      ],
+      "columns": [
+        {
+          "name": "anchor_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "path_templates",
+          "from_column": "anchor_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "path_settings",
+      "csv_path": "_core/path_settings_schema_documentation.csv",
+      "primary_key_fields": [
+        "settings_id"
+      ],
+      "columns": [
+        {
+          "name": "settings_id",
+          "type": "int",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "default_project_root_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "default_project_root_key",
+          "fk_target_table": "path_templates",
+          "fk_target_column": "path_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "path_templates",
+      "csv_path": "_core/path_templates_schema_documentation.csv",
+      "primary_key_fields": [
+        "path_key"
+      ],
+      "columns": [
+        {
+          "name": "path_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "path_type_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "anchor_key",
+          "type": "text",
+          "nullable": false,
+          "default": "dropbox_root"
+        },
+        {
+          "name": "relpath",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "exists_required",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false"
+        },
+        {
+          "name": "writable",
+          "type": "boolean",
+          "nullable": false,
+          "default": "true"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": "true"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "path_type_key",
+          "fk_target_table": "path_types",
+          "fk_target_column": "type_key"
+        },
+        {
+          "column": "anchor_key",
+          "fk_target_table": "path_anchors",
+          "fk_target_column": "anchor_key"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "path_settings",
+          "from_column": "default_project_root_key"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "path_types",
+      "csv_path": "_core/path_types_schema_documentation.csv",
+      "primary_key_fields": [
+        "type_key"
+      ],
+      "columns": [
+        {
+          "name": "type_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "path_templates",
+          "from_column": "path_type_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "payment_methods",
+      "csv_path": "_core/payment_methods_schema_documentation.csv",
+      "primary_key_fields": [
+        "method_key"
+      ],
+      "columns": [
+        {
+          "name": "method_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "invoices",
+          "from_column": "payment_method_key"
+        },
+        {
+          "from_table": "payments",
+          "from_column": "method_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "payment_processors",
+      "csv_path": "_core/payment_processors_schema_documentation.csv",
+      "primary_key_fields": [
+        "processor_key"
+      ],
+      "columns": [
+        {
+          "name": "processor_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "payments",
+          "from_column": "processor_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "payment_statuses",
+      "csv_path": "_core/payment_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "payments",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "payments",
+      "csv_path": "_core/payments_schema_documentation.csv",
+      "primary_key_fields": [
+        "payment_id"
+      ],
+      "columns": [
+        {
+          "name": "payment_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "invoice_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "recorded_by_person_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "amount",
+          "type": "numeric(12,2)",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "currency_code",
+          "type": "text",
+          "nullable": false,
+          "default": "USD"
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "method_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "processor_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "processor_payment_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "processor_refund_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "captured_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "refunded_amount",
+          "type": "numeric(12,2)",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "refunded_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "invoice_id",
+          "fk_target_table": "invoices",
+          "fk_target_column": "invoice_id"
+        },
+        {
+          "column": "recorded_by_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "currency_code",
+          "fk_target_table": "currencies",
+          "fk_target_column": "currency_code"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "payment_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "method_key",
+          "fk_target_table": "payment_methods",
+          "fk_target_column": "method_key"
+        },
+        {
+          "column": "processor_key",
+          "fk_target_table": "payment_processors",
+          "fk_target_column": "processor_key"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "people",
+      "csv_path": "_core/people_schema_documentation.csv",
+      "primary_key_fields": [
+        "person_id"
+      ],
+      "columns": [
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "first_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "last_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "initials",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "timezone",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "default_host_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "status_key",
+          "fk_target_table": "person_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "default_host_key",
+          "fk_target_table": "host_keys",
+          "fk_target_column": "host_key"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "booking_attendees",
+          "from_column": "person_id"
+        },
+        {
+          "from_table": "bookings",
+          "from_column": "created_by_person_id"
+        },
+        {
+          "from_table": "client_contacts",
+          "from_column": "person_id"
+        },
+        {
+          "from_table": "clients",
+          "from_column": "primary_contact_person_id"
+        },
+        {
+          "from_table": "clients",
+          "from_column": "account_owner_person_id"
+        },
+        {
+          "from_table": "deliverable_versions",
+          "from_column": "uploaded_by_person_id"
+        },
+        {
+          "from_table": "deliverable_versions",
+          "from_column": "approved_by_person_id"
+        },
+        {
+          "from_table": "deliverables",
+          "from_column": "created_by_person_id"
+        },
+        {
+          "from_table": "leads",
+          "from_column": "contact_person_id"
+        },
+        {
+          "from_table": "payments",
+          "from_column": "recorded_by_person_id"
+        },
+        {
+          "from_table": "person_calendar_sync_settings",
+          "from_column": "person_id"
+        },
+        {
+          "from_table": "person_contacts",
+          "from_column": "person_id"
+        },
+        {
+          "from_table": "person_known_hosts",
+          "from_column": "person_id"
+        },
+        {
+          "from_table": "person_permissions",
+          "from_column": "person_id"
+        },
+        {
+          "from_table": "person_roles",
+          "from_column": "person_id"
+        },
+        {
+          "from_table": "project_members",
+          "from_column": "person_id"
+        },
+        {
+          "from_table": "slug_reservations",
+          "from_column": "reserved_by_person_id"
+        },
+        {
+          "from_table": "work_items",
+          "from_column": "assigned_to_person_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "permissions",
+      "csv_path": "_core/permissions_schema_documentation.csv",
+      "primary_key_fields": [
+        "permission_key"
+      ],
+      "columns": [
+        {
+          "name": "permission_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "person_permissions",
+          "from_column": "permission_key"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "person_calendar_sync_settings",
+      "csv_path": "_core/person_calendar_sync_settings_schema_documentation.csv",
+      "primary_key_fields": [
+        "person_id"
+      ],
+      "columns": [
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "include_personal_calendar",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false"
+        },
+        {
+          "name": "personal_calendar_source",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "public_personal_events",
+          "type": "boolean",
+          "nullable": false,
+          "default": "false"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "person_contacts",
+      "csv_path": "_core/person_contacts_schema_documentation.csv",
+      "primary_key_fields": [
+        "person_id"
+      ],
+      "columns": [
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "phone",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "discord_handle",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "person_known_hosts",
+      "csv_path": "_core/person_known_hosts_schema_documentation.csv",
+      "primary_key_fields": [
+        "person_id",
+        "host_key"
+      ],
+      "columns": [
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "host_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "host_key",
+          "fk_target_table": "host_keys",
+          "fk_target_column": "host_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": true,
+      "association_entity": false
+    },
+    {
+      "table_name": "person_permissions",
+      "csv_path": "_core/person_permissions_schema_documentation.csv",
+      "primary_key_fields": [
+        "person_id",
+        "permission_key"
+      ],
+      "columns": [
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "permission_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "permission_key",
+          "fk_target_table": "permissions",
+          "fk_target_column": "permission_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": true,
+      "association_entity": false
+    },
+    {
+      "table_name": "person_roles",
+      "csv_path": "_core/person_roles_schema_documentation.csv",
+      "primary_key_fields": [
+        "person_id",
+        "role_key"
+      ],
+      "columns": [
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "role_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "role_key",
+          "fk_target_table": "roles",
+          "fk_target_column": "role_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": true,
+      "association_entity": false
+    },
+    {
+      "table_name": "person_statuses",
+      "csv_path": "_core/person_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "people",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "project_code_counters",
+      "csv_path": "_core/project_code_counters_schema_documentation.csv",
+      "primary_key_fields": [
+        "prefix",
+        "year_2"
+      ],
+      "columns": [
+        {
+          "name": "prefix",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "year_2",
+          "type": "smallint",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "next_seq",
+          "type": "integer",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "project_members",
+      "csv_path": "_core/project_members_schema_documentation.csv",
+      "primary_key_fields": [
+        "project_member_id"
+      ],
+      "columns": [
+        {
+          "name": "project_member_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "project_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "role_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "assigned_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "released_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": "TRUE"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "project_id",
+          "fk_target_table": "projects",
+          "fk_target_column": "project_id"
+        },
+        {
+          "column": "person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "role_key",
+          "fk_target_table": "roles",
+          "fk_target_column": "role_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "project_phases",
+      "csv_path": "_core/project_phases_schema_documentation.csv",
+      "primary_key_fields": [
+        "phase_key"
+      ],
+      "columns": [
+        {
+          "name": "phase_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "projects",
+          "from_column": "phase_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "project_priorities",
+      "csv_path": "_core/project_priorities_schema_documentation.csv",
+      "primary_key_fields": [
+        "priority_key"
+      ],
+      "columns": [
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "projects",
+          "from_column": "priority_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "project_statuses",
+      "csv_path": "_core/project_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "FALSE"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "projects",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "project_storage_roots",
+      "csv_path": "_core/project_storage_roots_schema_documentation.csv",
+      "primary_key_fields": [
+        "project_storage_root_id"
+      ],
+      "columns": [
+        {
+          "name": "project_storage_root_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "project_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "storage_provider_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "root_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "folder_relpath",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "share_url",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "is_primary",
+          "type": "boolean",
+          "nullable": false,
+          "default": "TRUE"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "project_id",
+          "fk_target_table": "projects",
+          "fk_target_column": "project_id"
+        },
+        {
+          "column": "storage_provider_key",
+          "fk_target_table": "storage_providers",
+          "fk_target_column": "provider_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "projects",
+      "csv_path": "_core/projects_schema_documentation.csv",
+      "primary_key_fields": [
+        "project_id"
+      ],
+      "columns": [
+        {
+          "name": "project_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "project_code",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "client_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "phase_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "due_date",
+          "type": "date",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "archived_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "current_invoice_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "metadata",
+          "type": "jsonb",
+          "nullable": false,
+          "default": "{}"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "client_id",
+          "fk_target_table": "clients",
+          "fk_target_column": "client_id"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "project_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "phase_key",
+          "fk_target_table": "project_phases",
+          "fk_target_column": "phase_key"
+        },
+        {
+          "column": "priority_key",
+          "fk_target_table": "project_priorities",
+          "fk_target_column": "priority_key"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        },
+        {
+          "column": "current_invoice_id",
+          "fk_target_table": "invoices",
+          "fk_target_column": "invoice_id"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "bookings",
+          "from_column": "project_id"
+        },
+        {
+          "from_table": "deliverables",
+          "from_column": "project_id"
+        },
+        {
+          "from_table": "invoices",
+          "from_column": "project_id"
+        },
+        {
+          "from_table": "leads",
+          "from_column": "converted_project_id"
+        },
+        {
+          "from_table": "project_members",
+          "from_column": "project_id"
+        },
+        {
+          "from_table": "project_storage_roots",
+          "from_column": "project_id"
+        },
+        {
+          "from_table": "work_items",
+          "from_column": "project_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    },
+    {
+      "table_name": "role_scope_roles",
+      "csv_path": "_core/role_scope_roles_schema_documentation.csv",
+      "primary_key_fields": [
+        "scope_key",
+        "role_key"
+      ],
+      "columns": [
+        {
+          "name": "scope_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "role_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "scope_key",
+          "fk_target_table": "role_scopes",
+          "fk_target_column": "scope_key"
+        },
+        {
+          "column": "role_key",
+          "fk_target_table": "roles",
+          "fk_target_column": "role_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": true,
+      "association_entity": false
+    },
+    {
+      "table_name": "role_scopes",
+      "csv_path": "_core/role_scopes_schema_documentation.csv",
+      "primary_key_fields": [
+        "scope_key"
+      ],
+      "columns": [
+        {
+          "name": "scope_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "role_scope_roles",
+          "from_column": "scope_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "roles",
+      "csv_path": "_core/roles_schema_documentation.csv",
+      "primary_key_fields": [
+        "role_key"
+      ],
+      "columns": [
+        {
+          "name": "role_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "booking_attendees",
+          "from_column": "role_key"
+        },
+        {
+          "from_table": "client_contacts",
+          "from_column": "role_key"
+        },
+        {
+          "from_table": "person_roles",
+          "from_column": "role_key"
+        },
+        {
+          "from_table": "project_members",
+          "from_column": "role_key"
+        },
+        {
+          "from_table": "role_scope_roles",
+          "from_column": "role_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "service_packages",
+      "csv_path": "_core/service_packages_schema_documentation.csv",
+      "primary_key_fields": [
+        "package_key"
+      ],
+      "columns": [
+        {
+          "name": "package_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "default_price",
+          "type": "numeric(12,2)",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": false,
+          "default": "true"
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "leads",
+          "from_column": "interested_package_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "slug_reservations",
+      "csv_path": "_core/slug_reservations_schema_documentation.csv",
+      "primary_key_fields": [
+        "scope_key",
+        "slug"
+      ],
+      "columns": [
+        {
+          "name": "scope_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "slug",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "reserved_by_person_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "reserved_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "scope_key",
+          "fk_target_table": "slug_scopes",
+          "fk_target_column": "scope_key"
+        },
+        {
+          "column": "reserved_by_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "slug_scopes",
+      "csv_path": "_core/slug_scopes_schema_documentation.csv",
+      "primary_key_fields": [
+        "scope_key"
+      ],
+      "columns": [
+        {
+          "name": "scope_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "slug_reservations",
+          "from_column": "scope_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "square_customer_creation_sources",
+      "csv_path": "_core/square_customer_creation_sources_schema_documentation.csv",
+      "primary_key_fields": [
+        "source_key"
+      ],
+      "columns": [
+        {
+          "name": "source_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "client_integrations_square",
+          "from_column": "creation_source_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "storage_providers",
+      "csv_path": "_core/storage_providers_schema_documentation.csv",
+      "primary_key_fields": [
+        "provider_key"
+      ],
+      "columns": [
+        {
+          "name": "provider_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "config",
+          "type": "jsonb",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "project_storage_roots",
+          "from_column": "storage_provider_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "tags",
+      "csv_path": "_core/tags_schema_documentation.csv",
+      "primary_key_fields": [
+        "tag_key"
+      ],
+      "columns": [
+        {
+          "name": "tag_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "lead_tags",
+          "from_column": "tag_key"
+        },
+        {
+          "from_table": "work_item_tags",
+          "from_column": "tag_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "work_item_priorities",
+      "csv_path": "_core/work_item_priorities_schema_documentation.csv",
+      "primary_key_fields": [
+        "priority_key"
+      ],
+      "columns": [
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "work_items",
+          "from_column": "priority_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "work_item_statuses",
+      "csv_path": "_core/work_item_statuses_schema_documentation.csv",
+      "primary_key_fields": [
+        "status_key"
+      ],
+      "columns": [
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "display_name",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "sort_order",
+          "type": "int",
+          "nullable": false,
+          "default": "0"
+        },
+        {
+          "name": "is_terminal",
+          "type": "boolean",
+          "nullable": true,
+          "default": "false"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [],
+      "inbound_fks": [
+        {
+          "from_table": "work_items",
+          "from_column": "status_key"
+        }
+      ],
+      "lookup_like": true,
+      "join_like": false,
+      "association_entity": false
+    },
+    {
+      "table_name": "work_item_tags",
+      "csv_path": "_core/work_item_tags_schema_documentation.csv",
+      "primary_key_fields": [
+        "work_item_id",
+        "tag_key"
+      ],
+      "columns": [
+        {
+          "name": "work_item_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "tag_key",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "work_item_id",
+          "fk_target_table": "work_items",
+          "fk_target_column": "work_item_id"
+        },
+        {
+          "column": "tag_key",
+          "fk_target_table": "tags",
+          "fk_target_column": "tag_key"
+        }
+      ],
+      "inbound_fks": [],
+      "lookup_like": false,
+      "join_like": true,
+      "association_entity": false
+    },
+    {
+      "table_name": "work_items",
+      "csv_path": "_core/work_items_schema_documentation.csv",
+      "primary_key_fields": [
+        "work_item_id"
+      ],
+      "columns": [
+        {
+          "name": "work_item_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "project_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "client_id",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "title",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "assigned_to_person_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "status_key",
+          "type": "text",
+          "nullable": false,
+          "default": "pending"
+        },
+        {
+          "name": "priority_key",
+          "type": "text",
+          "nullable": false,
+          "default": "normal"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "default": "now()"
+        },
+        {
+          "name": "due_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "template_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "source_activity_id",
+          "type": "text",
+          "nullable": true,
+          "default": ""
+        },
+        {
+          "name": "data_profile",
+          "type": "text",
+          "nullable": false,
+          "default": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "default": ""
+        }
+      ],
+      "outbound_fks": [
+        {
+          "column": "project_id",
+          "fk_target_table": "projects",
+          "fk_target_column": "project_id"
+        },
+        {
+          "column": "client_id",
+          "fk_target_table": "clients",
+          "fk_target_column": "client_id"
+        },
+        {
+          "column": "assigned_to_person_id",
+          "fk_target_table": "people",
+          "fk_target_column": "person_id"
+        },
+        {
+          "column": "status_key",
+          "fk_target_table": "work_item_statuses",
+          "fk_target_column": "status_key"
+        },
+        {
+          "column": "priority_key",
+          "fk_target_table": "work_item_priorities",
+          "fk_target_column": "priority_key"
+        },
+        {
+          "column": "source_activity_id",
+          "fk_target_table": "activity_log",
+          "fk_target_column": "activity_id"
+        },
+        {
+          "column": "data_profile",
+          "fk_target_table": "data_profiles",
+          "fk_target_column": "profile_key"
+        }
+      ],
+      "inbound_fks": [
+        {
+          "from_table": "work_item_tags",
+          "from_column": "work_item_id"
+        }
+      ],
+      "lookup_like": false,
+      "join_like": false,
+      "association_entity": true
+    }
+  ],
+  "invalid_fk_targets": [],
+  "schema_root_rel": "docs/db_design/schema_csv"
+}

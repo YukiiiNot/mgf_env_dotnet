@@ -1,0 +1,5 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+prefix,text,TRUE,FALSE,,FALSE,,,,"PRIMARY KEY (prefix, year_2)",Registry,controlled,TRUE,internal,Invoice number prefix (company brand),MGF,
+year_2,smallint,TRUE,FALSE,,FALSE,,,,"PRIMARY KEY (prefix, year_2)",Registry,controlled,TRUE,internal,"2-digit year used in invoice number (e.g., 25)",25,
+next_seq,integer,FALSE,FALSE,,FALSE,,,,CHECK (next_seq >= 0 AND next_seq <= 999999),Registry,system,FALSE,internal,"Next sequence number to allocate for this (prefix, year_2)",123,"Transactionally: lock row → read next_seq → increment → format invoice_number = 'MGF-INV-'||YY||'-'||LPAD(seq,6,'0')."
+updated_at,timestamptz,FALSE,FALSE,now(),TRUE,system,,,,Supabase,system,TRUE,internal,Timestamp last updated,2025-01-02T12:00:00Z,

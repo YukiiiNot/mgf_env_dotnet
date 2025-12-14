@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+status_key,text,True,False,,False,,,,CHECK (status_key ~ '^[a-z0-9_]+$'),Registry,controlled,True,internal,Machine-readable ledger status key,reserved,"Suggested keys: reserved, issued, retired, cancelled."
+display_name,text,False,False,,False,,,,,Registry,editable,False,internal,Human-friendly status name,Reserved,
+sort_order,int,False,False,0,False,,,,,Registry,editable,False,internal,Ordering value,10,
+is_terminal,boolean,False,True,false,False,,,,,Registry,editable,False,internal,Whether this status is terminal,true,Retired/Cancelled are typically terminal.
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T00:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-10T00:00:00Z,

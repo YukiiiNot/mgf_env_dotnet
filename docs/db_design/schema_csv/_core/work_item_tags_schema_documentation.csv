@@ -1,0 +1,4 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+work_item_id,text,True,False,,False,,work_items.work_item_id,,"PRIMARY KEY (work_item_id, tag_key)",MGFilms Pro,system,True,internal,Work item this tag is applied to,tsk_01HXYZABC123,Join table linking work items to tags
+tag_key,text,True,False,,False,,tags.tag_key,tags,"PRIMARY KEY (work_item_id, tag_key)",MGFilms Pro,system,True,internal,Tag applied to the work item,follow_up,Uses shared tags dictionary
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,When the tag was applied to the work item,2025-01-10T14:32:00Z,

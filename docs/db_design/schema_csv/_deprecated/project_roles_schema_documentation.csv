@@ -1,0 +1,6 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+role_key,text,True,False,,False,,,,CHECK (role_key ~ '^[a-z0-9_]+$'),Workflow,controlled,True,internal,Machine-readable role key used by project_members.role_key,editor,Use lowercase snake_case; keep stable once used.
+display_name,text,False,False,,False,,,,,Workflow,editable,False,internal,Human-friendly name for the role,Editor,
+sort_order,int,False,False,0,False,,,,,Workflow,editable,False,internal,Ordering value for UI dropdowns and reports,10,
+created_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Row creation timestamp,2025-01-01T12:00:00Z,
+updated_at,timestamptz,False,True,,True,system,,,,Supabase,system,False,internal,Row update timestamp,2025-01-05T09:30:00Z,

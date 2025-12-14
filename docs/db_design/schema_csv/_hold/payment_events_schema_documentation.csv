@@ -1,0 +1,7 @@
+FieldKey,Type,Primary,Nullable,Default,Computed,DerivesFrom,FKTarget,EnumGroup,Constraints,SourceSystem,UpdatePolicy,Indexed,Sensitivity,Description,Example,Notes
+payment_event_id,text,True,False,,False,,,,CHECK (payment_event_id ~ '^pye_[A-Za-z0-9]+$'),Supabase,immutable,True,internal,Surrogate primary key for payment processor event,pye_01HFEVT123,Could be uuid; text keeps consistency with other ids.
+payment_id,text,False,False,,False,,payments.payment_id,,FOREIGN KEY,Supabase,immutable,True,internal,Payment record this event belongs to,pay_01h9x3k7m2p4r6t8v0w1y2z3ab,
+processor_key,text,False,False,,False,,payment_processors.processor_key,payment_processors,FOREIGN KEY,Square,controlled,True,internal,Processor that produced this event,square,
+event_type,text,False,False,,False,,,,CHECK (char_length(event_type) BETWEEN 1 AND 100),Square,controlled,True,internal,Event type name (webhook/event kind),payment.updated,
+payload,jsonb,False,False,{},False,,,,,Square,system,False,internal,Raw event payload for debugging/audit,"{""type"":""payment.updated"",""data"":{""id"":""...""} }",Store raw payload; scrub secrets if any.
+received_at,timestamptz,False,False,now(),True,system,,,,Supabase,immutable,True,internal,Timestamp when the event was received,2025-02-15T16:21:00Z,
