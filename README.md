@@ -30,6 +30,32 @@ dotnet run --project src/MGF.Api
 dotnet run --project src/MGF.Worker
 ```
 
+## Square import tool
+
+- `src/MGF.Tools.SquareImport`: imports Square CSV exports into the database
+
+### Examples
+
+```powershell
+$env:MGF_ENV = "Dev"
+
+# customers
+dotnet run --project src/MGF.Tools.SquareImport -- customers --file .\docs\square_imports\customers-20251215-182743.csv --dry-run
+
+# transactions (multiple files)
+dotnet run --project src/MGF.Tools.SquareImport -- transactions --files `
+  .\docs\square_imports\transactions-2023-01-01-2024-01-01.csv `
+  .\docs\square_imports\transactions-2024-01-01-2025-01-01.csv `
+  .\docs\square_imports\transactions-2025-01-01-2026-01-01.csv `
+  --dry-run
+
+# invoices
+dotnet run --project src/MGF.Tools.SquareImport -- invoices --file .\docs\square_imports\invoices-export-20251215T1853.csv --dry-run
+
+# report
+dotnet run --project src/MGF.Tools.SquareImport -- report --out .\runtime\square-import-report.txt
+```
+
 ### Quick commands
 
 ```powershell
