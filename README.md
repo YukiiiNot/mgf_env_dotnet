@@ -7,6 +7,29 @@ MGF uses **EF Core migrations** as the executable source of truth for the Postgr
 - Workflow + commands: `docs/DB_WORKFLOW.md`
 - Schema design CSV docs (design-time only): `docs/db_design/schema_csv/README.md`
 
+## Internal API + worker
+
+- `src/MGF.Api`: internal Web API (intended DB entrypoint for apps)
+- `src/MGF.Worker`: background worker that processes rows in `public.jobs`
+
+### Local run
+
+```powershell
+# required secrets (stored in user-secrets for MGF.Infrastructure)
+dotnet user-secrets set "Database:Dev:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Security:ApiKey" "<long random string>" --project src/MGF.Infrastructure
+
+# apply migrations + seed lookups (recommended)
+$env:MGF_ENV = "Dev"
+dotnet run --project src/MGF.Tools.Migrator
+
+# run API (expects X-MGF-API-KEY header on /api/*)
+dotnet run --project src/MGF.Api
+
+# run worker (polls + executes jobs)
+dotnet run --project src/MGF.Worker
+```
+
 ### Quick commands
 
 ```powershell

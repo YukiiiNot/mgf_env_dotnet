@@ -297,6 +297,7 @@ public static class LookupSeeder
         UpsertJobTypes(
             rows:
             [
+                ("dropbox.create_project_structure", "Dropbox: Create Project Structure"),
                 ("notion.sync_booking", "Notion: Sync Booking"),
             ]
         ),
@@ -744,4 +745,3 @@ public static class LookupSeeder
         return string.IsNullOrWhiteSpace(schema) || string.Equals(schema, "public", StringComparison.OrdinalIgnoreCase);
     }
 }
-
