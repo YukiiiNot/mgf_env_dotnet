@@ -61,6 +61,28 @@ dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project s
 dotnet ef database update --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
 ```
 
+#### Rollback workflow (dev/staging only)
+
+Rollback means “update the database to an earlier migration” (it does not delete migration files).
+
+```powershell
+# 1) list migrations so you know the exact previous migration name
+dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+
+# 2) roll the DB back to a specific previous migration
+dotnet ef database update <PreviousMigrationName> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+
+# 3) (optional) roll all the way back to an empty DB (no migrations applied)
+dotnet ef database update 0 --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+
+# 4) if you also want to remove the latest migration from code, do it after rollback
+dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+```
+
+Notes:
+- `MGF.Tools.Migrator` only applies migrations forward (`MigrateAsync()`); use the EF CLI for rollbacks.
+- Avoid rollback on production databases; prefer a new “fix-forward” migration instead.
+
 ### Configuration helpers (no secrets in git)
 
 ```powershell

@@ -4,7 +4,7 @@ param(
     [string]$ConnectionString,
 
     [Parameter(Mandatory = $false)]
-    [string]$Host,
+    [string]$DbHost,
 
     [Parameter(Mandatory = $false)]
     [int]$Port = 5432,
@@ -20,8 +20,8 @@ param(
 )
 
 if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
-    if ([string]::IsNullOrWhiteSpace($Host)) {
-        $Host = Read-Host -Prompt "Supabase session pooler host (e.g. YOUR_PROJECT.pooler.supabase.com)"
+    if ([string]::IsNullOrWhiteSpace($DbHost)) {
+        $DbHost = Read-Host -Prompt "Supabase session pooler host (e.g. YOUR_PROJECT.pooler.supabase.com)"
     }
 
     if ([string]::IsNullOrWhiteSpace($Username)) {
@@ -41,7 +41,7 @@ if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
     }
 
     $ConnectionString =
-        "Host=$Host;Port=$Port;Database=$Database;Username=$Username;Password=$passwordPlain;" +
+        "Host=$DbHost;Port=$Port;Database=$Database;Username=$Username;Password=$passwordPlain;" +
         "Ssl Mode=Require;Trust Server Certificate=true"
 }
 
@@ -51,4 +51,3 @@ if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
 
 $env:Database__ConnectionString = $ConnectionString
 Write-Host "Set Database__ConnectionString for this PowerShell session."
-

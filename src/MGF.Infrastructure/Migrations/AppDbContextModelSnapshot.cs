@@ -16,7 +16,7 @@ namespace MGF.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -32,8 +32,7 @@ namespace MGF.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.HasKey("ClientId")
-                        .HasName("pk_clients");
+                    b.HasKey("ClientId");
 
                     b.ToTable("clients", (string)null);
                 });
@@ -49,8 +48,7 @@ namespace MGF.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("initials");
 
-                    b.HasKey("PersonId")
-                        .HasName("pk_people");
+                    b.HasKey("PersonId");
 
                     b.ToTable("people", (string)null);
                 });
@@ -66,11 +64,9 @@ namespace MGF.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("client_id");
 
-                    b.HasKey("ProjectId")
-                        .HasName("pk_projects");
+                    b.HasKey("ProjectId");
 
-                    b.HasIndex("ClientId")
-                        .HasDatabaseName("ix_projects_client_id");
+                    b.HasIndex("ClientId");
 
                     b.ToTable("projects", (string)null);
                 });
@@ -81,8 +77,7 @@ namespace MGF.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_projects_clients_client_id");
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

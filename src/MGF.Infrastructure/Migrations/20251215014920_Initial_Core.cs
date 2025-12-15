@@ -19,7 +19,7 @@ namespace MGF.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_clients", x => x.client_id);
+                    table.PrimaryKey("PK_clients", x => x.client_id);
                 });
 
             migrationBuilder.CreateTable(
@@ -31,7 +31,7 @@ namespace MGF.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_people", x => x.person_id);
+                    table.PrimaryKey("PK_people", x => x.person_id);
                 });
 
             migrationBuilder.CreateTable(
@@ -43,9 +43,9 @@ namespace MGF.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_projects", x => x.project_id);
+                    table.PrimaryKey("PK_projects", x => x.project_id);
                     table.ForeignKey(
-                        name: "fk_projects_clients_client_id",
+                        name: "FK_projects_clients_client_id",
                         column: x => x.client_id,
                         principalTable: "clients",
                         principalColumn: "client_id",
@@ -53,7 +53,7 @@ namespace MGF.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_projects_client_id",
+                name: "IX_projects_client_id",
                 table: "projects",
                 column: "client_id");
         }
