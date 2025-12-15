@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MGF.Application.Abstractions;
+using MGF.Infrastructure.Configuration;
 using MGF.Infrastructure.Data;
 using MGF.Infrastructure.Data.Repositories;
 using MGF.Infrastructure.Options;
@@ -14,14 +15,7 @@ public static class DependencyInjection
     {
         services.Configure<DatabaseOptions>(config.GetSection("Database"));
 
-        var connectionString = config["Database:ConnectionString"];
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            throw new InvalidOperationException(
-                "Database connection string not found. Set user-secrets `Database:ConnectionString` "
-                + "or set environment variable `Database__ConnectionString`."
-            );
-        }
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
 
         services.AddDbContext<AppDbContext>(options =>
         {

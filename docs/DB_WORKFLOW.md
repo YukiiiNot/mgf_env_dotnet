@@ -19,14 +19,22 @@ Both `dotnet ef` (design-time) and `MGF.Tools.Migrator` (runtime) load config in
 3. user-secrets (local dev)
 4. environment variables (CI/prod)
 
-The connection string key is: `Database:ConnectionString` (env var form: `Database__ConnectionString`).
+Connection string keys (selected by `MGF_ENV`, default `Dev`):
+
+- `Database:Dev:ConnectionString`
+- `Database:Staging:ConnectionString`
+- `Database:Prod:ConnectionString`
+
+Legacy fallback (only used when the env-specific key is missing):
+
+- `Database:ConnectionString` (env var form: `Database__ConnectionString`)
 
 ## Local dev setup (recommended: user-secrets)
 
 1) Set a local connection string (Npgsql format):
 
 ```powershell
-dotnet user-secrets set "Database:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
 ```
 
 Example format (do not commit real secrets; see `config/appsettings.Development.sample.json`):
@@ -105,7 +113,8 @@ dotnet ef database update <PreviousMigrationName> --project src/MGF.Infrastructu
 For one PowerShell session:
 
 ```powershell
-$env:Database__ConnectionString = "<Npgsql connection string>"
+$env:Database__Dev__ConnectionString = "<Npgsql connection string>"
+$env:MGF_ENV = "Dev"
 dotnet run --project src/MGF.Tools.Migrator
 ```
 
@@ -113,7 +122,7 @@ Or use `scripts/set-dev-connection.ps1` to set the session env var without commi
 
 ## CI / production
 
-Set `Database__ConnectionString` as a secret environment variable in the deployment pipeline, then run:
+Set `Database__Prod__ConnectionString` and `MGF_ENV=Prod` as secret environment variables in the deployment pipeline, then run:
 
 ```powershell
 dotnet run --project src/MGF.Tools.Migrator

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MGF.Infrastructure.Data;
+using MGF.Infrastructure.Configuration;
 
 namespace MGF.Infrastructure.IntegrationTests;
 
@@ -89,6 +90,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        DatabaseConnection.EnsureDestructiveAllowedOrThrow("Integration tests (will TRUNCATE core tables)");
+
         await using var db = TestDb.CreateContext();
         await db.Database.MigrateAsync();
 
@@ -110,6 +113,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     private static async Task ResetCoreDataAsync(AppDbContext db)
     {
+        DatabaseConnection.EnsureDestructiveAllowedOrThrow("Integration tests reset (TRUNCATE core tables)");
+
         await db.Database.OpenConnectionAsync();
         try
         {
@@ -193,4 +198,3 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return existing;
     }
 }
-

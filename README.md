@@ -12,6 +12,8 @@ MGF uses **EF Core migrations** as the executable source of truth for the Postgr
 ```powershell
 # repo health
 dotnet build .\MGF.sln
+
+# tests (includes DB integration tests; requires a DB connection string + `MGF_ALLOW_DESTRUCTIVE=true`)
 dotnet test .\MGF.sln
 
 # list migrations
@@ -87,10 +89,13 @@ Notes:
 
 ```powershell
 # recommended local dev: store the connection string in user-secrets (MGF.Infrastructure)
-dotnet user-secrets set "Database:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+
+# select which DB to use (Dev is default)
+$env:MGF_ENV = "Dev"
 
 # alternative (ad-hoc): set a session env var (PowerShell)
-$env:Database__ConnectionString = "<Npgsql connection string>"
+$env:Database__Dev__ConnectionString = "<Npgsql connection string>"
 
 # helper script to set Database__ConnectionString for the current session (prompts/params; no secrets committed)
 .\scripts\set-dev-connection.ps1

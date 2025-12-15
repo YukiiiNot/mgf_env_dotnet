@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.UserSecrets;
+using MGF.Infrastructure.Configuration;
 
 namespace MGF.Infrastructure.Data;
 
@@ -30,20 +31,7 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString = config["Database:ConnectionString"];
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            // Fallback for clarity; env vars are already loaded above.
-            connectionString = Environment.GetEnvironmentVariable("Database__ConnectionString");
-        }
-
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            throw new InvalidOperationException(
-                "Database connection string not found. Set user-secrets `Database:ConnectionString` "
-                + "or set environment variable `Database__ConnectionString`."
-            );
-        }
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseNpgsql(connectionString);
