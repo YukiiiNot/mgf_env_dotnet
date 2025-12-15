@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
 using MGF.Infrastructure.Configuration;
 using MGF.Infrastructure.Data;
+using MGF.Tools.SquareImport.Normalization;
 using MGF.Tools.SquareImport.Parsing;
 using MGF.Tools.SquareImport.Reporting;
 
-internal sealed class CustomersImporter
+internal sealed partial class CustomersImporter
 {
+    private const int DefaultBatchSize = 1000;
     private const string UnmatchedClientNotesMarker = "[system:unmatched_square]";
     private const string UnmatchedSquareCustomerIdSentinel = "__unmatched_square__";
 
@@ -19,9 +21,15 @@ internal sealed class CustomersImporter
         this.db = db;
     }
 
-    public async Task<ImportSummary> ImportAsync(string filePath, bool dryRun, CancellationToken cancellationToken)
+    public async Task<ImportSummary> ImportAsync(
+        string filePath,
+        CustomersImportOptions options,
+        bool dryRun,
+        CancellationToken cancellationToken
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+        ArgumentNullException.ThrowIfNull(options);
 
         var customers = CsvLoader.LoadCustomers(filePath);
         Console.WriteLine($"square-import customers: parsed rows={customers.Count} (dry-run={dryRun}).");
@@ -49,21 +57,97 @@ internal sealed class CustomersImporter
             }
         }
 
-        var duplicateEmails = FindDuplicateEmails(deduped.Values);
+        var inputs = deduped.Values
+            .OrderBy(r => r.RowNumber)
+            .ThenBy(r => r.SquareCustomerId, StringComparer.Ordinal)
+            .Select(BuildCustomerIdentity)
+            .ToList();
 
-        if (!dryRun)
+        stats.TotalRows = inputs.Count;
+        stats.ClassifiedOrganizations = inputs.Count(x => x.ProposedClientTypeKey == "organization");
+        stats.ClassifiedIndividuals = inputs.Count(x => x.ProposedClientTypeKey == "individual");
+
+        var hardDuplicates = DetectHardDuplicates(inputs);
+        var softDuplicates = DetectSoftDuplicates(inputs);
+
+        stats.HardDuplicateRows = hardDuplicates.RowCount;
+        stats.SoftDuplicateRows = softDuplicates.RowCount;
+
+        CsvReportWriter<CustomersImportReportRow>? hardDuplicatesWriter = null;
+        CsvReportWriter<CustomersImportReportRow>? softDuplicatesWriter = null;
+        CsvReportWriter<CustomersImportReportRow>? needsReviewWriter = null;
+        CsvReportWriter<CustomersImportReportRow>? appliedWriter = null;
+
+        var reportDirPath = options.ReportDir?.FullName ?? ".\\runtime\\square-import\\";
+        if (options.WriteReports)
         {
-            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-            await ImportRowsAsync(deduped.Values, stats, cancellationToken, dryRun);
-            await db.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-        }
-        else
-        {
-            await ImportRowsAsync(deduped.Values, stats, cancellationToken, dryRun);
+            hardDuplicatesWriter = new CsvReportWriter<CustomersImportReportRow>(
+                Path.Combine(reportDirPath, "customers-duplicates-hard.csv")
+            );
+            softDuplicatesWriter = new CsvReportWriter<CustomersImportReportRow>(
+                Path.Combine(reportDirPath, "customers-duplicates-soft.csv")
+            );
+            needsReviewWriter = new CsvReportWriter<CustomersImportReportRow>(
+                Path.Combine(reportDirPath, "customers-needs-review.csv")
+            );
+            appliedWriter = new CsvReportWriter<CustomersImportReportRow>(
+                Path.Combine(reportDirPath, "customers-applied.csv")
+            );
         }
 
-        WriteDetailedSummary(stats, duplicateEmails);
+        try
+        {
+            for (var offset = 0; offset < inputs.Count; offset += DefaultBatchSize)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var batch = inputs.Skip(offset).Take(DefaultBatchSize).ToList();
+
+                if (!dryRun)
+                {
+                    await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+                    await ProcessBatchAsync(
+                        batch,
+                        options,
+                        hardDuplicates,
+                        softDuplicates,
+                        stats,
+                        hardDuplicatesWriter,
+                        softDuplicatesWriter,
+                        needsReviewWriter,
+                        appliedWriter,
+                        cancellationToken,
+                        dryRun
+                    );
+                    await db.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                else
+                {
+                    await ProcessBatchAsync(
+                        batch,
+                        options,
+                        hardDuplicates,
+                        softDuplicates,
+                        stats,
+                        hardDuplicatesWriter,
+                        softDuplicatesWriter,
+                        needsReviewWriter,
+                        appliedWriter,
+                        cancellationToken,
+                        dryRun
+                    );
+                }
+            }
+        }
+        finally
+        {
+            appliedWriter?.Dispose();
+            needsReviewWriter?.Dispose();
+            softDuplicatesWriter?.Dispose();
+            hardDuplicatesWriter?.Dispose();
+        }
+
+        WriteDetailedSummary(stats, hardDuplicates, softDuplicates, reportDirPath, options.WriteReports);
 
         return new ImportSummary(
             Inserted: stats.TotalInserted,
@@ -636,8 +720,21 @@ internal sealed class CustomersImporter
             return;
         }
 
-        var desiredDisplayName = string.IsNullOrWhiteSpace(displayName) ? existingClient.DisplayName : displayName;
-        var desiredClientTypeKey = string.IsNullOrWhiteSpace(clientTypeKey) ? existingClient.ClientTypeKey : clientTypeKey;
+        var desiredDisplayName = existingClient.DisplayName;
+        if (ShouldOverwriteDisplayName(existingClient.DisplayName, displayName))
+        {
+            desiredDisplayName = displayName;
+        }
+
+        var desiredClientTypeKey = existingClient.ClientTypeKey;
+        if (
+            string.Equals(clientTypeKey, "organization", StringComparison.Ordinal)
+            && !string.Equals(existingClient.ClientTypeKey, "organization", StringComparison.Ordinal)
+        )
+        {
+            desiredClientTypeKey = "organization";
+        }
+
         var desiredPrimaryContactPersonId = existingClient.PrimaryContactPersonId ?? primaryContactPersonId;
 
         var needsUpdate =
@@ -773,7 +870,13 @@ internal sealed class CustomersImporter
             return;
         }
 
-        if (row.EmailAddress is null && row.PhoneNumber is null)
+        var incomingEmails = NormalizeMultiValue(row.EmailAddress, IdentityKeys.NormalizeEmail);
+        var incomingPhones = NormalizeMultiValue(row.PhoneNumber, IdentityKeys.NormalizePhone);
+
+        var incomingEmail = incomingEmails.Count == 0 ? null : incomingEmails[0];
+        var incomingPhone = incomingPhones.Count == 0 ? null : incomingPhones[0];
+
+        if (incomingEmail is null && incomingPhone is null)
         {
             stats.PersonContactsSkipped++;
             return;
@@ -795,8 +898,8 @@ internal sealed class CustomersImporter
                 {
                     ["person_id"] = personId,
                     ["discord_handle"] = null!,
-                    ["email"] = row.EmailAddress!,
-                    ["phone"] = row.PhoneNumber!,
+                    ["email"] = incomingEmail!,
+                    ["phone"] = incomingPhone!,
                     ["updated_at"] = DateTimeOffset.UtcNow,
                 },
                 cancellationToken
@@ -805,8 +908,8 @@ internal sealed class CustomersImporter
             return;
         }
 
-        var desiredEmail = row.EmailAddress ?? GetString(existing, "email");
-        var desiredPhone = row.PhoneNumber ?? GetString(existing, "phone");
+        var desiredEmail = incomingEmail ?? GetString(existing, "email");
+        var desiredPhone = incomingPhone ?? GetString(existing, "phone");
 
         var needsUpdate =
             !string.Equals(GetString(existing, "email"), desiredEmail, StringComparison.Ordinal)
@@ -1213,6 +1316,22 @@ internal sealed class CustomersImporter
 
     private sealed class CustomersImportStats
     {
+        public int TotalRows { get; set; }
+        public int ClassifiedOrganizations { get; set; }
+        public int ClassifiedIndividuals { get; set; }
+
+        public int RowsInserted { get; set; }
+        public int RowsUpdated { get; set; }
+        public int RowsLinked { get; set; }
+        public int RowsSkipped { get; set; }
+        public int RowsNeedsReview { get; set; }
+
+        public int AutoLinkedByEmail { get; set; }
+        public int AutoLinkedByPhone { get; set; }
+
+        public int HardDuplicateRows { get; set; }
+        public int SoftDuplicateRows { get; set; }
+
         public int ClientsInserted { get; set; }
         public int ClientsUpdated { get; set; }
         public int ClientsSkipped { get; set; }
