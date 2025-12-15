@@ -35,7 +35,7 @@ Example format (do not commit real secrets; see `config/appsettings.Development.
 Host=YOUR_PROJECT.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.YOUR_REF;Password=YOUR_PASSWORD;Ssl Mode=Require;Trust Server Certificate=true
 ```
 
-2) Run migrations:
+2) Create/run migrations:
 
 ```powershell
 dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
@@ -45,6 +45,60 @@ dotnet run --project src/MGF.Tools.Migrator
 `MGF.Tools.Migrator` will:
 - apply migrations
 - seed core lookup tables idempotently (safe to run multiple times)
+
+## Where migrations live
+
+- Folder: `src/MGF.Infrastructure/Migrations/`
+- Files: `*_<Name>.cs`, `*_<Name>.Designer.cs`, and `AppDbContextModelSnapshot.cs`
+
+## Common EF commands (with explanations)
+
+### List migrations
+
+Shows migrations known to EF in `MGF.Infrastructure`:
+
+```powershell
+dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+```
+
+### Add a migration
+
+Creates new migration files under `src/MGF.Infrastructure/Migrations/`:
+
+```powershell
+dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+```
+
+### Apply migrations (update the database)
+
+Recommended (applies migrations + seeds lookups):
+
+```powershell
+dotnet run --project src/MGF.Tools.Migrator
+```
+
+EF CLI alternative (updates DB only; does not run custom seeding):
+
+```powershell
+dotnet ef database update --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+```
+
+### Remove the latest migration
+
+Removes the most recent migration files (use with care):
+
+```powershell
+dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+```
+
+Notes:
+- If the migration has already been applied to a database, roll back first (or create a new “revert” migration) to avoid drift.
+
+### Roll back to a previous migration
+
+```powershell
+dotnet ef database update <PreviousMigrationName> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+```
 
 ## Alternative: session env var (ad-hoc)
 
@@ -73,4 +127,3 @@ These are read-only / local-safe:
 dotnet build .\MGF.sln
 dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
 ```
-
