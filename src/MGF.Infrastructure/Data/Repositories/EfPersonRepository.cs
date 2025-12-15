@@ -15,13 +15,13 @@ public sealed class EfPersonRepository : IPersonRepository
 
     public Task<Person?> GetByIdAsync(string personId, CancellationToken cancellationToken = default)
     {
-        return _db.People.AsNoTracking().SingleOrDefaultAsync(x => x.PersonId == personId, cancellationToken);
+        return _db.People.AsNoTracking().SingleOrDefaultAsync(x => x.PerId == personId, cancellationToken);
     }
 
     public async Task SaveAsync(Person person, CancellationToken cancellationToken = default)
     {
         var exists = await _db.People.AsNoTracking()
-            .AnyAsync(x => x.PersonId == person.PersonId, cancellationToken);
+            .AnyAsync(x => x.PerId == person.PerId, cancellationToken);
 
         if (exists)
         {
@@ -35,4 +35,3 @@ public sealed class EfPersonRepository : IPersonRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 }
-

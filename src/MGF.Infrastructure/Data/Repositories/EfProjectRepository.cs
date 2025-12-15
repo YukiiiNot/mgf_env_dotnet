@@ -15,13 +15,13 @@ public sealed class EfProjectRepository : IProjectRepository
 
     public Task<Project?> GetByIdAsync(string projectId, CancellationToken cancellationToken = default)
     {
-        return _db.Projects.AsNoTracking().SingleOrDefaultAsync(x => x.ProjectId == projectId, cancellationToken);
+        return _db.Projects.AsNoTracking().SingleOrDefaultAsync(x => x.PrjId == projectId, cancellationToken);
     }
 
     public async Task SaveAsync(Project project, CancellationToken cancellationToken = default)
     {
         var exists = await _db.Projects.AsNoTracking()
-            .AnyAsync(x => x.ProjectId == project.ProjectId, cancellationToken);
+            .AnyAsync(x => x.PrjId == project.PrjId, cancellationToken);
 
         if (exists)
         {
@@ -35,4 +35,3 @@ public sealed class EfProjectRepository : IProjectRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 }
-

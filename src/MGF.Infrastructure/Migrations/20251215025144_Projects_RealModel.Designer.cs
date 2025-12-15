@@ -3,6 +3,7 @@ using System;
 using MGF.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MGF.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251215025144_Projects_RealModel")]
+    partial class Projects_RealModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -180,43 +183,6 @@ namespace MGF.Infrastructure.Migrations
                     b.ToTable("project_code_counters", (string)null);
                 });
 
-            modelBuilder.Entity("MGF.Domain.Entities.ProjectMember", b =>
-                {
-                    b.Property<string>("PrjId")
-                        .HasColumnType("text")
-                        .HasColumnName("prj_id");
-
-                    b.Property<string>("PerId")
-                        .HasColumnType("text")
-                        .HasColumnName("per_id");
-
-                    b.Property<string>("RoleKey")
-                        .HasColumnType("text")
-                        .HasColumnName("role_key");
-
-                    b.Property<DateTimeOffset>("AssignedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("assigned_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTimeOffset?>("ReleasedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("released_at");
-
-                    b.HasKey("PrjId", "PerId", "RoleKey", "AssignedAt");
-
-                    b.HasIndex("PerId");
-
-                    b.HasIndex("RoleKey");
-
-                    b.HasIndex("PrjId", "PerId", "RoleKey")
-                        .IsUnique()
-                        .HasFilter("released_at IS NULL");
-
-                    b.ToTable("project_members", (string)null);
-                });
-
             modelBuilder.Entity("MGF.Domain.Entities.ProjectPhase", b =>
                 {
                     b.Property<string>("PhaseKey")
@@ -259,28 +225,6 @@ namespace MGF.Infrastructure.Migrations
                     b.HasKey("PriorityKey");
 
                     b.ToTable("project_priorities", (string)null);
-                });
-
-            modelBuilder.Entity("MGF.Domain.Entities.ProjectRole", b =>
-                {
-                    b.Property<string>("RoleKey")
-                        .HasColumnType("text")
-                        .HasColumnName("role_key");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("display_name");
-
-                    b.Property<int>("SortOrder")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("sort_order");
-
-                    b.HasKey("RoleKey");
-
-                    b.ToTable("project_roles", (string)null);
                 });
 
             modelBuilder.Entity("MGF.Domain.Entities.ProjectStatus", b =>
@@ -354,27 +298,6 @@ namespace MGF.Infrastructure.Migrations
                     b.HasOne("MGF.Domain.Entities.ProjectType", null)
                         .WithMany()
                         .HasForeignKey("TypeKey");
-                });
-
-            modelBuilder.Entity("MGF.Domain.Entities.ProjectMember", b =>
-                {
-                    b.HasOne("MGF.Domain.Entities.Person", null)
-                        .WithMany()
-                        .HasForeignKey("PerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MGF.Domain.Entities.Project", null)
-                        .WithMany()
-                        .HasForeignKey("PrjId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MGF.Domain.Entities.ProjectRole", null)
-                        .WithMany()
-                        .HasForeignKey("RoleKey")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
