@@ -2,12 +2,16 @@ namespace MGF.Tools.SquareImport.Importers;
 
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
+using MGF.Infrastructure.Configuration;
 using MGF.Infrastructure.Data;
 using MGF.Tools.SquareImport.Parsing;
 using MGF.Tools.SquareImport.Reporting;
 
 internal sealed class CustomersImporter
 {
+    private const string UnmatchedClientNotesMarker = "[system:unmatched_square]";
+    private const string UnmatchedSquareCustomerIdSentinel = "__unmatched_square__";
+
     private readonly AppDbContext db;
 
     public CustomersImporter(AppDbContext db)
@@ -154,6 +158,297 @@ internal sealed class CustomersImporter
         }
 
         return ImportSummary.Empty();
+    }
+
+    public async Task<ImportSummary> ResetAsync(bool dryRun, CancellationToken cancellationToken)
+    {
+        var env = DatabaseConnection.GetEnvironment();
+        if (env != MgfEnvironment.Dev)
+        {
+            Console.Error.WriteLine($"square-import customers: --reset blocked (DEV only). Current MGF_ENV={env}.");
+            return new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1);
+        }
+
+        Console.WriteLine($"square-import customers: reset starting (dry-run={dryRun})");
+
+        var clientIntegrationsSquare = db.Set<Dictionary<string, object>>("client_integrations_square");
+        var clientContacts = db.Set<Dictionary<string, object>>("client_contacts");
+        var personContacts = db.Set<Dictionary<string, object>>("person_contacts");
+
+        var candidateClientIds = await clientIntegrationsSquare.AsNoTracking()
+            .Where(
+                cis =>
+                    EF.Property<string?>(cis, "square_customer_id") != null
+                    && EF.Property<string?>(cis, "square_customer_id") != string.Empty
+                    && EF.Property<string?>(cis, "square_customer_id") != UnmatchedSquareCustomerIdSentinel
+            )
+            .Select(cis => EF.Property<string>(cis, "client_id"))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (candidateClientIds.Count == 0)
+        {
+            Console.WriteLine("square-import customers: reset found 0 Square-integrated clients.");
+            WriteResetCounts(
+                dryRun: dryRun,
+                clientsRemoved: 0,
+                clientIntegrationsSquareRemoved: 0,
+                clientContactsRemoved: 0,
+                peopleRemoved: 0,
+                personContactsRemoved: 0
+            );
+            return ImportSummary.Empty();
+        }
+
+        var excludedClientIds = await db.Clients.AsNoTracking()
+            .Where(c => candidateClientIds.Contains(c.ClientId) && c.Notes == UnmatchedClientNotesMarker)
+            .Select(c => c.ClientId)
+            .ToListAsync(cancellationToken);
+
+        if (excludedClientIds.Count > 0)
+        {
+            candidateClientIds = candidateClientIds.Except(excludedClientIds, StringComparer.Ordinal).ToList();
+        }
+
+        if (candidateClientIds.Count == 0)
+        {
+            Console.WriteLine("square-import customers: reset found 0 deletable clients after excluding system rows.");
+            WriteResetCounts(
+                dryRun: dryRun,
+                clientsRemoved: 0,
+                clientIntegrationsSquareRemoved: 0,
+                clientContactsRemoved: 0,
+                peopleRemoved: 0,
+                personContactsRemoved: 0
+            );
+            return ImportSummary.Empty();
+        }
+
+        var clientsRemoved = 0;
+        var clientIntegrationsSquareRemoved = 0;
+        var clientContactsRemoved = 0;
+
+        var personIdsFromDeletedClients = new HashSet<string>(StringComparer.Ordinal);
+
+        var clientsToProcess = candidateClientIds
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+
+        foreach (var clientId in clientsToProcess)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (dryRun)
+            {
+                clientContactsRemoved += await clientContacts.AsNoTracking()
+                    .Where(cc => EF.Property<string>(cc, "client_id") == clientId)
+                    .CountAsync(cancellationToken);
+
+                clientIntegrationsSquareRemoved += await clientIntegrationsSquare.AsNoTracking()
+                    .Where(cis => EF.Property<string>(cis, "client_id") == clientId)
+                    .CountAsync(cancellationToken);
+
+                clientsRemoved += await db.Clients.AsNoTracking()
+                    .Where(c => c.ClientId == clientId)
+                    .CountAsync(cancellationToken);
+
+                var personIds = await GetPersonIdsForClientAsync(clientId, clientContacts, cancellationToken);
+                foreach (var personId in personIds)
+                {
+                    personIdsFromDeletedClients.Add(personId);
+                }
+
+                continue;
+            }
+
+            var personIdsForClient = await GetPersonIdsForClientAsync(clientId, clientContacts, cancellationToken);
+
+            await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                clientContactsRemoved += await clientContacts
+                    .Where(cc => EF.Property<string>(cc, "client_id") == clientId)
+                    .ExecuteDeleteAsync(cancellationToken);
+
+                clientIntegrationsSquareRemoved += await clientIntegrationsSquare
+                    .Where(cis => EF.Property<string>(cis, "client_id") == clientId)
+                    .ExecuteDeleteAsync(cancellationToken);
+
+                clientsRemoved += await db.Clients
+                    .Where(c => c.ClientId == clientId)
+                    .ExecuteDeleteAsync(cancellationToken);
+
+                await tx.CommitAsync(cancellationToken);
+
+                foreach (var personId in personIdsForClient)
+                {
+                    personIdsFromDeletedClients.Add(personId);
+                }
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                Console.Error.WriteLine($"square-import customers: reset skipped client_id={clientId}: {ex.Message}");
+            }
+        }
+
+        var peopleRemoved = 0;
+        var personContactsRemoved = 0;
+
+        var candidatePersonIds = personIdsFromDeletedClients
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+
+        if (candidatePersonIds.Count > 0)
+        {
+            var referencedByClientContacts = await clientContacts.AsNoTracking()
+                .Where(cc => candidatePersonIds.Contains(EF.Property<string>(cc, "person_id")))
+                .Select(cc => EF.Property<string>(cc, "person_id"))
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var referencedAsPrimaryContact = await db.Clients.AsNoTracking()
+                .Where(c => c.PrimaryContactPersonId != null && candidatePersonIds.Contains(c.PrimaryContactPersonId))
+                .Select(c => c.PrimaryContactPersonId!)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var referencedAsAccountOwner = await db.Clients.AsNoTracking()
+                .Where(c => c.AccountOwnerPersonId != null && candidatePersonIds.Contains(c.AccountOwnerPersonId))
+                .Select(c => c.AccountOwnerPersonId!)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var protectedPersonIds = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var id in referencedByClientContacts)
+            {
+                protectedPersonIds.Add(id);
+            }
+            foreach (var id in referencedAsPrimaryContact)
+            {
+                protectedPersonIds.Add(id);
+            }
+            foreach (var id in referencedAsAccountOwner)
+            {
+                protectedPersonIds.Add(id);
+            }
+
+            var deletablePersonIds = candidatePersonIds.Where(id => !protectedPersonIds.Contains(id)).ToList();
+
+            foreach (var personId in deletablePersonIds)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (dryRun)
+                {
+                    personContactsRemoved += await personContacts.AsNoTracking()
+                        .Where(pc => EF.Property<string>(pc, "person_id") == personId)
+                        .CountAsync(cancellationToken);
+
+                    peopleRemoved += await db.People.AsNoTracking()
+                        .Where(p => p.PersonId == personId)
+                        .CountAsync(cancellationToken);
+                    continue;
+                }
+
+                await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    personContactsRemoved += await personContacts
+                        .Where(pc => EF.Property<string>(pc, "person_id") == personId)
+                        .ExecuteDeleteAsync(cancellationToken);
+
+                    peopleRemoved += await db.People
+                        .Where(p => p.PersonId == personId)
+                        .ExecuteDeleteAsync(cancellationToken);
+
+                    await tx.CommitAsync(cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    await tx.RollbackAsync(cancellationToken);
+                    Console.Error.WriteLine($"square-import customers: reset skipped person_id={personId}: {ex.Message}");
+                }
+            }
+        }
+
+        WriteResetCounts(
+            dryRun: dryRun,
+            clientsRemoved: clientsRemoved,
+            clientIntegrationsSquareRemoved: clientIntegrationsSquareRemoved,
+            clientContactsRemoved: clientContactsRemoved,
+            peopleRemoved: peopleRemoved,
+            personContactsRemoved: personContactsRemoved
+        );
+
+        return ImportSummary.Empty();
+    }
+
+    private async Task<IReadOnlyList<string>> GetPersonIdsForClientAsync(
+        string clientId,
+        DbSet<Dictionary<string, object>> clientContacts,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+
+        var client = await db.Clients.AsNoTracking()
+            .Where(c => c.ClientId == clientId)
+            .Select(
+                c =>
+                    new
+                    {
+                        c.PrimaryContactPersonId,
+                        c.AccountOwnerPersonId,
+                    }
+            )
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (client?.PrimaryContactPersonId is not null)
+        {
+            result.Add(client.PrimaryContactPersonId);
+        }
+
+        if (client?.AccountOwnerPersonId is not null)
+        {
+            result.Add(client.AccountOwnerPersonId);
+        }
+
+        var contactPersonIds = await clientContacts.AsNoTracking()
+            .Where(cc => EF.Property<string>(cc, "client_id") == clientId)
+            .Select(cc => EF.Property<string>(cc, "person_id"))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        foreach (var personId in contactPersonIds)
+        {
+            if (!string.IsNullOrWhiteSpace(personId))
+            {
+                result.Add(personId);
+            }
+        }
+
+        return result.OrderBy(x => x, StringComparer.Ordinal).ToList();
+    }
+
+    private static void WriteResetCounts(
+        bool dryRun,
+        int clientsRemoved,
+        int clientIntegrationsSquareRemoved,
+        int clientContactsRemoved,
+        int peopleRemoved,
+        int personContactsRemoved
+    )
+    {
+        var prefix = dryRun ? "would_remove" : "removed";
+        Console.WriteLine($"square-import customers: reset {prefix} clients={clientsRemoved}");
+        Console.WriteLine($"square-import customers: reset {prefix} client_integrations_square={clientIntegrationsSquareRemoved}");
+        Console.WriteLine($"square-import customers: reset {prefix} client_contacts={clientContactsRemoved}");
+        Console.WriteLine($"square-import customers: reset {prefix} person_contacts={personContactsRemoved}");
+        Console.WriteLine($"square-import customers: reset {prefix} people={peopleRemoved}");
     }
 
     private async Task ImportRowsAsync(

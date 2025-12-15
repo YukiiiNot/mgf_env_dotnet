@@ -14,6 +14,11 @@ internal static class CustomersCommand
             Description = "Path to the Square customers export CSV file.",
         };
 
+        var resetOption = new Option<bool>("--reset")
+        {
+            Description = "DEV-only: delete Square customer import data so it can be re-imported clean.",
+        };
+
         var dryRunOption = new Option<bool>("--dry-run")
         {
             Description = "Parse and validate only; do not write to the database.",
@@ -26,6 +31,7 @@ internal static class CustomersCommand
 
         var command = new Command("customers", "Import customers from a Square CSV export.");
         command.AddOption(fileOption);
+        command.AddOption(resetOption);
         command.AddOption(dryRunOption);
         command.AddOption(verifyOption);
 
@@ -33,8 +39,36 @@ internal static class CustomersCommand
             async (InvocationContext context) =>
             {
                 var file = context.ParseResult.GetValueForOption(fileOption);
+                var reset = context.ParseResult.GetValueForOption(resetOption);
                 var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
                 var verify = context.ParseResult.GetValueForOption(verifyOption);
+
+                if (reset)
+                {
+                    if (verify)
+                    {
+                        Console.Error.WriteLine("square-import customers: --reset cannot be used with --verify.");
+                        new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole("customers");
+                        context.ExitCode = 1;
+                        return;
+                    }
+
+                    if (file is not null)
+                    {
+                        Console.Error.WriteLine("square-import customers: --reset cannot be used with --file.");
+                        new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole("customers");
+                        context.ExitCode = 1;
+                        return;
+                    }
+
+                    context.ExitCode = await SquareImportCommandRunner.RunAsync(
+                        commandName: "customers",
+                        dryRun: dryRun,
+                        action: (db, cancellationToken) => new CustomersImporter(db).ResetAsync(dryRun, cancellationToken),
+                        cancellationToken: CancellationToken.None
+                    );
+                    return;
+                }
 
                 if (verify)
                 {
