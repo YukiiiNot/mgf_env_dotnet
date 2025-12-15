@@ -18,15 +18,14 @@ public static class DependencyInjection
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                "Database:ConnectionString is not set. Set it in `config/appsettings.Development.json` "
-                + "or via environment variable `Database__ConnectionString`."
+                "Database connection string not found. Set user-secrets `Database:ConnectionString` "
+                + "or set environment variable `Database__ConnectionString`."
             );
         }
 
         services.AddDbContext<AppDbContext>(options =>
         {
             options.UseNpgsql(connectionString);
-            options.UseSnakeCaseNamingConvention();
         });
 
         services.AddScoped<IProjectRepository, EfProjectRepository>();
@@ -36,4 +35,3 @@ public static class DependencyInjection
         return services;
     }
 }
-

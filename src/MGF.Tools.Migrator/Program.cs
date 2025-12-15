@@ -1,6 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.Infrastructure;
@@ -23,9 +25,12 @@ public static class Program
 
                     var repoRoot = FindRepoRoot();
                     var env = context.HostingEnvironment.EnvironmentName;
+                    var configDir = Path.Combine(repoRoot, "config");
 
-                    config.AddJsonFile(Path.Combine(repoRoot, "config", "appsettings.json"), optional: false, reloadOnChange: false);
-                    config.AddJsonFile(Path.Combine(repoRoot, "config", $"appsettings.{env}.json"), optional: true, reloadOnChange: false);
+                    config.SetBasePath(configDir);
+                    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+                    config.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false);
+                    config.AddUserSecretsIfAvailable(typeof(AppDbContext).Assembly);
                     config.AddEnvironmentVariables();
                 })
                 .ConfigureServices((context, services) =>
@@ -41,6 +46,10 @@ public static class Program
             await db.Database.MigrateAsync();
 
             Console.WriteLine("MGF.Tools.Migrator: migrations applied successfully.");
+
+            Console.WriteLine("MGF.Tools.Migrator: seeding lookup tables...");
+            await LookupSeeder.SeedAsync(db);
+            Console.WriteLine("MGF.Tools.Migrator: seeding completed.");
             return 0;
         }
         catch (Exception ex)
@@ -53,16 +62,35 @@ public static class Program
 
     private static string FindRepoRoot()
     {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+        return TryFindRepoRootFrom(Directory.GetCurrentDirectory())
+            ?? TryFindRepoRootFrom(AppContext.BaseDirectory)
+            ?? throw new InvalidOperationException("Could not locate repo root (MGF.sln). Run from within the repo.");
+    }
+
+    private static string? TryFindRepoRootFrom(string startPath)
+    {
+        var dir = new DirectoryInfo(startPath);
         while (dir is not null)
         {
             if (File.Exists(Path.Combine(dir.FullName, "MGF.sln")))
             {
                 return dir.FullName;
             }
+
             dir = dir.Parent;
         }
 
-        throw new InvalidOperationException("Could not locate repo root (MGF.sln). Run from within the repo.");
+        return null;
+    }
+
+    private static IConfigurationBuilder AddUserSecretsIfAvailable(this IConfigurationBuilder builder, Assembly assembly)
+    {
+        // Only wire user-secrets if the MGF.Infrastructure project has a UserSecretsId (recommended for local dev).
+        if (assembly.GetCustomAttribute<UserSecretsIdAttribute>() is null)
+        {
+            return builder;
+        }
+
+        return builder.AddUserSecrets(assembly, optional: true);
     }
 }
