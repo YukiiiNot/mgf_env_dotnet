@@ -9,6 +9,13 @@ public enum MgfEnvironment
     Prod,
 }
 
+public enum MgfDatabaseMode
+{
+    Auto,
+    Direct,
+    Pooler,
+}
+
 public static class DatabaseConnection
 {
     public static MgfEnvironment GetEnvironment()
@@ -37,12 +44,56 @@ public static class DatabaseConnection
         return MgfEnvironment.Dev;
     }
 
+    public static MgfDatabaseMode GetDatabaseMode()
+    {
+        var value = Environment.GetEnvironmentVariable("MGF_DB_MODE");
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return MgfDatabaseMode.Auto;
+        }
+
+        if (string.Equals(value, "direct", StringComparison.OrdinalIgnoreCase))
+        {
+            return MgfDatabaseMode.Direct;
+        }
+
+        if (string.Equals(value, "pooler", StringComparison.OrdinalIgnoreCase))
+        {
+            return MgfDatabaseMode.Pooler;
+        }
+
+        return MgfDatabaseMode.Auto;
+    }
+
     public static string ResolveConnectionString(IConfiguration config)
     {
         var env = GetEnvironment();
         var envName = env.ToString();
 
-        var connectionString = config[$"Database:{envName}:ConnectionString"];
+        string? connectionString = null;
+
+        var mode = GetDatabaseMode();
+        if (mode == MgfDatabaseMode.Direct)
+        {
+            connectionString = config[$"Database:{envName}:DirectConnectionString"];
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                connectionString = config["Database:DirectConnectionString"];
+            }
+        }
+        else if (mode == MgfDatabaseMode.Pooler)
+        {
+            connectionString = config[$"Database:{envName}:PoolerConnectionString"];
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                connectionString = config["Database:PoolerConnectionString"];
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            connectionString = config[$"Database:{envName}:ConnectionString"];
+        }
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             connectionString = config["Database:ConnectionString"];
@@ -79,10 +130,11 @@ public static class DatabaseConnection
     {
         return
             $"Database connection string not found for MGF_ENV={envName}. "
-            + $"Set user-secrets `Database:{envName}:ConnectionString` (preferred) "
+            + $"Set user-secrets `Database:{envName}:ConnectionString` (preferred), "
+            + $"or `Database:{envName}:DirectConnectionString` / `Database:{envName}:PoolerConnectionString` (when using `MGF_DB_MODE`), "
             + "or legacy `Database:ConnectionString`, "
-            + $"or set env var `Database__{envName}__ConnectionString` (preferred) "
+            + $"or set env var `Database__{envName}__ConnectionString` (preferred), "
+            + $"or `Database__{envName}__DirectConnectionString` / `Database__{envName}__PoolerConnectionString` (when using `MGF_DB_MODE`), "
             + "or legacy `Database__ConnectionString`.";
     }
 }
-

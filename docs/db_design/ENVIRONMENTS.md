@@ -7,8 +7,14 @@ This repo supports selecting which Postgres/Supabase database to use via `MGF_EN
 Use **one** of these per environment:
 
 - `Database:Dev:ConnectionString`
+- `Database:Dev:DirectConnectionString` (used when `MGF_DB_MODE=direct`)
+- `Database:Dev:PoolerConnectionString` (used when `MGF_DB_MODE=pooler`)
 - `Database:Staging:ConnectionString`
+- `Database:Staging:DirectConnectionString` (used when `MGF_DB_MODE=direct`)
+- `Database:Staging:PoolerConnectionString` (used when `MGF_DB_MODE=pooler`)
 - `Database:Prod:ConnectionString`
+- `Database:Prod:DirectConnectionString` (used when `MGF_DB_MODE=direct`)
+- `Database:Prod:PoolerConnectionString` (used when `MGF_DB_MODE=pooler`)
 
 Legacy fallback (only used when the env-specific key is missing):
 
@@ -21,15 +27,19 @@ User-secrets are per-developer and are **not committed to git**.
 ```powershell
 dotnet user-secrets init --project src/MGF.Infrastructure
 
-dotnet user-secrets set "Database:Dev:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
-dotnet user-secrets set "Database:Staging:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
-dotnet user-secrets set "Database:Prod:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Staging:DirectConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Staging:PoolerConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Prod:DirectConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Prod:PoolerConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
 ```
 
 Example (Npgsql format):
 
 ```text
-Host=YOUR_HOST;Port=5432;Database=postgres;Username=postgres.YOUR_REF;Password=YOUR_PASSWORD;Ssl Mode=Require;Trust Server Certificate=true
+Host=db.YOUR_REF.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YOUR_PASSWORD;Ssl Mode=Require;Pooling=false
+Host=YOUR_PROJECT.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.YOUR_REF;Password=YOUR_PASSWORD;Ssl Mode=Require
 ```
 
 ## Alternative: environment variables
@@ -37,9 +47,16 @@ Host=YOUR_HOST;Port=5432;Database=postgres;Username=postgres.YOUR_REF;Password=Y
 Environment variables override all config files and user-secrets.
 
 ```powershell
+$env:MGF_DB_MODE = "direct"
 $env:Database__Dev__ConnectionString = "<Npgsql connection string>"
+$env:Database__Dev__DirectConnectionString = "<Npgsql connection string>"
+$env:Database__Dev__PoolerConnectionString = "<Npgsql connection string>"
 $env:Database__Staging__ConnectionString = "<Npgsql connection string>"
+$env:Database__Staging__DirectConnectionString = "<Npgsql connection string>"
+$env:Database__Staging__PoolerConnectionString = "<Npgsql connection string>"
 $env:Database__Prod__ConnectionString = "<Npgsql connection string>"
+$env:Database__Prod__DirectConnectionString = "<Npgsql connection string>"
+$env:Database__Prod__PoolerConnectionString = "<Npgsql connection string>"
 ```
 
 Legacy env var (fallback only):
@@ -71,6 +88,7 @@ setx MGF_ENV Dev
 ## Running migrations (Migrator)
 
 ```powershell
+$env:MGF_DB_MODE = "direct"
 dotnet run --project src/MGF.Tools.Migrator
 ```
 
@@ -90,4 +108,3 @@ dotnet test .\MGF.sln
 ```
 
 Never set `MGF_ALLOW_DESTRUCTIVE=true` for Prod (Prod blocks it anyway).
-

@@ -4,6 +4,7 @@ using System.Text.Json;
 using MGF.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MGF.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251215075215_Phase1_02_Core")]
+    partial class Phase1_02_Core
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -559,71 +562,6 @@ namespace MGF.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("booking_attendees", b =>
-                {
-                    b.Property<string>("booking_attendee_id")
-                        .HasColumnType("text")
-                        .HasColumnName("booking_attendee_id");
-
-                    b.Property<string>("booking_id")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("booking_id");
-
-                    b.Property<DateTimeOffset?>("call_time")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("call_time");
-
-                    b.Property<DateTimeOffset>("created_at")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("notes")
-                        .HasColumnType("text")
-                        .HasColumnName("notes");
-
-                    b.Property<string>("person_id")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("person_id");
-
-                    b.Property<DateTimeOffset?>("release_time")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("release_time");
-
-                    b.Property<string>("role_key")
-                        .HasColumnType("text")
-                        .HasColumnName("role_key");
-
-                    b.HasKey("booking_attendee_id");
-
-                    b.HasIndex("booking_attendee_id");
-
-                    b.HasIndex("booking_id");
-
-                    b.HasIndex("call_time");
-
-                    b.HasIndex("created_at");
-
-                    b.HasIndex("person_id");
-
-                    b.HasIndex("release_time");
-
-                    b.HasIndex("role_key");
-
-                    b.HasIndex("booking_id", "person_id")
-                        .IsUnique();
-
-                    b.ToTable("booking_attendees", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_booking_attendees_0", "booking_attendee_id ~ '^bka_[0-9a-hjkmnp-tv-z]{26}$'");
-
-                            t.HasCheckConstraint("CK_booking_attendees_1", "release_time IS NULL OR call_time IS NULL OR release_time >= call_time");
-                        });
-                });
-
             modelBuilder.Entity("booking_phases", b =>
                 {
                     b.Property<string>("phase_key")
@@ -938,51 +876,6 @@ namespace MGF.Infrastructure.Migrations
                     b.HasIndex("created_at");
 
                     b.ToTable("client_billing_profiles", (string)null);
-                });
-
-            modelBuilder.Entity("client_contacts", b =>
-                {
-                    b.Property<string>("client_id")
-                        .HasColumnType("text")
-                        .HasColumnName("client_id");
-
-                    b.Property<string>("person_id")
-                        .HasColumnType("text")
-                        .HasColumnName("person_id");
-
-                    b.Property<DateTimeOffset>("created_at")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<bool>("is_primary")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_primary");
-
-                    b.Property<string>("notes")
-                        .HasColumnType("text")
-                        .HasColumnName("notes");
-
-                    b.Property<string>("role_key")
-                        .HasColumnType("text")
-                        .HasColumnName("role_key");
-
-                    b.HasKey("client_id", "person_id");
-
-                    b.HasIndex("client_id");
-
-                    b.HasIndex("created_at");
-
-                    b.HasIndex("is_primary");
-
-                    b.HasIndex("person_id");
-
-                    b.HasIndex("role_key");
-
-                    b.ToTable("client_contacts", (string)null);
                 });
 
             modelBuilder.Entity("client_integrations_square", b =>
@@ -2319,33 +2212,6 @@ namespace MGF.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("lead_tags", b =>
-                {
-                    b.Property<string>("lead_id")
-                        .HasColumnType("text")
-                        .HasColumnName("lead_id");
-
-                    b.Property<string>("tag_key")
-                        .HasColumnType("text")
-                        .HasColumnName("tag_key");
-
-                    b.Property<DateTimeOffset>("created_at")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("lead_id", "tag_key");
-
-                    b.HasIndex("created_at");
-
-                    b.HasIndex("lead_id");
-
-                    b.HasIndex("tag_key");
-
-                    b.ToTable("lead_tags", (string)null);
-                });
-
             modelBuilder.Entity("leads", b =>
                 {
                     b.Property<string>("lead_id")
@@ -3013,87 +2879,6 @@ namespace MGF.Infrastructure.Migrations
                     b.ToTable("person_contacts", (string)null);
                 });
 
-            modelBuilder.Entity("person_known_hosts", b =>
-                {
-                    b.Property<string>("person_id")
-                        .HasColumnType("text")
-                        .HasColumnName("person_id");
-
-                    b.Property<string>("host_key")
-                        .HasColumnType("text")
-                        .HasColumnName("host_key");
-
-                    b.Property<DateTimeOffset>("created_at")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("person_id", "host_key");
-
-                    b.HasIndex("created_at");
-
-                    b.HasIndex("host_key");
-
-                    b.HasIndex("person_id");
-
-                    b.ToTable("person_known_hosts", (string)null);
-                });
-
-            modelBuilder.Entity("person_permissions", b =>
-                {
-                    b.Property<string>("person_id")
-                        .HasColumnType("text")
-                        .HasColumnName("person_id");
-
-                    b.Property<string>("permission_key")
-                        .HasColumnType("text")
-                        .HasColumnName("permission_key");
-
-                    b.Property<DateTimeOffset>("created_at")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("person_id", "permission_key");
-
-                    b.HasIndex("created_at");
-
-                    b.HasIndex("permission_key");
-
-                    b.HasIndex("person_id");
-
-                    b.ToTable("person_permissions", (string)null);
-                });
-
-            modelBuilder.Entity("person_roles", b =>
-                {
-                    b.Property<string>("person_id")
-                        .HasColumnType("text")
-                        .HasColumnName("person_id");
-
-                    b.Property<string>("role_key")
-                        .HasColumnType("text")
-                        .HasColumnName("role_key");
-
-                    b.Property<DateTimeOffset>("created_at")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("person_id", "role_key");
-
-                    b.HasIndex("created_at");
-
-                    b.HasIndex("person_id");
-
-                    b.HasIndex("role_key");
-
-                    b.ToTable("person_roles", (string)null);
-                });
-
             modelBuilder.Entity("person_statuses", b =>
                 {
                     b.Property<string>("status_key")
@@ -3170,67 +2955,6 @@ namespace MGF.Infrastructure.Migrations
                     b.ToTable("project_code_counters", null, t =>
                         {
                             t.HasCheckConstraint("CK_project_code_counters_0", "next_seq >= 0 AND next_seq <= 9999");
-                        });
-                });
-
-            modelBuilder.Entity("project_members", b =>
-                {
-                    b.Property<string>("project_member_id")
-                        .HasColumnType("text")
-                        .HasColumnName("project_member_id");
-
-                    b.Property<DateTimeOffset?>("assigned_at")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("assigned_at");
-
-                    b.Property<bool>("is_active")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("notes")
-                        .HasColumnType("text")
-                        .HasColumnName("notes");
-
-                    b.Property<string>("person_id")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("person_id");
-
-                    b.Property<string>("project_id")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("project_id");
-
-                    b.Property<DateTimeOffset?>("released_at")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("released_at");
-
-                    b.Property<string>("role_key")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("role_key");
-
-                    b.HasKey("project_member_id");
-
-                    b.HasIndex("assigned_at");
-
-                    b.HasIndex("is_active");
-
-                    b.HasIndex("person_id");
-
-                    b.HasIndex("project_id");
-
-                    b.HasIndex("project_member_id");
-
-                    b.HasIndex("role_key");
-
-                    b.ToTable("project_members", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_project_members_0", "project_member_id ~ '^prm_[A-Za-z0-9]+$'");
-
-                            t.HasCheckConstraint("CK_project_members_1", "is_active = true OR released_at IS NOT NULL");
                         });
                 });
 
@@ -3419,33 +3143,6 @@ namespace MGF.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_project_storage_roots_1", "folder_relpath !~ '(^/|\\\\\\\\|\\.\\.)'");
                         });
-                });
-
-            modelBuilder.Entity("role_scope_roles", b =>
-                {
-                    b.Property<string>("scope_key")
-                        .HasColumnType("text")
-                        .HasColumnName("scope_key");
-
-                    b.Property<string>("role_key")
-                        .HasColumnType("text")
-                        .HasColumnName("role_key");
-
-                    b.Property<DateTimeOffset>("created_at")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("scope_key", "role_key");
-
-                    b.HasIndex("created_at");
-
-                    b.HasIndex("role_key");
-
-                    b.HasIndex("scope_key");
-
-                    b.ToTable("role_scope_roles", (string)null);
                 });
 
             modelBuilder.Entity("role_scopes", b =>
@@ -3877,33 +3574,6 @@ namespace MGF.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("work_item_tags", b =>
-                {
-                    b.Property<string>("work_item_id")
-                        .HasColumnType("text")
-                        .HasColumnName("work_item_id");
-
-                    b.Property<string>("tag_key")
-                        .HasColumnType("text")
-                        .HasColumnName("tag_key");
-
-                    b.Property<DateTimeOffset>("created_at")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("work_item_id", "tag_key");
-
-                    b.HasIndex("created_at");
-
-                    b.HasIndex("tag_key");
-
-                    b.HasIndex("work_item_id");
-
-                    b.ToTable("work_item_tags", (string)null);
-                });
-
             modelBuilder.Entity("work_items", b =>
                 {
                     b.Property<string>("work_item_id")
@@ -4120,26 +3790,6 @@ namespace MGF.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("booking_attendees", b =>
-                {
-                    b.HasOne("bookings", null)
-                        .WithMany()
-                        .HasForeignKey("booking_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MGF.Domain.Entities.Person", null)
-                        .WithMany()
-                        .HasForeignKey("person_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("roles", null)
-                        .WithMany()
-                        .HasForeignKey("role_key")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
             modelBuilder.Entity("bookings", b =>
                 {
                     b.HasOne("MGF.Domain.Entities.Person", null)
@@ -4179,26 +3829,6 @@ namespace MGF.Infrastructure.Migrations
                         .HasForeignKey("client_id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("client_contacts", b =>
-                {
-                    b.HasOne("MGF.Domain.Entities.Client", null)
-                        .WithMany()
-                        .HasForeignKey("client_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MGF.Domain.Entities.Person", null)
-                        .WithMany()
-                        .HasForeignKey("person_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("roles", null)
-                        .WithMany()
-                        .HasForeignKey("role_key")
-                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("client_integrations_square", b =>
@@ -4365,21 +3995,6 @@ namespace MGF.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("lead_tags", b =>
-                {
-                    b.HasOne("leads", null)
-                        .WithMany()
-                        .HasForeignKey("lead_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("tags", null)
-                        .WithMany()
-                        .HasForeignKey("tag_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("leads", b =>
                 {
                     b.HasOne("MGF.Domain.Entities.Person", null)
@@ -4515,72 +4130,6 @@ namespace MGF.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("person_known_hosts", b =>
-                {
-                    b.HasOne("host_keys", null)
-                        .WithMany()
-                        .HasForeignKey("host_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MGF.Domain.Entities.Person", null)
-                        .WithMany()
-                        .HasForeignKey("person_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("person_permissions", b =>
-                {
-                    b.HasOne("permissions", null)
-                        .WithMany()
-                        .HasForeignKey("permission_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MGF.Domain.Entities.Person", null)
-                        .WithMany()
-                        .HasForeignKey("person_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("person_roles", b =>
-                {
-                    b.HasOne("MGF.Domain.Entities.Person", null)
-                        .WithMany()
-                        .HasForeignKey("person_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("roles", null)
-                        .WithMany()
-                        .HasForeignKey("role_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("project_members", b =>
-                {
-                    b.HasOne("MGF.Domain.Entities.Person", null)
-                        .WithMany()
-                        .HasForeignKey("person_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MGF.Domain.Entities.Project", null)
-                        .WithMany()
-                        .HasForeignKey("project_id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("roles", null)
-                        .WithMany()
-                        .HasForeignKey("role_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("project_storage_roots", b =>
                 {
                     b.HasOne("MGF.Domain.Entities.Project", null)
@@ -4592,21 +4141,6 @@ namespace MGF.Infrastructure.Migrations
                     b.HasOne("storage_providers", null)
                         .WithMany()
                         .HasForeignKey("storage_provider_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("role_scope_roles", b =>
-                {
-                    b.HasOne("roles", null)
-                        .WithMany()
-                        .HasForeignKey("role_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("role_scopes", null)
-                        .WithMany()
-                        .HasForeignKey("scope_key")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -4628,21 +4162,6 @@ namespace MGF.Infrastructure.Migrations
                     b.HasOne("slug_scopes", null)
                         .WithMany()
                         .HasForeignKey("scope_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("work_item_tags", b =>
-                {
-                    b.HasOne("tags", null)
-                        .WithMany()
-                        .HasForeignKey("tag_key")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("work_items", null)
-                        .WithMany()
-                        .HasForeignKey("work_item_id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

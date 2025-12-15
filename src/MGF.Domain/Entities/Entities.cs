@@ -1,118 +1,201 @@
-﻿namespace MGF.Domain.Entities;
+namespace MGF.Domain.Entities;
+
+using System.Text.Json;
 
 public sealed class Project : EntityBase
 {
     public Project(
-        string prjId,
+        string projectId,
         string projectCode,
-        string cliId,
+        string clientId,
         string name,
         string statusKey,
         string phaseKey,
         string? priorityKey,
-        string? typeKey,
-        string pathsRootKey,
-        string folderRelpath,
-        string? dropboxUrl,
+        DateOnly? dueDate,
         DateTimeOffset? archivedAt,
+        string dataProfile,
+        string? currentInvoiceId,
+        JsonElement metadata,
         DateTimeOffset createdAt,
-        DateTimeOffset updatedAt
+        DateTimeOffset? updatedAt
     )
         : base(createdAt, updatedAt)
     {
-        PrjId = prjId;
+        ProjectId = projectId;
         ProjectCode = projectCode;
-        CliId = cliId;
+        ClientId = clientId;
         Name = name;
         StatusKey = statusKey;
         PhaseKey = phaseKey;
         PriorityKey = priorityKey;
-        TypeKey = typeKey;
-        PathsRootKey = pathsRootKey;
-        FolderRelpath = folderRelpath;
-        DropboxUrl = dropboxUrl;
+        DueDate = dueDate;
         ArchivedAt = archivedAt;
+        DataProfile = dataProfile;
+        CurrentInvoiceId = currentInvoiceId;
+        Metadata = metadata;
     }
 
     public Project(
-        string prjId,
+        string projectId,
         string projectCode,
-        string cliId,
+        string clientId,
         string name,
         string statusKey,
         string phaseKey,
-        string pathsRootKey,
-        string folderRelpath,
+        string dataProfile = "real",
         string? priorityKey = null,
-        string? typeKey = null,
-        string? dropboxUrl = null,
-        DateTimeOffset? archivedAt = null
+        DateOnly? dueDate = null,
+        DateTimeOffset? archivedAt = null,
+        string? currentInvoiceId = null,
+        JsonElement? metadata = null
     )
         : this(
-            prjId,
+            projectId,
             projectCode,
-            cliId,
+            clientId,
             name,
             statusKey,
             phaseKey,
             priorityKey,
-            typeKey,
-            pathsRootKey,
-            folderRelpath,
-            dropboxUrl,
+            dueDate,
             archivedAt,
+            dataProfile,
+            currentInvoiceId,
+            metadata ?? EmptyMetadata(),
             DateTimeOffset.UtcNow,
-            DateTimeOffset.UtcNow
+            null
         )
     {
     }
 
-    public string PrjId { get; }
+    public string ProjectId { get; }
     public string ProjectCode { get; }
-    public string CliId { get; }
+    public string ClientId { get; }
     public string Name { get; }
     public string StatusKey { get; }
     public string PhaseKey { get; }
     public string? PriorityKey { get; }
-    public string? TypeKey { get; }
-    public string PathsRootKey { get; }
-    public string FolderRelpath { get; }
-    public string? DropboxUrl { get; }
+    public DateOnly? DueDate { get; }
     public DateTimeOffset? ArchivedAt { get; }
+    public string DataProfile { get; }
+    public string? CurrentInvoiceId { get; }
+    public JsonElement Metadata { get; }
+
+    private static JsonElement EmptyMetadata()
+    {
+        return JsonDocument.Parse("{}").RootElement.Clone();
+    }
 }
 
 public sealed class Client : EntityBase
 {
-    public Client(string cliId, string name, DateTimeOffset createdAt, DateTimeOffset updatedAt)
+    public Client(
+        string clientId,
+        string displayName,
+        string clientTypeKey,
+        string statusKey,
+        string? primaryContactPersonId,
+        string? accountOwnerPersonId,
+        string? notes,
+        string dataProfile,
+        DateTimeOffset createdAt,
+        DateTimeOffset? updatedAt
+    )
         : base(createdAt, updatedAt)
     {
-        CliId = cliId;
-        Name = name;
+        ClientId = clientId;
+        DisplayName = displayName;
+        ClientTypeKey = clientTypeKey;
+        StatusKey = statusKey;
+        PrimaryContactPersonId = primaryContactPersonId;
+        AccountOwnerPersonId = accountOwnerPersonId;
+        Notes = notes;
+        DataProfile = dataProfile;
     }
 
-    public Client(string cliId, string name)
-        : this(cliId, name, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+    public Client(string clientId, string displayName)
+        : this(
+            clientId,
+            displayName,
+            clientTypeKey: "organization",
+            statusKey: "active",
+            primaryContactPersonId: null,
+            accountOwnerPersonId: null,
+            notes: null,
+            dataProfile: "real",
+            createdAt: DateTimeOffset.UtcNow,
+            updatedAt: null
+        )
     {
     }
 
-    public string CliId { get; }
-    public string Name { get; }
+    public string ClientId { get; }
+    public string DisplayName { get; }
+    public string ClientTypeKey { get; }
+    public string StatusKey { get; }
+    public string? PrimaryContactPersonId { get; }
+    public string? AccountOwnerPersonId { get; }
+    public string? Notes { get; }
+    public string DataProfile { get; }
 }
 
 public sealed class Person : EntityBase
 {
-    public Person(string perId, string initials, DateTimeOffset createdAt, DateTimeOffset updatedAt)
+    public Person(
+        string personId,
+        string firstName,
+        string lastName,
+        string? displayName,
+        string? initials,
+        string statusKey,
+        string? timezone,
+        string? defaultHostKey,
+        string? notes,
+        string dataProfile,
+        DateTimeOffset createdAt,
+        DateTimeOffset? updatedAt
+    )
         : base(createdAt, updatedAt)
     {
-        PerId = perId;
+        PersonId = personId;
+        FirstName = firstName;
+        LastName = lastName;
+        DisplayName = displayName;
         Initials = initials;
+        StatusKey = statusKey;
+        Timezone = timezone;
+        DefaultHostKey = defaultHostKey;
+        Notes = notes;
+        DataProfile = dataProfile;
     }
 
-    public Person(string perId, string initials)
-        : this(perId, initials, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow)
+    public Person(string personId, string firstName, string lastName, string? initials = null)
+        : this(
+            personId,
+            firstName,
+            lastName,
+            displayName: null,
+            initials: initials,
+            statusKey: "active",
+            timezone: null,
+            defaultHostKey: null,
+            notes: null,
+            dataProfile: "real",
+            createdAt: DateTimeOffset.UtcNow,
+            updatedAt: null
+        )
     {
     }
 
-    public string PerId { get; }
-    public string Initials { get; }
+    public string PersonId { get; }
+    public string FirstName { get; }
+    public string LastName { get; }
+    public string? DisplayName { get; }
+    public string? Initials { get; }
+    public string StatusKey { get; }
+    public string? Timezone { get; }
+    public string? DefaultHostKey { get; }
+    public string? Notes { get; }
+    public string DataProfile { get; }
 }

@@ -15,13 +15,13 @@ public sealed class EfClientRepository : IClientRepository
 
     public Task<Client?> GetByIdAsync(string clientId, CancellationToken cancellationToken = default)
     {
-        return _db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.CliId == clientId, cancellationToken);
+        return _db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.ClientId == clientId, cancellationToken);
     }
 
     public async Task SaveAsync(Client client, CancellationToken cancellationToken = default)
     {
         var exists = await _db.Clients.AsNoTracking()
-            .AnyAsync(x => x.CliId == client.CliId, cancellationToken);
+            .AnyAsync(x => x.ClientId == client.ClientId, cancellationToken);
 
         if (exists)
         {

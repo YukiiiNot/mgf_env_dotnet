@@ -38,6 +38,12 @@ Generated: 2025-12-14 17:22:35Z
 - Removed denormalized columns rather than marking deprecated, per default v1 policy.
 
 ## Manual Review Needed
+
+## 2025-12-15 — Docs re-org
+- Reorganized active `_core` schema docs into subfolders:
+  - `_core/_lookup` for lookup/dictionary tables
+  - `_core/_join` for join/association tables
+- Updated `_notes/schema_inventory.json` `csv_path` entries to match the new layout.
 - (none)
 
 ## Resolved

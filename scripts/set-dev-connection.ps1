@@ -19,13 +19,29 @@ param(
     [SecureString]$Password
 )
 
+$mode = $env:MGF_DB_MODE
+if ([string]::IsNullOrWhiteSpace($mode)) {
+    $mode = "pooler"
+}
+$mode = $mode.ToLowerInvariant()
+
 if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
     if ([string]::IsNullOrWhiteSpace($DbHost)) {
-        $DbHost = Read-Host -Prompt "Supabase session pooler host (e.g. YOUR_PROJECT.pooler.supabase.com)"
+        if ($mode -eq "direct") {
+            $DbHost = Read-Host -Prompt "Supabase direct DB host (e.g. db.YOUR_REF.supabase.co)"
+        }
+        else {
+            $DbHost = Read-Host -Prompt "Supabase session pooler host (e.g. YOUR_PROJECT.pooler.supabase.com)"
+        }
     }
 
     if ([string]::IsNullOrWhiteSpace($Username)) {
-        $Username = Read-Host -Prompt "Username (e.g. postgres.YOUR_REF)"
+        if ($mode -eq "direct") {
+            $Username = Read-Host -Prompt "Username (e.g. postgres)"
+        }
+        else {
+            $Username = Read-Host -Prompt "Username (e.g. postgres.YOUR_REF)"
+        }
     }
 
     if ($null -eq $Password) {
@@ -42,12 +58,25 @@ if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
 
     $ConnectionString =
         "Host=$DbHost;Port=$Port;Database=$Database;Username=$Username;Password=$passwordPlain;" +
-        "Ssl Mode=Require;Trust Server Certificate=true"
+        "Ssl Mode=Require"
+
+    if ($mode -eq "direct") {
+        $ConnectionString = $ConnectionString + ";Pooling=false"
+    }
 }
 
 if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
     throw "No connection string provided."
 }
 
+$env:Database__Dev__ConnectionString = $ConnectionString
 $env:Database__ConnectionString = $ConnectionString
-Write-Host "Set Database__ConnectionString for this PowerShell session."
+
+if ($mode -eq "direct") {
+    $env:Database__Dev__DirectConnectionString = $ConnectionString
+}
+else {
+    $env:Database__Dev__PoolerConnectionString = $ConnectionString
+}
+
+Write-Host "Set Database__Dev__* (mode=$mode) for this PowerShell session."

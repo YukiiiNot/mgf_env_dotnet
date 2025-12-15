@@ -7,134 +7,107 @@ namespace MGF.Infrastructure.IntegrationTests;
 public sealed class SmokeTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
     [Fact]
-    public async Task CanInsertClientPersonProjectMembership()
+    public async Task CanInsertClientPersonProjectAndProjectMember()
     {
         await fixture.ResetAsync();
         await using var db = TestDb.CreateContext();
 
-        var client = new Client($"cli_{Guid.NewGuid():N}", "Test Client");
-        var person = new Person($"per_{Guid.NewGuid():N}", "TT");
+        var clientId = EntityIds.NewClientId();
+        var personId = EntityIds.NewPersonId();
+        var projectId = EntityIds.NewProjectId();
+        var projectMemberId = EntityIds.NewWithPrefix("prm");
 
-        db.Add(client);
-        db.Add(person);
-        await db.SaveChangesAsync();
+        db.Add(new MGF.Domain.Entities.Client(clientId, "Test Client"));
+        db.Add(new MGF.Domain.Entities.Person(personId, "Test", "User", initials: "TU"));
 
-        var project = new Project(
-            prjId: $"prj_{Guid.NewGuid():N}",
-            projectCode: $"MGF_TEST_{Guid.NewGuid():N}",
-            cliId: client.CliId,
-            name: "Test Project",
-            statusKey: "active",
-            phaseKey: "planning",
-            priorityKey: "normal",
-            typeKey: "video_edit",
-            pathsRootKey: "local",
-            folderRelpath: "test/project",
-            dropboxUrl: null,
-            archivedAt: null
+        db.Add(
+            new MGF.Domain.Entities.Project(
+                projectId: projectId,
+                projectCode: "MGF99-0001",
+                clientId: clientId,
+                name: "Test Project",
+                statusKey: "active",
+                phaseKey: "planning",
+                priorityKey: "normal"
+            )
         );
 
-        db.Add(project);
-        await db.SaveChangesAsync();
+        db.Set<Dictionary<string, object>>("project_members").Add(
+            new Dictionary<string, object>
+            {
+                ["project_member_id"] = projectMemberId,
+                ["project_id"] = projectId,
+                ["person_id"] = personId,
+                ["role_key"] = "producer",
+                ["is_active"] = true,
+                ["assigned_at"] = DateTimeOffset.UtcNow,
+            }
+        );
 
-        db.Add(new ProjectMember(project.PrjId, person.PerId, "producer"));
         await db.SaveChangesAsync();
 
         Assert.Equal(1, await db.Clients.CountAsync());
         Assert.Equal(1, await db.People.CountAsync());
         Assert.Equal(1, await db.Projects.CountAsync());
-        Assert.Equal(1, await db.ProjectMembers.CountAsync());
+        Assert.Equal(1, await db.Set<Dictionary<string, object>>("project_members").CountAsync());
     }
 
     [Fact]
-    public async Task ForeignKeyEnforcementWorks()
+    public async Task ForeignKeysAreEnforced()
     {
         await fixture.ResetAsync();
         await using var db = TestDb.CreateContext();
 
-        var projectWithMissingClient = new Project(
-            prjId: $"prj_{Guid.NewGuid():N}",
-            projectCode: $"MGF_TEST_{Guid.NewGuid():N}",
-            cliId: "cli_missing",
-            name: "Bad Project",
-            statusKey: "active",
-            phaseKey: "planning",
-            priorityKey: "normal",
-            typeKey: "video_edit",
-            pathsRootKey: "local",
-            folderRelpath: "bad/project"
+        // projects.client_id FK -> clients.client_id
+        db.Add(
+            new MGF.Domain.Entities.Project(
+                projectId: EntityIds.NewProjectId(),
+                projectCode: "MGF99-0002",
+                clientId: "cli_missing",
+                name: "Bad Project",
+                statusKey: "active",
+                phaseKey: "planning",
+                priorityKey: "normal"
+            )
         );
 
-        db.Add(projectWithMissingClient);
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
-
-        await fixture.ResetAsync();
-        await using var db2 = TestDb.CreateContext();
-
-        var client = new Client($"cli_{Guid.NewGuid():N}", "Client");
-        db2.Add(client);
-        await db2.SaveChangesAsync();
-
-        var project = new Project(
-            prjId: $"prj_{Guid.NewGuid():N}",
-            projectCode: $"MGF_TEST_{Guid.NewGuid():N}",
-            cliId: client.CliId,
-            name: "Project",
-            statusKey: "active",
-            phaseKey: "planning",
-            priorityKey: "normal",
-            typeKey: "video_edit",
-            pathsRootKey: "local",
-            folderRelpath: "ok/project"
-        );
-
-        db2.Add(project);
-        await db2.SaveChangesAsync();
-
-        db2.Add(new ProjectMember(project.PrjId, "per_missing", "producer"));
-        await Assert.ThrowsAsync<DbUpdateException>(() => db2.SaveChangesAsync());
     }
 
     [Fact]
-    public async Task ProjectCodeUniquenessEnforced()
+    public async Task ProjectCodeIsUnique()
     {
         await fixture.ResetAsync();
         await using var db = TestDb.CreateContext();
 
-        var client = new Client($"cli_{Guid.NewGuid():N}", "Client");
-        db.Add(client);
+        var clientId = EntityIds.NewClientId();
+        db.Add(new MGF.Domain.Entities.Client(clientId, "Client"));
         await db.SaveChangesAsync();
 
-        var projectCode = $"MGF_TEST_DUP_{Guid.NewGuid():N}";
+        const string code = "MGF99-0100";
 
         db.Add(
-            new Project(
-                prjId: $"prj_{Guid.NewGuid():N}",
-                projectCode: projectCode,
-                cliId: client.CliId,
+            new MGF.Domain.Entities.Project(
+                projectId: EntityIds.NewProjectId(),
+                projectCode: code,
+                clientId: clientId,
                 name: "Project 1",
                 statusKey: "active",
                 phaseKey: "planning",
-                priorityKey: "normal",
-                typeKey: "video_edit",
-                pathsRootKey: "local",
-                folderRelpath: "dup/project1"
+                priorityKey: "normal"
             )
         );
         await db.SaveChangesAsync();
 
         db.Add(
-            new Project(
-                prjId: $"prj_{Guid.NewGuid():N}",
-                projectCode: projectCode,
-                cliId: client.CliId,
+            new MGF.Domain.Entities.Project(
+                projectId: EntityIds.NewProjectId(),
+                projectCode: code,
+                clientId: clientId,
                 name: "Project 2",
                 statusKey: "active",
                 phaseKey: "planning",
-                priorityKey: "normal",
-                typeKey: "video_edit",
-                pathsRootKey: "local",
-                folderRelpath: "dup/project2"
+                priorityKey: "normal"
             )
         );
 
@@ -160,64 +133,142 @@ public sealed class SmokeTests(DatabaseFixture fixture) : IClassFixture<Database
         await fixture.ResetAsync();
         await using var db = TestDb.CreateContext();
 
-        Assert.True(await db.ProjectStatuses.AnyAsync(x => x.StatusKey == "active"));
-        Assert.True(await db.ProjectPhases.AnyAsync(x => x.PhaseKey == "planning"));
-        Assert.True(await db.ProjectPriorities.AnyAsync(x => x.PriorityKey == "normal"));
-        Assert.True(await db.ProjectTypes.AnyAsync(x => x.TypeKey == "video_edit"));
-        Assert.True(await db.ProjectRoles.AnyAsync(x => x.RoleKey == "producer"));
+        Assert.True(await ExistsAsync(db, "data_profiles", "profile_key", "real"));
+        Assert.True(await ExistsAsync(db, "client_types", "type_key", "organization"));
+        Assert.True(await ExistsAsync(db, "client_statuses", "status_key", "active"));
+        Assert.True(await ExistsAsync(db, "person_statuses", "status_key", "active"));
+        Assert.True(await ExistsAsync(db, "project_statuses", "status_key", "active"));
+        Assert.True(await ExistsAsync(db, "project_phases", "phase_key", "planning"));
+        Assert.True(await ExistsAsync(db, "project_priorities", "priority_key", "normal"));
+        Assert.True(await ExistsAsync(db, "roles", "role_key", "producer"));
+        Assert.True(await ExistsAsync(db, "role_scopes", "scope_key", "project"));
+        Assert.True(
+            await ExistsCompositeAsync(
+                db,
+                "role_scope_roles",
+                new[] { ("scope_key", (object)"project"), ("role_key", (object)"producer") }
+            )
+        );
 
-        var year = DateTime.UtcNow.Year;
-        Assert.True(await db.ProjectCodeCounters.AnyAsync(x => x.Year == year));
+        var year2 = (short)(DateTime.UtcNow.Year % 100);
+        Assert.True(
+            await ExistsCompositeAsync(
+                db,
+                "project_code_counters",
+                new[] { ("prefix", (object)"MGF"), ("year_2", (object)year2) }
+            )
+        );
+        Assert.True(
+            await ExistsCompositeAsync(
+                db,
+                "invoice_number_counters",
+                new[] { ("prefix", (object)"MGF"), ("year_2", (object)year2) }
+            )
+        );
     }
 
     [Fact]
-    public async Task ProjectMembersEnforceUniqueActiveMembership()
+    public async Task ProjectMembersCheckConstraintIsEnforced()
     {
         await fixture.ResetAsync();
         await using var db = TestDb.CreateContext();
 
-        var client = new Client($"cli_{Guid.NewGuid():N}", "Client");
-        var person = new Person($"per_{Guid.NewGuid():N}", "PM");
+        var clientId = EntityIds.NewClientId();
+        var personId = EntityIds.NewPersonId();
+        var projectId = EntityIds.NewProjectId();
 
-        db.Add(client);
-        db.Add(person);
-        await db.SaveChangesAsync();
-
-        var project = new Project(
-            prjId: $"prj_{Guid.NewGuid():N}",
-            projectCode: $"MGF_TEST_{Guid.NewGuid():N}",
-            cliId: client.CliId,
-            name: "Project",
-            statusKey: "active",
-            phaseKey: "planning",
-            priorityKey: "normal",
-            typeKey: "video_edit",
-            pathsRootKey: "local",
-            folderRelpath: "members/project"
-        );
-
-        db.Add(project);
-        await db.SaveChangesAsync();
-
+        db.Add(new MGF.Domain.Entities.Client(clientId, "Client"));
+        db.Add(new MGF.Domain.Entities.Person(personId, "Person", "One", initials: "PO"));
         db.Add(
-            new ProjectMember(
-                project.PrjId,
-                person.PerId,
-                "producer",
-                assignedAt: DateTimeOffset.Parse("2025-01-01T00:00:00Z"),
-                releasedAt: null
+            new MGF.Domain.Entities.Project(
+                projectId: projectId,
+                projectCode: "MGF99-0200",
+                clientId: clientId,
+                name: "Project",
+                statusKey: "active",
+                phaseKey: "planning",
+                priorityKey: "normal"
             )
         );
+
         await db.SaveChangesAsync();
 
+        db.Set<Dictionary<string, object>>("project_members").Add(
+            new Dictionary<string, object>
+            {
+                ["project_member_id"] = EntityIds.NewWithPrefix("prm"),
+                ["project_id"] = projectId,
+                ["person_id"] = personId,
+                ["role_key"] = "producer",
+                ["is_active"] = false,
+                ["released_at"] = null!,
+            }
+        );
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task BookingAttendeesUniqueConstraintIsEnforced()
+    {
+        await fixture.ResetAsync();
+        await using var db = TestDb.CreateContext();
+
+        var clientId = EntityIds.NewClientId();
+        var personId = EntityIds.NewPersonId();
+        var projectId = EntityIds.NewProjectId();
+        var bookingId = EntityIds.NewWithPrefix("bkg");
+
+        db.Add(new MGF.Domain.Entities.Client(clientId, "Client"));
+        db.Add(new MGF.Domain.Entities.Person(personId, "Booking", "Person", initials: "BP"));
         db.Add(
-            new ProjectMember(
-                project.PrjId,
-                person.PerId,
-                "producer",
-                assignedAt: DateTimeOffset.Parse("2025-02-01T00:00:00Z"),
-                releasedAt: null
+            new MGF.Domain.Entities.Project(
+                projectId: projectId,
+                projectCode: "MGF99-0300",
+                clientId: clientId,
+                name: "Project",
+                statusKey: "active",
+                phaseKey: "planning",
+                priorityKey: "normal"
             )
+        );
+
+        await db.SaveChangesAsync();
+
+        db.Set<Dictionary<string, object>>("bookings").Add(
+            new Dictionary<string, object>
+            {
+                ["booking_id"] = bookingId,
+                ["project_id"] = projectId,
+                ["title"] = "Test Booking",
+                ["start_at"] = DateTimeOffset.UtcNow,
+                ["end_at"] = DateTimeOffset.UtcNow.AddHours(1),
+                ["data_profile"] = "real",
+            }
+        );
+
+        await db.SaveChangesAsync();
+
+        var attendees = db.Set<Dictionary<string, object>>("booking_attendees");
+        attendees.Add(
+            new Dictionary<string, object>
+            {
+                ["booking_attendee_id"] = EntityIds.NewWithPrefix("bka"),
+                ["booking_id"] = bookingId,
+                ["person_id"] = personId,
+                ["role_key"] = "producer",
+            }
+        );
+        await db.SaveChangesAsync();
+
+        attendees.Add(
+            new Dictionary<string, object>
+            {
+                ["booking_attendee_id"] = EntityIds.NewWithPrefix("bka"),
+                ["booking_id"] = bookingId,
+                ["person_id"] = personId,
+                ["role_key"] = "editor",
+            }
         );
 
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
@@ -232,8 +283,10 @@ public sealed class SmokeTests(DatabaseFixture fixture) : IClassFixture<Database
             cmd.CommandText =
                 """
                 UPDATE public.project_code_counters
-                SET next_seq = next_seq + 1
-                WHERE year = (EXTRACT(YEAR FROM now()))::int
+                SET next_seq = next_seq + 1,
+                    updated_at = now()
+                WHERE prefix = 'MGF'
+                  AND year_2 = (EXTRACT(YEAR FROM now())::int % 100)::smallint
                 RETURNING next_seq - 1;
                 """;
 
@@ -250,5 +303,52 @@ public sealed class SmokeTests(DatabaseFixture fixture) : IClassFixture<Database
             await db.Database.CloseConnectionAsync();
         }
     }
-}
 
+    private static async Task<bool> ExistsAsync(AppDbContext db, string table, string keyColumn, string keyValue)
+    {
+        await using var cmd = db.Database.GetDbConnection().CreateCommand();
+        cmd.CommandText = $"SELECT 1 FROM public.{table} WHERE {keyColumn} = @p LIMIT 1;";
+
+        var param = cmd.CreateParameter();
+        param.ParameterName = "@p";
+        param.Value = keyValue;
+        cmd.Parameters.Add(param);
+
+        await db.Database.OpenConnectionAsync();
+        try
+        {
+            var result = await cmd.ExecuteScalarAsync();
+            return result is not null;
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
+    }
+
+    private static async Task<bool> ExistsCompositeAsync(AppDbContext db, string table, IReadOnlyList<(string Column, object Value)> keys)
+    {
+        var where = string.Join(" AND ", keys.Select((k, i) => $"{k.Column} = @p{i}"));
+        await using var cmd = db.Database.GetDbConnection().CreateCommand();
+        cmd.CommandText = $"SELECT 1 FROM public.{table} WHERE {where} LIMIT 1;";
+
+        for (var i = 0; i < keys.Count; i++)
+        {
+            var param = cmd.CreateParameter();
+            param.ParameterName = $"@p{i}";
+            param.Value = keys[i].Value;
+            cmd.Parameters.Add(param);
+        }
+
+        await db.Database.OpenConnectionAsync();
+        try
+        {
+            var result = await cmd.ExecuteScalarAsync();
+            return result is not null;
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
+    }
+}

@@ -15,11 +15,15 @@ public sealed class DatabaseOptions
 
     // Legacy single connection string (fallback when env-specific key is missing).
     public string ConnectionString { get; init; } = string.Empty;
+    public string DirectConnectionString { get; init; } = string.Empty;
+    public string PoolerConnectionString { get; init; } = string.Empty;
 }
 
 public sealed class DatabaseEnvironmentOptions
 {
     public string ConnectionString { get; init; } = string.Empty;
+    public string DirectConnectionString { get; init; } = string.Empty;
+    public string PoolerConnectionString { get; init; } = string.Empty;
 }
 
 public sealed class FeatureFlagsOptions

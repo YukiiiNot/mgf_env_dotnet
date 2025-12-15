@@ -1,4 +1,4 @@
-{
+﻿{
   "generated_at_utc": "2025-12-14 19:07:40Z",
   "table_count": 75,
   "fk_count": 104,
@@ -176,7 +176,7 @@
     },
     {
       "table_name": "activity_ops",
-      "csv_path": "_core/activity_ops_schema_documentation.csv",
+      "csv_path": "_core/_lookup/activity_ops_schema_documentation.csv",
       "primary_key_fields": [
         "op_key"
       ],
@@ -225,7 +225,7 @@
     },
     {
       "table_name": "activity_priorities",
-      "csv_path": "_core/activity_priorities_schema_documentation.csv",
+      "csv_path": "_core/_lookup/activity_priorities_schema_documentation.csv",
       "primary_key_fields": [
         "priority_key"
       ],
@@ -274,7 +274,7 @@
     },
     {
       "table_name": "activity_statuses",
-      "csv_path": "_core/activity_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/activity_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -323,7 +323,7 @@
     },
     {
       "table_name": "activity_topics",
-      "csv_path": "_core/activity_topics_schema_documentation.csv",
+      "csv_path": "_core/_lookup/activity_topics_schema_documentation.csv",
       "primary_key_fields": [
         "topic_key"
       ],
@@ -372,7 +372,7 @@
     },
     {
       "table_name": "booking_attendees",
-      "csv_path": "_core/booking_attendees_schema_documentation.csv",
+      "csv_path": "_core/_join/booking_attendees_schema_documentation.csv",
       "primary_key_fields": [
         "booking_attendee_id"
       ],
@@ -450,7 +450,7 @@
     },
     {
       "table_name": "booking_phases",
-      "csv_path": "_core/booking_phases_schema_documentation.csv",
+      "csv_path": "_core/_lookup/booking_phases_schema_documentation.csv",
       "primary_key_fields": [
         "phase_key"
       ],
@@ -499,7 +499,7 @@
     },
     {
       "table_name": "booking_statuses",
-      "csv_path": "_core/booking_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/booking_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -853,7 +853,7 @@
     },
     {
       "table_name": "client_contacts",
-      "csv_path": "_core/client_contacts_schema_documentation.csv",
+      "csv_path": "_core/_join/client_contacts_schema_documentation.csv",
       "primary_key_fields": [],
       "columns": [
         {
@@ -996,7 +996,7 @@
     },
     {
       "table_name": "client_statuses",
-      "csv_path": "_core/client_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/client_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -1051,7 +1051,7 @@
     },
     {
       "table_name": "client_types",
-      "csv_path": "_core/client_types_schema_documentation.csv",
+      "csv_path": "_core/_lookup/client_types_schema_documentation.csv",
       "primary_key_fields": [
         "type_key"
       ],
@@ -1229,7 +1229,7 @@
     },
     {
       "table_name": "currencies",
-      "csv_path": "_core/currencies_schema_documentation.csv",
+      "csv_path": "_core/_lookup/currencies_schema_documentation.csv",
       "primary_key_fields": [
         "currency_code"
       ],
@@ -1288,7 +1288,7 @@
     },
     {
       "table_name": "data_profiles",
-      "csv_path": "_core/data_profiles_schema_documentation.csv",
+      "csv_path": "_core/_lookup/data_profiles_schema_documentation.csv",
       "primary_key_fields": [
         "profile_key"
       ],
@@ -1373,7 +1373,7 @@
     },
     {
       "table_name": "deliverable_statuses",
-      "csv_path": "_core/deliverable_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/deliverable_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -1698,7 +1698,7 @@
     },
     {
       "table_name": "delivery_methods",
-      "csv_path": "_core/delivery_methods_schema_documentation.csv",
+      "csv_path": "_core/_lookup/delivery_methods_schema_documentation.csv",
       "primary_key_fields": [
         "method_key"
       ],
@@ -1747,7 +1747,7 @@
     },
     {
       "table_name": "host_keys",
-      "csv_path": "_core/host_keys_schema_documentation.csv",
+      "csv_path": "_core/_lookup/host_keys_schema_documentation.csv",
       "primary_key_fields": [
         "host_key"
       ],
@@ -1806,7 +1806,7 @@
     },
     {
       "table_name": "integration_sync_statuses",
-      "csv_path": "_core/integration_sync_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/integration_sync_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -2029,7 +2029,7 @@
     },
     {
       "table_name": "invoice_statuses",
-      "csv_path": "_core/invoice_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/invoice_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -2264,7 +2264,7 @@
     },
     {
       "table_name": "job_priorities",
-      "csv_path": "_core/job_priorities_schema_documentation.csv",
+      "csv_path": "_core/_lookup/job_priorities_schema_documentation.csv",
       "primary_key_fields": [
         "priority_key"
       ],
@@ -2313,7 +2313,7 @@
     },
     {
       "table_name": "job_statuses",
-      "csv_path": "_core/job_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/job_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -2368,7 +2368,7 @@
     },
     {
       "table_name": "job_types",
-      "csv_path": "_core/job_types_schema_documentation.csv",
+      "csv_path": "_core/_lookup/job_types_schema_documentation.csv",
       "primary_key_fields": [
         "job_type_key"
       ],
@@ -2572,7 +2572,7 @@
     },
     {
       "table_name": "lead_outcomes",
-      "csv_path": "_core/lead_outcomes_schema_documentation.csv",
+      "csv_path": "_core/_lookup/lead_outcomes_schema_documentation.csv",
       "primary_key_fields": [
         "outcome_key"
       ],
@@ -2621,7 +2621,7 @@
     },
     {
       "table_name": "lead_priorities",
-      "csv_path": "_core/lead_priorities_schema_documentation.csv",
+      "csv_path": "_core/_lookup/lead_priorities_schema_documentation.csv",
       "primary_key_fields": [
         "priority_key"
       ],
@@ -2670,7 +2670,7 @@
     },
     {
       "table_name": "lead_sources",
-      "csv_path": "_core/lead_sources_schema_documentation.csv",
+      "csv_path": "_core/_lookup/lead_sources_schema_documentation.csv",
       "primary_key_fields": [
         "source_key"
       ],
@@ -2719,7 +2719,7 @@
     },
     {
       "table_name": "lead_stages",
-      "csv_path": "_core/lead_stages_schema_documentation.csv",
+      "csv_path": "_core/_lookup/lead_stages_schema_documentation.csv",
       "primary_key_fields": [
         "stage_key"
       ],
@@ -2774,7 +2774,7 @@
     },
     {
       "table_name": "lead_tags",
-      "csv_path": "_core/lead_tags_schema_documentation.csv",
+      "csv_path": "_core/_join/lead_tags_schema_documentation.csv",
       "primary_key_fields": [
         "lead_id",
         "tag_key"
@@ -3003,7 +3003,7 @@
     },
     {
       "table_name": "path_anchors",
-      "csv_path": "_core/path_anchors_schema_documentation.csv",
+      "csv_path": "_core/_lookup/path_anchors_schema_documentation.csv",
       "primary_key_fields": [
         "anchor_key"
       ],
@@ -3180,7 +3180,7 @@
     },
     {
       "table_name": "path_types",
-      "csv_path": "_core/path_types_schema_documentation.csv",
+      "csv_path": "_core/_lookup/path_types_schema_documentation.csv",
       "primary_key_fields": [
         "type_key"
       ],
@@ -3229,7 +3229,7 @@
     },
     {
       "table_name": "payment_methods",
-      "csv_path": "_core/payment_methods_schema_documentation.csv",
+      "csv_path": "_core/_lookup/payment_methods_schema_documentation.csv",
       "primary_key_fields": [
         "method_key"
       ],
@@ -3282,7 +3282,7 @@
     },
     {
       "table_name": "payment_processors",
-      "csv_path": "_core/payment_processors_schema_documentation.csv",
+      "csv_path": "_core/_lookup/payment_processors_schema_documentation.csv",
       "primary_key_fields": [
         "processor_key"
       ],
@@ -3331,7 +3331,7 @@
     },
     {
       "table_name": "payment_statuses",
-      "csv_path": "_core/payment_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/payment_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -3868,7 +3868,7 @@
     },
     {
       "table_name": "person_known_hosts",
-      "csv_path": "_core/person_known_hosts_schema_documentation.csv",
+      "csv_path": "_core/_join/person_known_hosts_schema_documentation.csv",
       "primary_key_fields": [
         "person_id",
         "host_key"
@@ -3912,7 +3912,7 @@
     },
     {
       "table_name": "person_permissions",
-      "csv_path": "_core/person_permissions_schema_documentation.csv",
+      "csv_path": "_core/_join/person_permissions_schema_documentation.csv",
       "primary_key_fields": [
         "person_id",
         "permission_key"
@@ -3956,7 +3956,7 @@
     },
     {
       "table_name": "person_roles",
-      "csv_path": "_core/person_roles_schema_documentation.csv",
+      "csv_path": "_core/_join/person_roles_schema_documentation.csv",
       "primary_key_fields": [
         "person_id",
         "role_key"
@@ -4000,7 +4000,7 @@
     },
     {
       "table_name": "person_statuses",
-      "csv_path": "_core/person_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/person_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -4094,7 +4094,7 @@
     },
     {
       "table_name": "project_members",
-      "csv_path": "_core/project_members_schema_documentation.csv",
+      "csv_path": "_core/_join/project_members_schema_documentation.csv",
       "primary_key_fields": [
         "project_member_id"
       ],
@@ -4172,7 +4172,7 @@
     },
     {
       "table_name": "project_phases",
-      "csv_path": "_core/project_phases_schema_documentation.csv",
+      "csv_path": "_core/_lookup/project_phases_schema_documentation.csv",
       "primary_key_fields": [
         "phase_key"
       ],
@@ -4221,7 +4221,7 @@
     },
     {
       "table_name": "project_priorities",
-      "csv_path": "_core/project_priorities_schema_documentation.csv",
+      "csv_path": "_core/_lookup/project_priorities_schema_documentation.csv",
       "primary_key_fields": [
         "priority_key"
       ],
@@ -4270,7 +4270,7 @@
     },
     {
       "table_name": "project_statuses",
-      "csv_path": "_core/project_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/project_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -4556,7 +4556,7 @@
     },
     {
       "table_name": "role_scope_roles",
-      "csv_path": "_core/role_scope_roles_schema_documentation.csv",
+      "csv_path": "_core/_join/role_scope_roles_schema_documentation.csv",
       "primary_key_fields": [
         "scope_key",
         "role_key"
@@ -4600,7 +4600,7 @@
     },
     {
       "table_name": "role_scopes",
-      "csv_path": "_core/role_scopes_schema_documentation.csv",
+      "csv_path": "_core/_lookup/role_scopes_schema_documentation.csv",
       "primary_key_fields": [
         "scope_key"
       ],
@@ -4649,7 +4649,7 @@
     },
     {
       "table_name": "roles",
-      "csv_path": "_core/roles_schema_documentation.csv",
+      "csv_path": "_core/_lookup/roles_schema_documentation.csv",
       "primary_key_fields": [
         "role_key"
       ],
@@ -4714,7 +4714,7 @@
     },
     {
       "table_name": "service_packages",
-      "csv_path": "_core/service_packages_schema_documentation.csv",
+      "csv_path": "_core/_lookup/service_packages_schema_documentation.csv",
       "primary_key_fields": [
         "package_key"
       ],
@@ -4854,7 +4854,7 @@
     },
     {
       "table_name": "slug_scopes",
-      "csv_path": "_core/slug_scopes_schema_documentation.csv",
+      "csv_path": "_core/_lookup/slug_scopes_schema_documentation.csv",
       "primary_key_fields": [
         "scope_key"
       ],
@@ -4903,7 +4903,7 @@
     },
     {
       "table_name": "square_customer_creation_sources",
-      "csv_path": "_core/square_customer_creation_sources_schema_documentation.csv",
+      "csv_path": "_core/_lookup/square_customer_creation_sources_schema_documentation.csv",
       "primary_key_fields": [
         "source_key"
       ],
@@ -4952,7 +4952,7 @@
     },
     {
       "table_name": "storage_providers",
-      "csv_path": "_core/storage_providers_schema_documentation.csv",
+      "csv_path": "_core/_lookup/storage_providers_schema_documentation.csv",
       "primary_key_fields": [
         "provider_key"
       ],
@@ -5007,7 +5007,7 @@
     },
     {
       "table_name": "tags",
-      "csv_path": "_core/tags_schema_documentation.csv",
+      "csv_path": "_core/_lookup/tags_schema_documentation.csv",
       "primary_key_fields": [
         "tag_key"
       ],
@@ -5054,7 +5054,7 @@
     },
     {
       "table_name": "work_item_priorities",
-      "csv_path": "_core/work_item_priorities_schema_documentation.csv",
+      "csv_path": "_core/_lookup/work_item_priorities_schema_documentation.csv",
       "primary_key_fields": [
         "priority_key"
       ],
@@ -5103,7 +5103,7 @@
     },
     {
       "table_name": "work_item_statuses",
-      "csv_path": "_core/work_item_statuses_schema_documentation.csv",
+      "csv_path": "_core/_lookup/work_item_statuses_schema_documentation.csv",
       "primary_key_fields": [
         "status_key"
       ],
@@ -5158,7 +5158,7 @@
     },
     {
       "table_name": "work_item_tags",
-      "csv_path": "_core/work_item_tags_schema_documentation.csv",
+      "csv_path": "_core/_join/work_item_tags_schema_documentation.csv",
       "primary_key_fields": [
         "work_item_id",
         "tag_key"
