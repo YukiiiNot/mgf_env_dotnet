@@ -1,5 +1,7 @@
 namespace MGF.Tools.SquareImport.Importers;
 
+using System.Globalization;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
 using MGF.Infrastructure.Data;
@@ -29,9 +31,29 @@ internal sealed class TransactionsImporter
         this.db = db;
     }
 
-    public async Task<ImportSummary> ImportAsync(string[] filePaths, bool dryRun, CancellationToken cancellationToken)
+    public async Task<ImportSummary> ImportAsync(
+        string[] filePaths,
+        bool dryRun,
+        string? unmatchedReportPath,
+        CancellationToken cancellationToken
+    )
     {
         ArgumentNullException.ThrowIfNull(filePaths);
+
+        using var unmatchedReportWriter = CreateUnmatchedReportWriter(unmatchedReportPath);
+        if (unmatchedReportWriter is not null)
+        {
+            WriteCsvRow(
+                unmatchedReportWriter,
+                "transaction_id",
+                "raw_customer_id",
+                "customer_name",
+                "amount",
+                "occurred_at",
+                "source_file",
+                "row_number"
+            );
+        }
 
         var transactions = CsvLoader.LoadTransactions(filePaths);
         Console.WriteLine($"square-import transactions: parsed rows={transactions.Count} (dry-run={dryRun}).");
@@ -96,17 +118,38 @@ internal sealed class TransactionsImporter
             if (!dryRun)
             {
                 await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
-                await ProcessBatchAsync(batch, stats, unmatchedCustomerIdCounts, cancellationToken, dryRun);
+                await ProcessBatchAsync(
+                    batch,
+                    stats,
+                    unmatchedCustomerIdCounts,
+                    unmatchedReportWriter,
+                    cancellationToken,
+                    dryRun
+                );
                 await db.SaveChangesAsync(cancellationToken);
                 await tx.CommitAsync(cancellationToken);
             }
             else
             {
-                await ProcessBatchAsync(batch, stats, unmatchedCustomerIdCounts, cancellationToken, dryRun);
+                await ProcessBatchAsync(
+                    batch,
+                    stats,
+                    unmatchedCustomerIdCounts,
+                    unmatchedReportWriter,
+                    cancellationToken,
+                    dryRun
+                );
             }
         }
 
         WriteDetailedSummary(stats, unmatchedCustomerIdCounts);
+
+        if (unmatchedReportWriter is not null && !string.IsNullOrWhiteSpace(unmatchedReportPath))
+        {
+            Console.WriteLine(
+                $"square-import transactions: unmatched report path={unmatchedReportPath} rows={stats.UnmatchedReportRowsWritten}"
+            );
+        }
 
         return new ImportSummary(
             Inserted: stats.TotalInserted,
@@ -120,6 +163,7 @@ internal sealed class TransactionsImporter
         IReadOnlyList<SquareTransactionRow> batch,
         TransactionsImportStats stats,
         Dictionary<string, int> unmatchedCustomerIdCounts,
+        TextWriter? unmatchedReportWriter,
         CancellationToken cancellationToken,
         bool dryRun
     )
@@ -251,6 +295,7 @@ internal sealed class TransactionsImporter
                 now,
                 stats,
                 unmatchedCustomerIdCounts,
+                unmatchedReportWriter,
                 cancellationToken,
                 dryRun
             );
@@ -271,6 +316,7 @@ internal sealed class TransactionsImporter
         DateTimeOffset now,
         TransactionsImportStats stats,
         Dictionary<string, int> unmatchedCustomerIdCounts,
+        TextWriter? unmatchedReportWriter,
         CancellationToken cancellationToken,
         bool dryRun
     )
@@ -311,6 +357,13 @@ internal sealed class TransactionsImporter
         if (!hasMatch)
         {
             stats.UnmatchedRows++;
+
+            if (unmatchedReportWriter is not null)
+            {
+                WriteUnmatchedReportRow(unmatchedReportWriter, row, transactionId, amount, issuedAt);
+                stats.UnmatchedReportRowsWritten++;
+            }
+
             if (!string.IsNullOrWhiteSpace(squareCustomerId))
             {
                 unmatchedCustomerIdCounts[squareCustomerId] =
@@ -1110,6 +1163,7 @@ internal sealed class TransactionsImporter
         public int DuplicateTransactionIdsSkipped { get; set; }
         public int MultiCustomerIdRows { get; set; }
         public int UnmatchedRows { get; set; }
+        public int UnmatchedReportRowsWritten { get; set; }
         public int Errors { get; set; }
 
         public Totals<int> TotalsByYear { get; } = new();
@@ -1118,5 +1172,79 @@ internal sealed class TransactionsImporter
         public int TotalInserted => ProjectsInserted + InvoicesInserted + InvoiceIntegrationsInserted + PaymentsInserted;
         public int TotalUpdated => InvoicesUpdated + InvoiceIntegrationsUpdated + PaymentsUpdated;
         public int TotalSkipped => InvoicesSkipped + InvoiceIntegrationsSkipped + PaymentsSkipped;
+    }
+
+    private static TextWriter? CreateUnmatchedReportWriter(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        return new StreamWriter(path, append: false, encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
+    private static void WriteUnmatchedReportRow(
+        TextWriter writer,
+        SquareTransactionRow row,
+        string transactionId,
+        decimal amount,
+        DateTimeOffset occurredAt
+    )
+    {
+        row.RawFields.TryGetValue("Customer ID", out var rawCustomerId);
+        row.RawFields.TryGetValue("Customer Name", out var rawCustomerName);
+
+        WriteCsvRow(
+            writer,
+            transactionId,
+            rawCustomerId,
+            rawCustomerName ?? row.CustomerName,
+            amount.ToString("0.00", CultureInfo.InvariantCulture),
+            occurredAt.ToString("o", CultureInfo.InvariantCulture),
+            Path.GetFileName(row.SourceFile),
+            row.RowNumber.ToString(CultureInfo.InvariantCulture)
+        );
+    }
+
+    private static void WriteCsvRow(TextWriter writer, params string?[] fields)
+    {
+        for (var i = 0; i < fields.Length; i++)
+        {
+            if (i > 0)
+            {
+                writer.Write(',');
+            }
+
+            writer.Write(CsvEscape(fields[i]));
+        }
+
+        writer.WriteLine();
+    }
+
+    private static string CsvEscape(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var needsQuotes = value.Contains(',', StringComparison.Ordinal)
+            || value.Contains('"', StringComparison.Ordinal)
+            || value.Contains('\n', StringComparison.Ordinal)
+            || value.Contains('\r', StringComparison.Ordinal);
+
+        if (!needsQuotes)
+        {
+            return value;
+        }
+
+        return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 }
