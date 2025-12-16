@@ -13,14 +13,13 @@ public static class LookupSeeder
     // Keep these small and stable; migrations remain the schema source of truth.
     private static readonly SeedStatement[] SeedStatements =
     [
-        UpsertKeyDisplaySort(
-            tableName: "data_profiles",
-            keyColumn: "profile_key",
+        UpsertDataProfiles(
             rows:
             [
-                ("real", "Real", 10),
-                ("dummy", "Dummy", 20),
-                ("fixture", "Fixture", 30),
+                ("real", "Real", 10, null),
+                ("dummy", "Dummy", 20, null),
+                ("fixture", "Fixture", 30, null),
+                ("legacy", "Legacy Import", 40, "Imported from Square legacy migration"),
             ]
         ),
         UpsertCurrency(
@@ -551,6 +550,31 @@ public static class LookupSeeder
         return new SeedStatement(tableName, sql);
     }
 
+    private static SeedStatement UpsertDataProfiles(
+        IReadOnlyList<(string ProfileKey, string DisplayName, int SortOrder, string? Description)> rows
+    )
+    {
+        const string tableName = "data_profiles";
+
+        var values = string.Join(
+            ",\n  ",
+            rows.Select(r => $"('{Esc(r.ProfileKey)}', '{Esc(r.DisplayName)}', {r.SortOrder}, {SqlNullableText(r.Description)})")
+        );
+
+        var sql =
+            $"""
+            INSERT INTO public.{tableName} (profile_key, display_name, sort_order, description)
+            VALUES
+              {values}
+            ON CONFLICT (profile_key) DO UPDATE
+            SET display_name = EXCLUDED.display_name,
+                sort_order = EXCLUDED.sort_order,
+                description = COALESCE(EXCLUDED.description, public.{tableName}.description);
+            """;
+
+        return new SeedStatement(tableName, sql);
+    }
+
     private static SeedStatement UpsertCurrency(IReadOnlyList<(string Code, string Name, string Symbol, int MinorUnits)> rows)
     {
         const string tableName = "currencies";
@@ -667,6 +691,11 @@ public static class LookupSeeder
     }
 
     private static string Esc(string value) => value.Replace("'", "''", StringComparison.Ordinal);
+
+    private static string SqlNullableText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "NULL" : $"'{Esc(value)}'";
+    }
 
     private static async Task<HashSet<string>> GetExistingPublicTablesAsync(AppDbContext db, CancellationToken cancellationToken)
     {

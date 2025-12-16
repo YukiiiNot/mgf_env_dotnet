@@ -332,9 +332,10 @@ internal sealed class TransactionsImporter
             stats.Errors++;
             return;
         }
-
+ 
         var transactionId = row.TransactionId.Trim();
-        var issuedAt = row.TransactionAt.Value;
+        var issuedAtLocal = row.TransactionAt.Value;
+        var issuedAt = issuedAtLocal.ToUniversalTime();
 
         var amountCents = row.TotalCollectedCents ?? row.GrossSalesCents;
         if (amountCents is null || amountCents.Value <= 0)
@@ -358,11 +359,11 @@ internal sealed class TransactionsImporter
         {
             stats.UnmatchedRows++;
 
-            if (unmatchedReportWriter is not null)
-            {
-                WriteUnmatchedReportRow(unmatchedReportWriter, row, transactionId, amount, issuedAt);
+             if (unmatchedReportWriter is not null)
+             {
+                WriteUnmatchedReportRow(unmatchedReportWriter, row, transactionId, amount, issuedAtLocal);
                 stats.UnmatchedReportRowsWritten++;
-            }
+             }
 
             if (!string.IsNullOrWhiteSpace(squareCustomerId))
             {
@@ -377,7 +378,7 @@ internal sealed class TransactionsImporter
             return;
         }
 
-        stats.TotalsByYear.Add(issuedAt.Year, amount);
+        stats.TotalsByYear.Add(issuedAtLocal.Year, amount);
         stats.TotalsByPaymentStatus.Add(paymentStatusKey, amount);
 
         if (paymentsByExternalId.TryGetValue(transactionId, out var existingPaymentRows))
@@ -480,7 +481,7 @@ internal sealed class TransactionsImporter
         }
 
         var invoiceIdNew = EntityIds.NewWithPrefix("inv");
-        var invoiceNumber = await AllocateInvoiceNumberAsync(invoiceNumberCounters, issuedAt, now, cancellationToken);
+        var invoiceNumber = await AllocateInvoiceNumberAsync(invoiceNumberCounters, issuedAtLocal, now, cancellationToken);
 
         await invoices.AddAsync(
             CreateInvoiceRow(
@@ -878,33 +879,34 @@ internal sealed class TransactionsImporter
     {
         var year2 = (short)(issuedAt.Year % 100);
 
-        var counter = await invoiceNumberCounters
-            .SingleOrDefaultAsync(
+        var counter = invoiceNumberCounters.Local.FirstOrDefault(c =>
+            string.Equals(GetString(c, "prefix"), CodePrefix, StringComparison.Ordinal) && GetInt(c, "year_2") == year2
+        );
+
+        if (counter is null)
+        {
+            counter = await invoiceNumberCounters.SingleOrDefaultAsync(
                 c => EF.Property<string>(c, "prefix") == CodePrefix && EF.Property<short>(c, "year_2") == year2,
                 cancellationToken
             );
+        }
 
-        int seq;
         if (counter is null)
         {
-            seq = 1;
-            await invoiceNumberCounters.AddAsync(
-                new Dictionary<string, object>
-                {
-                    ["prefix"] = CodePrefix,
-                    ["year_2"] = year2,
-                    ["next_seq"] = seq + 1,
-                    ["updated_at"] = now,
-                },
-                cancellationToken
-            );
+            counter = new Dictionary<string, object>
+            {
+                ["prefix"] = CodePrefix,
+                ["year_2"] = year2,
+                ["next_seq"] = 1,
+                ["updated_at"] = now,
+            };
+
+            await invoiceNumberCounters.AddAsync(counter, cancellationToken);
         }
-        else
-        {
-            seq = GetInt(counter, "next_seq");
-            counter["next_seq"] = seq + 1;
-            counter["updated_at"] = now;
-        }
+
+        var seq = GetInt(counter, "next_seq");
+        counter["next_seq"] = seq + 1;
+        counter["updated_at"] = now;
 
         return $"{CodePrefix}-INV-{year2:00}-{seq:000000}";
     }

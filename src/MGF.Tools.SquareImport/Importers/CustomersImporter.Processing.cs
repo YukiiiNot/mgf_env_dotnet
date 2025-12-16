@@ -1001,6 +1001,28 @@ internal sealed partial class CustomersImporter
             dryRun
         );
 
+        if (personId is null && string.Equals(identity.ProposedClientTypeKey, "organization", StringComparison.Ordinal))
+        {
+            if (identity.PrimaryNormalizedEmail is not null || identity.PrimaryNormalizedPhone is not null)
+            {
+                var billingProfiles = db.Set<Dictionary<string, object>>("client_billing_profiles");
+                await UpsertClientBillingProfileAsync(
+                    billingProfiles,
+                    clientId,
+                    billingEmail: identity.PrimaryNormalizedEmail,
+                    billingPhone: identity.PrimaryNormalizedPhone,
+                    addressLine1: identity.Row.StreetAddress1,
+                    addressLine2: identity.Row.StreetAddress2,
+                    addressCity: identity.Row.City,
+                    addressRegion: identity.Row.State,
+                    addressPostalCode: identity.Row.PostalCode,
+                    stats,
+                    cancellationToken,
+                    dryRun
+                );
+            }
+        }
+
         await UpsertPersonContactsAsync(personContacts, personId, identity.Row, stats, cancellationToken, dryRun);
         await UpsertClientContactsAsync(
             clientContacts,

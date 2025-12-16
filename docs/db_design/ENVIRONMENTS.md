@@ -97,13 +97,14 @@ dotnet run --project src/MGF.Tools.Migrator
 Integration tests **TRUNCATE** core tables in the target DB. Guardrails:
 
 - If `MGF_ENV == "Prod"`: destructive ops are **blocked always**.
-- If `MGF_ENV != "Prod"`: destructive ops require `MGF_ALLOW_DESTRUCTIVE == "true"`.
+- If `MGF_ENV != "Prod"`: destructive ops require `MGF_ALLOW_DESTRUCTIVE == "true"` and `MGF_DESTRUCTIVE_ACK == "I_UNDERSTAND"`.
 
 Run tests safely:
 
 ```powershell
 $env:MGF_ENV = "Dev"
 $env:MGF_ALLOW_DESTRUCTIVE = "true"
+$env:MGF_DESTRUCTIVE_ACK = "I_UNDERSTAND"
 dotnet test .\MGF.sln
 ```
 

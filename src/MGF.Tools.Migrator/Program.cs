@@ -19,10 +19,22 @@ public static class Program
 {
     private static ILoggerFactory? NpgsqlLoggerFactory { get; set; }
 
+    private enum MigratorMode
+    {
+        MigrateAndSeed,
+        SeedLookupsOnly,
+    }
+
+    private sealed record ParsedArgs(MigratorMode Mode, bool Smoke, bool ShowHelp, string[] HostArgs);
+
     public static async Task<int> Main(string[] args)
     {
-        var smoke = args.Any(a => string.Equals(a, "--smoke", StringComparison.OrdinalIgnoreCase));
-        var hostArgs = args.Where(a => !string.Equals(a, "--smoke", StringComparison.OrdinalIgnoreCase)).ToArray();
+        var parsed = ParseArgs(args);
+        if (parsed.ShowHelp)
+        {
+            PrintHelp();
+            return 0;
+        }
 
         Console.WriteLine("MGF.Tools.Migrator: starting migration runner...");
 
@@ -32,10 +44,20 @@ public static class Program
             var mgfDbMode = DatabaseConnection.GetDatabaseMode();
             Console.WriteLine($"MGF.Tools.Migrator: MGF_ENV={mgfEnv}");
             Console.WriteLine($"MGF.Tools.Migrator: MGF_DB_MODE={mgfDbMode}");
+            Console.WriteLine($"MGF.Tools.Migrator: MGF_ALLOW_DESTRUCTIVE={GetEnvOrUnset("MGF_ALLOW_DESTRUCTIVE")}");
+            Console.WriteLine($"MGF.Tools.Migrator: DOTNET_ENVIRONMENT={GetEnvOrUnset("DOTNET_ENVIRONMENT")}");
+            Console.WriteLine($"MGF.Tools.Migrator: ASPNETCORE_ENVIRONMENT={GetEnvOrUnset("ASPNETCORE_ENVIRONMENT")}");
+            Console.WriteLine($"MGF.Tools.Migrator: mode={parsed.Mode}");
             TryEnableNpgsqlLogging(mgfEnv);
             LogVersionInfo();
 
-            using var host = Host.CreateDefaultBuilder(hostArgs)
+            if (parsed.Mode == MigratorMode.SeedLookupsOnly && parsed.Smoke)
+            {
+                Console.Error.WriteLine("MGF.Tools.Migrator: --smoke cannot be used with --seed-lookups.");
+                return 2;
+            }
+
+            using var host = Host.CreateDefaultBuilder(parsed.HostArgs)
                 .ConfigureAppConfiguration((context, config) =>
                 {
                     config.Sources.Clear();
@@ -65,6 +87,8 @@ public static class Program
                 })
                 .Build();
 
+            Console.WriteLine($"MGF.Tools.Migrator: config environment={host.Services.GetRequiredService<IHostEnvironment>().EnvironmentName}");
+
             var configuration = host.Services.GetRequiredService<IConfiguration>();
             var connectionString = DatabaseConnection.ResolveConnectionString(configuration);
             LogConnectionInfo(connectionString);
@@ -76,31 +100,51 @@ public static class Program
                 initialDelay: TimeSpan.FromSeconds(1)
             );
 
-            await RunWithTransientRetryAsync(
-                operationName: "EF Core migrations + seed",
-                action: async cancellationToken =>
-                {
-                    await using var scope = host.Services.CreateAsyncScope();
-                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-                    Console.WriteLine("MGF.Tools.Migrator: applying EF Core migrations...");
-                    await db.Database.MigrateAsync(cancellationToken);
-                    Console.WriteLine("MGF.Tools.Migrator: migrations applied successfully.");
-
-                    Console.WriteLine("MGF.Tools.Migrator: seeding lookup tables...");
-                    await LookupSeeder.SeedAsync(db);
-                    Console.WriteLine("MGF.Tools.Migrator: seeding completed.");
-
-                    if (smoke)
+            if (parsed.Mode == MigratorMode.SeedLookupsOnly)
+            {
+                await RunWithTransientRetryAsync(
+                    operationName: "lookup seeding",
+                    action: async cancellationToken =>
                     {
-                        Console.WriteLine("MGF.Tools.Migrator: running smoke checks...");
-                        await RunSmokeAsync(db);
-                        Console.WriteLine("MGF.Tools.Migrator: smoke checks passed.");
-                    }
-                },
-                maxAttempts: 3,
-                initialDelay: TimeSpan.FromSeconds(2)
-            );
+                        await using var scope = host.Services.CreateAsyncScope();
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                        Console.WriteLine("MGF.Tools.Migrator: seeding lookup tables (seed-only, migrations skipped)...");
+                        await LookupSeeder.SeedAsync(db, cancellationToken);
+                        Console.WriteLine("MGF.Tools.Migrator: seeding completed.");
+                    },
+                    maxAttempts: 3,
+                    initialDelay: TimeSpan.FromSeconds(2)
+                );
+            }
+            else
+            {
+                await RunWithTransientRetryAsync(
+                    operationName: "EF Core migrations + seed",
+                    action: async cancellationToken =>
+                    {
+                        await using var scope = host.Services.CreateAsyncScope();
+                        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                        Console.WriteLine("MGF.Tools.Migrator: applying EF Core migrations...");
+                        await db.Database.MigrateAsync(cancellationToken);
+                        Console.WriteLine("MGF.Tools.Migrator: migrations applied successfully.");
+
+                        Console.WriteLine("MGF.Tools.Migrator: seeding lookup tables...");
+                        await LookupSeeder.SeedAsync(db, cancellationToken);
+                        Console.WriteLine("MGF.Tools.Migrator: seeding completed.");
+
+                        if (parsed.Smoke)
+                        {
+                            Console.WriteLine("MGF.Tools.Migrator: running smoke checks...");
+                            await RunSmokeAsync(db);
+                            Console.WriteLine("MGF.Tools.Migrator: smoke checks passed.");
+                        }
+                    },
+                    maxAttempts: 3,
+                    initialDelay: TimeSpan.FromSeconds(2)
+                );
+            }
 
             return 0;
         }
@@ -110,6 +154,67 @@ public static class Program
             Console.Error.WriteLine(ex.ToString());
             return 1;
         }
+    }
+
+    private static ParsedArgs ParseArgs(string[] args)
+    {
+        var mode = MigratorMode.MigrateAndSeed;
+        var smoke = false;
+        var showHelp = false;
+        var hostArgs = new List<string>(args.Length);
+
+        foreach (var arg in args)
+        {
+            if (string.Equals(arg, "--smoke", StringComparison.OrdinalIgnoreCase))
+            {
+                smoke = true;
+                continue;
+            }
+
+            if (
+                string.Equals(arg, "--seed-lookups", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(arg, "--seed-lookups-only", StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                mode = MigratorMode.SeedLookupsOnly;
+                continue;
+            }
+
+            if (string.Equals(arg, "--help", StringComparison.OrdinalIgnoreCase) || string.Equals(arg, "-h", StringComparison.OrdinalIgnoreCase))
+            {
+                showHelp = true;
+                continue;
+            }
+
+            hostArgs.Add(arg);
+        }
+
+        return new ParsedArgs(mode, smoke, showHelp, hostArgs.ToArray());
+    }
+
+    private static void PrintHelp()
+    {
+        Console.WriteLine(
+            """
+            MGF.Tools.Migrator
+
+            Usage:
+              dotnet run --project src/MGF.Tools.Migrator
+              dotnet run --project src/MGF.Tools.Migrator -- --seed-lookups
+              dotnet run --project src/MGF.Tools.Migrator -- --smoke
+
+            Options:
+              --seed-lookups       Seed lookup/reference tables only (does NOT apply EF migrations)
+              --smoke              Run a basic DB smoke check after migrations+seed
+              --help, -h           Show this help
+            """
+        );
+    }
+
+    private static string GetEnvOrUnset(string name)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+        return string.IsNullOrWhiteSpace(value) ? "(unset)" : value;
     }
 
     private static string FindRepoRoot()

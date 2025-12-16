@@ -1357,16 +1357,35 @@ internal sealed partial class CustomersImporter
         public int ClientIntegrationsUpdated { get; set; }
         public int ClientIntegrationsSkipped { get; set; }
 
+        public int BillingProfilesInserted { get; set; }
+        public int BillingProfilesUpdated { get; set; }
+        public int BillingProfilesSkipped { get; set; }
+
         public int DuplicateSquareCustomerIdsSkipped { get; set; }
         public int Errors { get; set; }
 
         public int TotalInserted =>
-            ClientsInserted + PeopleInserted + PersonContactsInserted + ClientContactsInserted + ClientIntegrationsInserted;
+            ClientsInserted
+            + PeopleInserted
+            + PersonContactsInserted
+            + ClientContactsInserted
+            + ClientIntegrationsInserted
+            + BillingProfilesInserted;
 
         public int TotalUpdated =>
-            ClientsUpdated + PeopleUpdated + PersonContactsUpdated + ClientContactsUpdated + ClientIntegrationsUpdated;
+            ClientsUpdated
+            + PeopleUpdated
+            + PersonContactsUpdated
+            + ClientContactsUpdated
+            + ClientIntegrationsUpdated
+            + BillingProfilesUpdated;
 
         public int TotalSkipped =>
-            ClientsSkipped + PeopleSkipped + PersonContactsSkipped + ClientContactsSkipped + ClientIntegrationsSkipped;
+            ClientsSkipped
+            + PeopleSkipped
+            + PersonContactsSkipped
+            + ClientContactsSkipped
+            + ClientIntegrationsSkipped
+            + BillingProfilesSkipped;
     }
 }

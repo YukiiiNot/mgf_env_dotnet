@@ -82,6 +82,7 @@ Reset Dev → run migrator → run integration tests:
 ```powershell
 $env:MGF_ENV = "Dev"
 $env:MGF_ALLOW_DESTRUCTIVE = "true"
+$env:MGF_DESTRUCTIVE_ACK = "I_UNDERSTAND"
 dotnet test .\MGF.sln
 ```
 

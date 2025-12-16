@@ -41,6 +41,9 @@ internal sealed partial class CustomersImporter
         Console.WriteLine(
             $"square-import customers: client_integrations_square inserted={stats.ClientIntegrationsInserted} updated={stats.ClientIntegrationsUpdated} skipped={stats.ClientIntegrationsSkipped}"
         );
+        Console.WriteLine(
+            $"square-import customers: client_billing_profiles inserted={stats.BillingProfilesInserted} updated={stats.BillingProfilesUpdated} skipped={stats.BillingProfilesSkipped}"
+        );
 
         if (reportsWritten)
         {
@@ -79,4 +82,3 @@ internal sealed partial class CustomersImporter
         }
     }
 }
-

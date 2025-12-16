@@ -118,10 +118,15 @@ public static class DatabaseConnection
         }
 
         var allow = Environment.GetEnvironmentVariable("MGF_ALLOW_DESTRUCTIVE");
-        if (!string.Equals(allow, "true", StringComparison.OrdinalIgnoreCase))
+        var ack = Environment.GetEnvironmentVariable("MGF_DESTRUCTIVE_ACK");
+
+        if (
+            !string.Equals(allow, "true", StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(ack, "I_UNDERSTAND", StringComparison.OrdinalIgnoreCase)
+        )
         {
             throw new InvalidOperationException(
-                $"Destructive operation requires MGF_ALLOW_DESTRUCTIVE=true (MGF_ENV={env}): {operation}."
+                $"Destructive operation requires MGF_ALLOW_DESTRUCTIVE=true and MGF_DESTRUCTIVE_ACK=I_UNDERSTAND (MGF_ENV={env}): {operation}."
             );
         }
     }

@@ -23,6 +23,10 @@ dotnet user-secrets set "Security:ApiKey" "<long random string>" --project src/M
 $env:MGF_ENV = "Dev"
 dotnet run --project src/MGF.Tools.Migrator
 
+# seed lookups only (skips migrations; use when schema is already up to date)
+$env:MGF_ENV = "Dev"
+dotnet run --project src/MGF.Tools.Migrator -- --seed-lookups
+
 # run API (expects X-MGF-API-KEY header on /api/*)
 dotnet run --project src/MGF.Api
 
@@ -39,14 +43,24 @@ dotnet run --project src/MGF.Worker
 ```powershell
 $env:MGF_ENV = "Dev"
 
-# customers
-dotnet run --project src/MGF.Tools.SquareImport -- customers --file .\docs\square_imports\customers-20251215-182743.csv --dry-run
+# customers (Square CSV mode)
+dotnet run --project src/MGF.Tools.SquareImport -- customers --mode square --file .\docs\square_imports\customers-20251215-182743.csv --dry-run
 
-# transactions (multiple files)
+# customers (applied mode: re-run from customers-applied.csv)
+dotnet run --project src/MGF.Tools.SquareImport -- customers --mode applied --file .\runtime\square-import\customers-applied.csv --dry-run
+
+# customers: DB sanity checks (no CSV)
+dotnet run --project src/MGF.Tools.SquareImport -- customers --verify
+
+# customers: DEV-only reset (deletes Square-imported customer data only)
+dotnet run --project src/MGF.Tools.SquareImport -- customers --reset
+
+# transactions (multiple files) + unmatched report
 dotnet run --project src/MGF.Tools.SquareImport -- transactions --files `
   .\docs\square_imports\transactions-2023-01-01-2024-01-01.csv `
   .\docs\square_imports\transactions-2024-01-01-2025-01-01.csv `
   .\docs\square_imports\transactions-2025-01-01-2026-01-01.csv `
+  --unmatched-report .\runtime\unmatched-transactions.csv `
   --dry-run
 
 # invoices
@@ -56,13 +70,35 @@ dotnet run --project src/MGF.Tools.SquareImport -- invoices --file .\docs\square
 dotnet run --project src/MGF.Tools.SquareImport -- report --out .\runtime\square-import-report.txt
 ```
 
+### Command reference
+
+```powershell
+# list all commands/options
+dotnet run --project src/MGF.Tools.SquareImport -- --help
+
+# customers
+dotnet run --project src/MGF.Tools.SquareImport -- customers --help
+
+# transactions
+dotnet run --project src/MGF.Tools.SquareImport -- transactions --help
+
+# invoices
+dotnet run --project src/MGF.Tools.SquareImport -- invoices --help
+
+# report
+dotnet run --project src/MGF.Tools.SquareImport -- report --help
+```
+
 ### Quick commands
 
 ```powershell
 # repo health
 dotnet build .\MGF.sln
 
-# tests (includes DB integration tests; requires a DB connection string + `MGF_ALLOW_DESTRUCTIVE=true`)
+# tests (includes DB integration tests; requires a DB connection string + destructive opt-in flags)
+$env:MGF_ENV = "Dev"
+$env:MGF_ALLOW_DESTRUCTIVE = "true"
+$env:MGF_DESTRUCTIVE_ACK = "I_UNDERSTAND"
 dotnet test .\MGF.sln
 
 # list migrations
@@ -76,6 +112,9 @@ dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project s
 
 # apply migrations + seed lookups (recommended)
 dotnet run --project src/MGF.Tools.Migrator
+
+# seed lookups only (skips migrations; use when schema is already up to date)
+dotnet run --project src/MGF.Tools.Migrator -- --seed-lookups
 ```
 
 ## Tooling / useful commands

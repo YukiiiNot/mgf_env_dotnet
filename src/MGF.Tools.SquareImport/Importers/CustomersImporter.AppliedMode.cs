@@ -116,6 +116,7 @@ internal sealed partial class CustomersImporter
     )
     {
         var clientIntegrationsSquare = db.Set<Dictionary<string, object>>("client_integrations_square");
+        var billingProfiles = db.Set<Dictionary<string, object>>("client_billing_profiles");
         var personContacts = db.Set<Dictionary<string, object>>("person_contacts");
         var clientContacts = db.Set<Dictionary<string, object>>("client_contacts");
 
@@ -142,24 +143,45 @@ internal sealed partial class CustomersImporter
 
         var integrationsBySquareCustomerId = squareCustomerIds.Length == 0
             ? new Dictionary<string, Dictionary<string, object>>(StringComparer.Ordinal)
-            : await clientIntegrationsSquare.AsNoTracking()
-                .Where(
-                    cis =>
-                        EF.Property<string?>(cis, "square_customer_id") != null
-                        && squareCustomerIds.Contains(EF.Property<string?>(cis, "square_customer_id")!)
-                )
-                .ToDictionaryAsync(
-                    cis => EF.Property<string>(cis, "square_customer_id")!,
-                    cis => cis,
-                    StringComparer.Ordinal,
-                    cancellationToken
-                );
+            : (
+                await clientIntegrationsSquare.AsNoTracking()
+                    .Where(
+                        cis =>
+                            EF.Property<string?>(cis, "square_customer_id") != null
+                            && squareCustomerIds.Contains(EF.Property<string?>(cis, "square_customer_id")!)
+                    )
+                    .Select(
+                        cis =>
+                            new
+                            {
+                                SquareCustomerId = EF.Property<string>(cis, "square_customer_id")!,
+                                Row = cis,
+                            }
+                    )
+                    .ToListAsync(cancellationToken)
+            )
+            .Where(x => !string.IsNullOrWhiteSpace(x.SquareCustomerId))
+            .GroupBy(x => x.SquareCustomerId, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.First().Row, StringComparer.Ordinal);
 
         var integrationsByClientId = matchedClientIds.Length == 0
             ? new Dictionary<string, Dictionary<string, object>>(StringComparer.Ordinal)
-            : await (dryRun ? clientIntegrationsSquare.AsNoTracking() : clientIntegrationsSquare)
-                .Where(cis => matchedClientIds.Contains(EF.Property<string>(cis, "client_id")))
-                .ToDictionaryAsync(cis => EF.Property<string>(cis, "client_id"), cis => cis, StringComparer.Ordinal, cancellationToken);
+            : (
+                await (dryRun ? clientIntegrationsSquare.AsNoTracking() : clientIntegrationsSquare)
+                    .Where(cis => matchedClientIds.Contains(EF.Property<string>(cis, "client_id")))
+                    .Select(
+                        cis =>
+                            new
+                            {
+                                ClientId = EF.Property<string>(cis, "client_id"),
+                                Row = cis,
+                            }
+                    )
+                    .ToListAsync(cancellationToken)
+            )
+            .Where(x => !string.IsNullOrWhiteSpace(x.ClientId))
+            .GroupBy(x => x.ClientId, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.First().Row, StringComparer.Ordinal);
 
         var clientsById = matchedClientIds.Length == 0
             ? new Dictionary<string, Client>(StringComparer.Ordinal)
@@ -235,6 +257,28 @@ internal sealed partial class CustomersImporter
                 cancellationToken,
                 dryRun
             );
+
+            if (
+                personId is null
+                && row.ProposedClientTypeKey.Equals("organization", StringComparison.OrdinalIgnoreCase)
+                && (!string.IsNullOrWhiteSpace(row.NormalizedEmail) || !string.IsNullOrWhiteSpace(row.NormalizedPhone))
+            )
+            {
+                await UpsertClientBillingProfileAsync(
+                    billingProfiles,
+                    clientId,
+                    billingEmail: row.NormalizedEmail,
+                    billingPhone: row.NormalizedPhone,
+                    addressLine1: null,
+                    addressLine2: null,
+                    addressCity: null,
+                    addressRegion: null,
+                    addressPostalCode: null,
+                    stats,
+                    cancellationToken,
+                    dryRun
+                );
+            }
 
             if (personId is not null)
             {

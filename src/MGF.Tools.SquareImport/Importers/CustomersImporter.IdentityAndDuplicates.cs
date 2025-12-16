@@ -87,11 +87,11 @@ internal sealed partial class CustomersImporter
         var stateKey = NormalizeStateKey(row.State);
         var postalKey = NormalizePostalKey(row.PostalCode);
 
-        var shouldCreatePerson =
-            !string.IsNullOrWhiteSpace(row.FirstName)
-            || !string.IsNullOrWhiteSpace(row.LastName)
-            || normalizedEmails.Count > 0
-            || normalizedPhones.Count > 0;
+        var shouldCreatePerson = !string.IsNullOrWhiteSpace(row.FirstName) || !string.IsNullOrWhiteSpace(row.LastName);
+        if (!string.Equals(clientTypeKey, "organization", StringComparison.Ordinal))
+        {
+            shouldCreatePerson = shouldCreatePerson || normalizedEmails.Count > 0 || normalizedPhones.Count > 0;
+        }
 
         return new CustomerIdentity(
             Row: row,

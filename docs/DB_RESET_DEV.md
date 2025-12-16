@@ -62,5 +62,6 @@ Integration tests may truncate data between test classes. They require an explic
 ```powershell
 $env:MGF_ENV = "Dev"
 $env:MGF_ALLOW_DESTRUCTIVE = "true"
+$env:MGF_DESTRUCTIVE_ACK = "I_UNDERSTAND"
 dotnet test .\MGF.sln
 ```

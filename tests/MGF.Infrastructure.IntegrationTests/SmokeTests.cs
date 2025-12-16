@@ -134,6 +134,7 @@ public sealed class SmokeTests(DatabaseFixture fixture) : IClassFixture<Database
         await using var db = TestDb.CreateContext();
 
         Assert.True(await ExistsAsync(db, "data_profiles", "profile_key", "real"));
+        Assert.True(await ExistsAsync(db, "data_profiles", "profile_key", "legacy"));
         Assert.True(await ExistsAsync(db, "client_types", "type_key", "organization"));
         Assert.True(await ExistsAsync(db, "client_statuses", "status_key", "active"));
         Assert.True(await ExistsAsync(db, "person_statuses", "status_key", "active"));
