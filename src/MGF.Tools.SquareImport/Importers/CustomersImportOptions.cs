@@ -8,11 +8,18 @@ internal enum CustomersMinConfidenceToAutoLink
     EmailOrPhone = 3,
 }
 
+internal enum CustomersImportMode
+{
+    Square = 0,
+    Applied = 1,
+}
+
 internal sealed record CustomersImportOptions(
     bool WriteReports,
     DirectoryInfo? ReportDir,
     bool Strict,
-    CustomersMinConfidenceToAutoLink MinConfidenceToAutoLink
+    CustomersMinConfidenceToAutoLink MinConfidenceToAutoLink,
+    CustomersImportMode Mode
 )
 {
     public static bool TryParseMinConfidence(
@@ -59,5 +66,33 @@ internal sealed record CustomersImportOptions(
         error = "Use one of: email_or_phone, email_only, phone_only, none.";
         return false;
     }
-}
 
+    public static bool TryParseMode(string? value, out CustomersImportMode parsed, out string? error)
+    {
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            parsed = CustomersImportMode.Square;
+            return true;
+        }
+
+        var normalized = value.Trim();
+
+        if (normalized.Equals("square", StringComparison.OrdinalIgnoreCase))
+        {
+            parsed = CustomersImportMode.Square;
+            return true;
+        }
+
+        if (normalized.Equals("applied", StringComparison.OrdinalIgnoreCase))
+        {
+            parsed = CustomersImportMode.Applied;
+            return true;
+        }
+
+        parsed = CustomersImportMode.Square;
+        error = "Use one of: square, applied.";
+        return false;
+    }
+}

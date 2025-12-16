@@ -31,6 +31,11 @@ internal sealed partial class CustomersImporter
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentNullException.ThrowIfNull(options);
 
+        if (options.Mode == CustomersImportMode.Applied)
+        {
+            return await ImportFromAppliedReportAsync(filePath, options, dryRun, cancellationToken);
+        }
+
         var customers = CsvLoader.LoadCustomers(filePath);
         Console.WriteLine($"square-import customers: parsed rows={customers.Count} (dry-run={dryRun}).");
 

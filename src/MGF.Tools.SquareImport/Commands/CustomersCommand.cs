@@ -11,7 +11,7 @@ internal static class CustomersCommand
     {
         var fileOption = new Option<FileInfo?>("--file")
         {
-            Description = "Path to the Square customers export CSV file.",
+            Description = "Path to the Square customers export CSV file (or customers-applied.csv when --mode applied).",
         };
 
         var resetOption = new Option<bool>("--reset")
@@ -40,6 +40,11 @@ internal static class CustomersCommand
             Description = "Auto-link confidence threshold (default email_or_phone). Supported: email_or_phone, email_only, phone_only, none.",
         };
 
+        var modeOption = new Option<string?>("--mode", getDefaultValue: () => "square")
+        {
+            Description = "Import mode (default square). Supported: square, applied.",
+        };
+
         var dryRunOption = new Option<bool>("--dry-run")
         {
             Description = "Parse and validate only; do not write to the database.",
@@ -57,6 +62,7 @@ internal static class CustomersCommand
         command.AddOption(reportDirOption);
         command.AddOption(strictOption);
         command.AddOption(minConfidenceOption);
+        command.AddOption(modeOption);
         command.AddOption(dryRunOption);
         command.AddOption(verifyOption);
 
@@ -69,6 +75,7 @@ internal static class CustomersCommand
                 var reportDir = context.ParseResult.GetValueForOption(reportDirOption);
                 var strict = context.ParseResult.GetValueForOption(strictOption);
                 var minConfidence = context.ParseResult.GetValueForOption(minConfidenceOption);
+                var mode = context.ParseResult.GetValueForOption(modeOption);
                 var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
                 var verify = context.ParseResult.GetValueForOption(verifyOption);
 
@@ -134,6 +141,14 @@ internal static class CustomersCommand
                     return;
                 }
 
+                if (!CustomersImportOptions.TryParseMode(mode, out var importMode, out var modeError))
+                {
+                    Console.Error.WriteLine($"square-import customers: invalid --mode: {modeError}");
+                    new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole("customers");
+                    context.ExitCode = 1;
+                    return;
+                }
+
                 context.ExitCode = await SquareImportCommandRunner.RunAsync(
                     commandName: "customers",
                     dryRun: dryRun,
@@ -144,7 +159,8 @@ internal static class CustomersCommand
                                 WriteReports: writeReports,
                                 ReportDir: reportDir,
                                 Strict: strict,
-                                MinConfidenceToAutoLink: minConfidenceToAutoLink
+                                MinConfidenceToAutoLink: minConfidenceToAutoLink,
+                                Mode: importMode
                             ),
                             dryRun: dryRun,
                             cancellationToken: cancellationToken
