@@ -298,6 +298,9 @@ public static class LookupSeeder
             [
                 ("dropbox.create_project_structure", "Dropbox: Create Project Structure"),
                 ("notion.sync_booking", "Notion: Sync Booking"),
+                ("square.reconcile.payments", "Square: Reconcile Payments"),
+                ("square.payment.upsert", "Square: Upsert Payment"),
+                ("square.webhook_event.process", "Square: Process Webhook Event"),
             ]
         ),
         UpsertKeyDisplaySort(

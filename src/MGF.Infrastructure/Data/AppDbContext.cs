@@ -2,7 +2,6 @@ namespace MGF.Infrastructure.Data;
 
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
-using MGF.Infrastructure.Data.SchemaDocs;
 
 public sealed class AppDbContext : DbContext
 {
@@ -14,11 +13,12 @@ public sealed class AppDbContext : DbContext
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Person> People => Set<Person>();
+    public DbSet<SquareWebhookEvent> SquareWebhookEvents => Set<SquareWebhookEvent>();
+    public DbSet<SquareSyncReviewQueueItem> SquareSyncReviewQueue => Set<SquareSyncReviewQueueItem>();
+    public DbSet<SquareReconcileCursor> SquareReconcileCursors => Set<SquareReconcileCursor>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        SchemaDocModelBuilder.Apply(modelBuilder);
-        base.OnModelCreating(modelBuilder);
+        AppDbContextModelBuilder.Apply(modelBuilder);
     }
 }
-

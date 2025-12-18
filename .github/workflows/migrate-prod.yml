@@ -1,0 +1,58 @@
+name: Migrate (Production)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    environment: prod
+    env:
+      MGF_ENV: Prod
+      MGF_DB_MODE: direct
+      Database__Prod__DirectConnectionString: ${{ secrets.PROD_DB_DIRECT_CONNECTION_STRING }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET (global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~\.nuget\packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/packages.lock.json') }}
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Restore
+        run: dotnet restore .\MGF.sln
+
+      - name: Build (Release)
+        run: dotnet build .\MGF.sln -c Release --no-restore
+
+      - name: Ensure runtime output dir
+        run: New-Item -ItemType Directory -Force -Path .\runtime | Out-Null
+
+      - name: Applied migrations (before)
+        run: dotnet run --project src/MGF.Tools.DbMigrationsInfo -c Release -- --connection "$env:Database__Prod__DirectConnectionString"
+
+      - name: Build migrations bundle
+        run: dotnet ef migrations bundle --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator --configuration Release --output .\runtime\efbundle-prod.exe
+
+      - name: Apply migrations (bundle)
+        run: .\runtime\efbundle-prod.exe --connection "$env:Database__Prod__DirectConnectionString" --verbose
+
+      - name: Applied migrations (after)
+        run: dotnet run --project src/MGF.Tools.DbMigrationsInfo -c Release -- --connection "$env:Database__Prod__DirectConnectionString"
+

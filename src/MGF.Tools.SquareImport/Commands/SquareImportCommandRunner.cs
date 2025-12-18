@@ -1,8 +1,6 @@
 namespace MGF.Tools.SquareImport.Commands;
 
-using System.Reflection;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.Infrastructure;
@@ -34,15 +32,8 @@ internal static class SquareImportCommandRunner
                 {
                     config.Sources.Clear();
 
-                    var repoRoot = FindRepoRoot();
                     var env = context.HostingEnvironment.EnvironmentName;
-                    var configDir = Path.Combine(repoRoot, "config");
-
-                    config.SetBasePath(configDir);
-                    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-                    config.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false);
-                    config.AddUserSecretsIfAvailable(typeof(AppDbContext).Assembly);
-                    config.AddEnvironmentVariables();
+                    config.AddMgfConfiguration(env, typeof(AppDbContext).Assembly);
                 })
                 .ConfigureServices((context, services) =>
                 {
@@ -71,29 +62,6 @@ internal static class SquareImportCommandRunner
             new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole(commandName);
             return 1;
         }
-    }
-
-    private static string FindRepoRoot()
-    {
-        return TryFindRepoRootFrom(Directory.GetCurrentDirectory())
-            ?? TryFindRepoRootFrom(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate repo root (MGF.sln). Run from within the repo.");
-    }
-
-    private static string? TryFindRepoRootFrom(string startPath)
-    {
-        var dir = new DirectoryInfo(startPath);
-        while (dir is not null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "MGF.sln")))
-            {
-                return dir.FullName;
-            }
-
-            dir = dir.Parent;
-        }
-
-        return null;
     }
 
     private static void LogConnectionInfo(string connectionString)
@@ -125,18 +93,5 @@ internal static class SquareImportCommandRunner
         {
             await conn.CloseAsync();
         }
-    }
-}
-
-internal static class ConfigurationBuilderUserSecretsExtensions
-{
-    public static IConfigurationBuilder AddUserSecretsIfAvailable(this IConfigurationBuilder builder, Assembly assembly)
-    {
-        if (assembly.GetCustomAttribute<UserSecretsIdAttribute>() is null)
-        {
-            return builder;
-        }
-
-        return builder.AddUserSecrets(assembly, optional: true);
     }
 }
