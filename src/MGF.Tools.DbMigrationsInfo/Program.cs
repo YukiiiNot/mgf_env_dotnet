@@ -26,18 +26,11 @@ public static class Program
             await using var connection = new NpgsqlConnection(connectionString);
             await connection.OpenAsync();
 
-            await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted);
-            await using var setReadOnly = connection.CreateCommand();
-            setReadOnly.Transaction = transaction;
-            setReadOnly.CommandText = "SET TRANSACTION READ ONLY;";
-            await setReadOnly.ExecuteNonQueryAsync();
-
             await using var command = connection.CreateCommand();
-            command.Transaction = transaction;
             command.CommandText =
                 """
                 select "MigrationId", "ProductVersion"
-                from "__EFMigrationsHistory"
+                from public."__EFMigrationsHistory"
                 order by "MigrationId";
                 """;
 
@@ -50,8 +43,6 @@ public static class Program
                 Console.WriteLine($"{migrationId}\t{productVersion}");
                 rows++;
             }
-
-            await transaction.CommitAsync();
 
             if (rows == 0)
             {
