@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - staging
+  push:
+    branches:
+      - main
+      - staging
+      - "feature/**"
+      - "fix/**"
+      - "chore/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET (global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~\.nuget\packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Guardrail (block destructive SQL keywords)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pattern = '\bTRUNCATE\b|\bDROP\s+SCHEMA\b|\bDROP\s+TABLE\b|\bTRUNCATE\b.*\bCASCADE\b'
+          $files =
+            Get-ChildItem -Path . -Recurse -File -Include *.cs,*.sql |
+            Where-Object {
+              $_.FullName -notlike "*\tests\*" -and
+              $_.FullName -notlike "*\tools\*" -and
+              $_.FullName -notlike "*\docs\*" -and
+              $_.FullName -notlike "*\.github\*" -and
+              $_.FullName -notlike "*\src\MGF.Infrastructure\Migrations\*" -and
+              $_.FullName -notlike "*\src\MGF.Infrastructure\Data\SchemaDocs\*"
+            }
+
+          $matches = $files | Select-String -Pattern $pattern
+          if ($null -ne $matches -and $matches.Count -gt 0) {
+            Write-Host "Blocked: found dangerous SQL keyword(s) in non-test code:"
+            $matches | ForEach-Object { Write-Host "$($_.Path):$($_.LineNumber): $($_.Line)" }
+            exit 1
+          }
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Restore
+        run: dotnet restore .\MGF.sln
+
+      - name: Build (Release)
+        run: dotnet build .\MGF.sln -c Release --no-restore
+
+      - name: Unit tests (Release)
+        run: |
+          dotnet test .\tests\MGF.Domain.Tests\MGF.Domain.Tests.csproj -c Release --no-build
+          dotnet test .\tests\MGF.Application.Tests\MGF.Application.Tests.csproj -c Release --no-build
+
+      - name: EF model drift check
+        env:
+          MGF_ENV: Dev
+          MGF_DB_MODE: direct
+          Database__Dev__DirectConnectionString: "Host=example.invalid;Port=5432;Database=postgres;Username=postgres;Password=notreal;Ssl Mode=Disable;Pooling=false;Multiplexing=false"
+        run: dotnet ef migrations has-pending-model-changes --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator --configuration Release

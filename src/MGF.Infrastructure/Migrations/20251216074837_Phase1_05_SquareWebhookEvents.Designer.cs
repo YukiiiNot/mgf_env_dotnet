@@ -4,6 +4,7 @@ using System.Text.Json;
 using MGF.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MGF.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251216074837_Phase1_05_SquareWebhookEvents")]
+    partial class Phase1_05_SquareWebhookEvents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -271,99 +274,6 @@ namespace MGF.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_projects_1", "project_code ~ '^MGF[0-9]{2}-[0-9]{4}$'");
 
                             t.HasCheckConstraint("CK_projects_2", "archived_at IS NULL OR status_key = 'archived'");
-                        });
-                });
-
-            modelBuilder.Entity("MGF.Infrastructure.Data.SquareReconcileCursor", b =>
-                {
-                    b.Property<string>("ReconcileKey")
-                        .HasColumnType("text")
-                        .HasColumnName("reconcile_key");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTimeOffset>("CursorAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cursor_at");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("ReconcileKey");
-
-                    b.ToTable("square_reconcile_cursors", "public");
-                });
-
-            modelBuilder.Entity("MGF.Infrastructure.Data.SquareSyncReviewQueueItem", b =>
-                {
-                    b.Property<Guid>("SquareSyncReviewId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("square_sync_review_id")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Error")
-                        .HasColumnType("text")
-                        .HasColumnName("error");
-
-                    b.Property<JsonElement>("Payload")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("payload");
-
-                    b.Property<string>("ProcessorKey")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("processor_key");
-
-                    b.Property<string>("ProcessorPaymentId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("processor_payment_id");
-
-                    b.Property<string>("ReviewType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("review_type");
-
-                    b.Property<string>("SquareCustomerId")
-                        .HasColumnType("text")
-                        .HasColumnName("square_customer_id");
-
-                    b.Property<string>("SquareEventId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("square_event_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("open")
-                        .HasColumnName("status");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("SquareSyncReviewId");
-
-                    b.HasIndex("ReviewType", "ProcessorKey", "ProcessorPaymentId")
-                        .IsUnique();
-
-                    b.ToTable("square_sync_review_queue", "public", t =>
-                        {
-                            t.HasCheckConstraint("CK_square_sync_review_queue_0", "status IN ('open','resolved','ignored')");
                         });
                 });
 
@@ -3063,9 +2973,6 @@ namespace MGF.Infrastructure.Migrations
                     b.HasIndex("refunded_at");
 
                     b.HasIndex("status_key");
-
-                    b.HasIndex("processor_key", "processor_payment_id")
-                        .IsUnique();
 
                     b.ToTable("payments", null, t =>
                         {

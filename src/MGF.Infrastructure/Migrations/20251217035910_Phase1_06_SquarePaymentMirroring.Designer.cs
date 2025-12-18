@@ -4,6 +4,7 @@ using System.Text.Json;
 using MGF.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MGF.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251217035910_Phase1_06_SquarePaymentMirroring")]
+    partial class Phase1_06_SquarePaymentMirroring
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -272,31 +275,6 @@ namespace MGF.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_projects_2", "archived_at IS NULL OR status_key = 'archived'");
                         });
-                });
-
-            modelBuilder.Entity("MGF.Infrastructure.Data.SquareReconcileCursor", b =>
-                {
-                    b.Property<string>("ReconcileKey")
-                        .HasColumnType("text")
-                        .HasColumnName("reconcile_key");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTimeOffset>("CursorAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cursor_at");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("ReconcileKey");
-
-                    b.ToTable("square_reconcile_cursors", "public");
                 });
 
             modelBuilder.Entity("MGF.Infrastructure.Data.SquareSyncReviewQueueItem", b =>

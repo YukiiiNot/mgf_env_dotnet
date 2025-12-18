@@ -1,7 +1,6 @@
-using System.Reflection;
-using Microsoft.Extensions.Configuration.UserSecrets;
 using MGF.Api.Middleware;
 using MGF.Api.Services;
+using MGF.Api.Square;
 using MGF.Infrastructure;
 using MGF.Infrastructure.Configuration;
 using MGF.Infrastructure.Data;
@@ -14,19 +13,7 @@ Console.WriteLine($"MGF.Api: MGF_ENV={mgfEnv}");
 Console.WriteLine($"MGF.Api: MGF_DB_MODE={mgfDbMode}");
 
 builder.Configuration.Sources.Clear();
-
-var repoRoot = FindRepoRoot();
-var configDir = Path.Combine(repoRoot, "config");
-
-builder.Configuration.SetBasePath(configDir);
-builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile(
-    $"appsettings.{builder.Environment.EnvironmentName}.json",
-    optional: true,
-    reloadOnChange: false
-);
-builder.Configuration.AddUserSecretsIfAvailable(typeof(AppDbContext).Assembly);
-builder.Configuration.AddEnvironmentVariables();
+builder.Configuration.AddMgfConfiguration(builder.Environment.EnvironmentName, typeof(AppDbContext).Assembly);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
@@ -35,6 +22,7 @@ builder.Services.AddScoped<ClientsService>();
 builder.Services.AddScoped<PeopleService>();
 builder.Services.AddScoped<JobsService>();
 builder.Services.AddScoped<ProjectsService>();
+builder.Services.AddSingleton<ISquareWebhookVerifier, SquareWebhookVerifier>();
 
 var app = builder.Build();
 
@@ -44,39 +32,3 @@ app.UseMiddleware<ApiKeyMiddleware>();
 app.MapControllers();
 
 app.Run();
-
-static string FindRepoRoot()
-{
-    return TryFindRepoRootFrom(Directory.GetCurrentDirectory())
-        ?? TryFindRepoRootFrom(AppContext.BaseDirectory)
-        ?? throw new InvalidOperationException("Could not locate repo root (MGF.sln). Run from within the repo.");
-}
-
-static string? TryFindRepoRootFrom(string startPath)
-{
-    var dir = new DirectoryInfo(startPath);
-    while (dir is not null)
-    {
-        if (File.Exists(Path.Combine(dir.FullName, "MGF.sln")))
-        {
-            return dir.FullName;
-        }
-
-        dir = dir.Parent;
-    }
-
-    return null;
-}
-
-static class ConfigurationBuilderUserSecretsExtensions
-{
-    public static IConfigurationBuilder AddUserSecretsIfAvailable(this IConfigurationBuilder builder, Assembly assembly)
-    {
-        if (assembly.GetCustomAttribute<UserSecretsIdAttribute>() is null)
-        {
-            return builder;
-        }
-
-        return builder.AddUserSecrets(assembly, optional: true);
-    }
-}

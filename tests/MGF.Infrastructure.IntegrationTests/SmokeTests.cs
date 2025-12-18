@@ -143,6 +143,9 @@ public sealed class SmokeTests(DatabaseFixture fixture) : IClassFixture<Database
         Assert.True(await ExistsAsync(db, "project_priorities", "priority_key", "normal"));
         Assert.True(await ExistsAsync(db, "roles", "role_key", "producer"));
         Assert.True(await ExistsAsync(db, "role_scopes", "scope_key", "project"));
+        Assert.True(await ExistsAsync(db, "job_types", "job_type_key", "square.reconcile.payments"));
+        Assert.True(await ExistsAsync(db, "job_types", "job_type_key", "square.payment.upsert"));
+        Assert.True(await ExistsAsync(db, "job_types", "job_type_key", "square.webhook_event.process"));
         Assert.True(
             await ExistsCompositeAsync(
                 db,
