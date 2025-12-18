@@ -53,13 +53,15 @@ jobs:
         run: dotnet ef migrations bundle --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator --configuration Release --output .\runtime\efbundle-staging.exe
 
       - name: Applied migrations (before)
-        run: dotnet run --project src/MGF.Tools.DbMigrationsInfo -c Release -- --connection "$env:Database__Staging__DirectConnectionString"
+        shell: pwsh
+        run: dotnet run --project src/MGF.Tools.DbMigrationsInfo -c Release -- --connection $env:Database__Staging__DirectConnectionString
 
       - name: Apply migrations (bundle)
         run: .\runtime\efbundle-staging.exe --connection "$env:Database__Staging__DirectConnectionString" --verbose
 
       - name: Applied migrations (after)
-        run: dotnet run --project src/MGF.Tools.DbMigrationsInfo -c Release -- --connection "$env:Database__Staging__DirectConnectionString"
+        shell: pwsh
+        run: dotnet run --project src/MGF.Tools.DbMigrationsInfo -c Release -- --connection $env:Database__Staging__DirectConnectionString
 
       - name: Migrations (after)
         run: dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator --configuration Release --no-build
