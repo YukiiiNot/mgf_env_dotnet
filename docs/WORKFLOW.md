@@ -54,6 +54,66 @@ dotnet run --project src/MGF.Api
 dotnet run --project src/MGF.Worker
 ```
 
+### 5) Project provisioning v1 (draft → provision)
+
+Project creation is **draft-first** and provisioning is **explicit**:
+
+- `POST /api/projects` creates a `projects` row with `status_key='draft'` and returns `{ projectId, projectCode }`.
+- `POST /api/projects/{projectId}/provision` sets `status_key='provisioning'` and enqueues `dropbox.create_project_structure` in `public.jobs`.
+
+```powershell
+$headers = @{ "X-MGF-API-KEY" = "<api key>" }
+
+# Create draft project (no Dropbox job enqueued yet)
+$create = Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://localhost:5000/api/projects" `
+  -Headers $headers `
+  -ContentType "application/json" `
+  -Body (@{
+    clientId = "cli_..."
+    projectName = "Example Project"
+    editorPersonId = "per_..."
+  } | ConvertTo-Json)
+
+# Provision (enqueues dropbox.create_project_structure)
+$provision = Invoke-RestMethod `
+  -Method Post `
+  -Uri ("http://localhost:5000/api/projects/{0}/provision" -f $create.projectId) `
+  -Headers $headers `
+  -ContentType "application/json" `
+  -Body (@{ templateKey = "default" } | ConvertTo-Json)
+```
+
+## Editorial file naming + templates
+
+We follow Adobe Premiere Productions norms. The system **does not** version or merge `.prproj` files.
+
+- `.prproj` filenames are **stable**:
+  - MASTER: `{PROJECT_CODE}_{PROJECT_NAME}_MASTER.prproj`
+  - Editor working file: `{PROJECT_CODE}_{PROJECT_NAME}_{EDITOR_INITIALS}.prproj`
+- Sequence naming (inside Premiere) can carry versions.
+- Exports/renders **do** use versioning (e.g., `..._EXPORT_v###.mp4`).
+
+Templates and schemas:
+- Folder templates live in `docs/templates/`
+  - `nas_production_template.json` (authoritative editing workspace)
+  - `dropbox_project_template.json` (intake/delivery/reference/meta only)
+- JSON Schemas live in `docs/schemas/`
+  - `mgf.folderTemplate.schema.json`
+  - `mgf.namingRules.schema.json`
+
+NAS template `04_Edit` structure (legacy conventions):
+- `Production/` (Premiere Production workspace)
+- `MASTER/`
+- `WORKING/{EDITOR_INITIALS}/`
+- `Externals/{AE,AI,AUD,PP,PS}/{MASTER|{EDITOR_INITIALS}}/`
+- `Autosaves/{MASTER|{EDITOR_INITIALS}}/`
+
+Dropbox template includes `.mgf/` under `00_Admin/` with:
+- `project_metadata.json`
+- `folder_manifest.json`
+
 ## Creating migrations (local)
 
 Use EF CLI with:

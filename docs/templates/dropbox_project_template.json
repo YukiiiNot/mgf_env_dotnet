@@ -1,0 +1,65 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "dropbox_project_template",
+  "displayName": "Dropbox Project Template",
+  "description": "Intake, delivery, references, and metadata only (not an editing workspace).",
+  "namingRules": {
+    "projectFiles": {
+      "master": "{PROJECT_CODE}_{PROJECT_NAME}_MASTER.prproj",
+      "editor": "{PROJECT_CODE}_{PROJECT_NAME}_{EDITOR_INITIALS}.prproj",
+      "notes": "Stable filenames only; Dropbox is not the editing workspace."
+    },
+    "exports": {
+      "versioned": "{PROJECT_CODE}_{PROJECT_NAME}_EXPORT_v###.mp4",
+      "notes": "Use versioning for exports/renders only."
+    }
+  },
+  "root": {
+    "name": "{PROJECT_CODE}_{PROJECT_NAME}",
+    "children": [
+      {
+        "name": "00_Admin",
+        "children": [
+          {
+            "name": ".mgf",
+            "children": [
+              { "kind": "file", "name": "project_metadata.json" },
+              { "kind": "file", "name": "folder_manifest.json" }
+            ]
+          },
+          { "name": "ProjectInfo" },
+          { "name": "ClientNotes" }
+        ]
+      },
+      {
+        "name": "01_Intake",
+        "children": [
+          { "name": "FromClient" },
+          { "name": "Uploads" }
+        ]
+      },
+      {
+        "name": "02_References",
+        "children": [
+          { "name": "Branding" },
+          { "name": "Scripts" },
+          { "name": "Inspiration" }
+        ]
+      },
+      {
+        "name": "03_Delivery",
+        "children": [
+          { "name": "ClientReview" },
+          { "name": "Finals" }
+        ]
+      },
+      {
+        "name": "99_Archive",
+        "children": [
+          { "name": "Legacy" },
+          { "name": "Exports" }
+        ]
+      }
+    ]
+  }
+}

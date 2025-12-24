@@ -1,0 +1,155 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "nas_production_template",
+  "displayName": "NAS Production Template",
+  "description": "Authoritative editing workspace for Adobe Premiere Productions.",
+  "namingRules": {
+    "projectFiles": {
+      "master": "{PROJECT_CODE}_{PROJECT_NAME}_MASTER.prproj",
+      "editor": "{PROJECT_CODE}_{PROJECT_NAME}_{EDITOR_INITIALS}.prproj",
+      "notes": "Stable filenames only; no _v### for .prproj."
+    },
+    "exports": {
+      "versioned": "{PROJECT_CODE}_{PROJECT_NAME}_EXPORT_v###.mp4",
+      "notes": "Use versioning for exports/renders only."
+    }
+  },
+  "root": {
+    "name": "{PROJECT_CODE}_{PROJECT_NAME}",
+    "children": [
+      {
+        "name": "00_Admin",
+        "children": [
+          { "kind": "file", "name": "00_README-START-HERE.md" },
+          { "name": "01_Briefs_Contracts" },
+          { "name": "02_Schedules_CallSheets" },
+          { "name": "03_References_ClientDecks" }
+        ]
+      },
+      {
+        "name": "01_PreProduction",
+        "children": [
+          { "name": "01_Scripts" },
+          { "name": "02_Storyboards" },
+          { "name": "03_Locations" },
+          { "name": "04_Talent Contracts" },
+          { "name": "05_Budget" }
+        ]
+      },
+      {
+        "name": "02_Ingest",
+        "children": [
+          { "name": "01_CameraCards_RAW" },
+          { "name": "02_Audio_RAW" },
+          { "name": "03_Transcodes_ProRes" },
+          { "name": "04_Staging_ToProjectAssets" }
+        ]
+      },
+      {
+        "name": "03_ProjectAssets",
+        "children": [
+          { "name": "99_Drop Zipped Files Here to Unzip" },
+          { "name": "Fonts" },
+          { "name": "Graphics" },
+          { "name": "LUTs" },
+          { "name": "Music" },
+          { "name": "Proxies" },
+          { "name": "SFX" },
+          { "name": "Stills" },
+          { "name": "Video" },
+          { "kind": "file", "name": "99_Open_GlobalAssets_Local.bat", "optional": true },
+          { "kind": "file", "name": "99_Open_GlobalAssets_Online.url", "optional": true }
+        ]
+      },
+      {
+        "name": "04_Edit",
+        "children": [
+          { "name": "Production", "notes": "Premiere Productions workspace lives here." },
+          { "name": "MASTER" },
+          {
+            "name": "WORKING",
+            "children": [
+              { "name": "{EDITOR_INITIALS}", "notes": "Editor working file location." }
+            ]
+          },
+          {
+            "name": "Externals",
+            "children": [
+              {
+                "name": "AE",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              },
+              {
+                "name": "AI",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              },
+              {
+                "name": "AUD",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              },
+              {
+                "name": "PP",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              },
+              {
+                "name": "PS",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Autosaves",
+            "children": [
+              { "name": "MASTER" },
+              { "name": "{EDITOR_INITIALS}" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "05_Renders",
+        "children": [
+          { "name": "From_AE" },
+          { "name": "From_Premiere" },
+          { "name": "Timeline_Prerenders" }
+        ]
+      },
+      {
+        "name": "06_Reviews",
+        "children": [
+          { "name": "From_Editors" }
+        ]
+      },
+      {
+        "name": "07_Deliverables",
+        "children": [
+          { "name": "Client_Proofs" },
+          { "name": "Final_Masters" },
+          { "name": "Social_Cutdowns" }
+        ]
+      },
+      {
+        "name": "99_Archive",
+        "children": [
+          { "name": "ProjectSnapshots" },
+          { "name": "Legacy" }
+        ]
+      }
+    ]
+  }
+}

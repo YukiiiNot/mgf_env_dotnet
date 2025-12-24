@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mgf.local/schemas/mgf.namingRules.schema.json",
+  "title": "MGF Naming Rules",
+  "description": "Naming rules for project files and exports.",
+  "type": "object",
+  "required": ["projectFiles", "exports"],
+  "properties": {
+    "projectFiles": {
+      "type": "object",
+      "description": "Stable .prproj names only; no versioning in filenames.",
+      "required": ["master", "editor"],
+      "properties": {
+        "master": {
+          "$ref": "#/$defs/prprojPattern"
+        },
+        "editor": {
+          "$ref": "#/$defs/prprojPattern"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "exports": {
+      "type": "object",
+      "description": "Exports/renders may use versioned filenames.",
+      "required": ["versioned"],
+      "properties": {
+        "versioned": {
+          "$ref": "#/$defs/filenamePattern"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "filenamePattern": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?:[A-Za-z0-9 ._()\-#]|\\{(PROJECT_CODE|PROJECT_NAME|CLIENT_NAME|EDITOR_INITIALS)\\})+$"
+    },
+    "prprojPattern": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/filenamePattern"
+        },
+        {
+          "pattern": "\\.prproj$"
+        }
+      ]
+    }
+  }
+}
