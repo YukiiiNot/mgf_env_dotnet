@@ -1,0 +1,16 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "domain_lucidlink_root",
+  "displayName": "Domain LucidLink Root",
+  "description": "Top-level LucidLink taxonomy for active editorial work (no caches).",
+  "root": {
+    "name": "LUCIDLINK_ROOT",
+    "children": [
+      { "name": "00_Admin", "optional": true },
+      { "name": "01_ProductionsActive" },
+      { "name": "02_SharedMedia", "optional": true },
+      { "name": "03_Renders_Internal", "optional": true },
+      { "name": "99_Temp", "optional": true }
+    ]
+  }
+}

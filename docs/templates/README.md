@@ -2,8 +2,8 @@
 
 ## Purpose
 
-- Legacy templates reflect the earlier NAS + Dropbox workflow.
-- Container templates reflect the current storage roles (Dropbox business/exchange, LucidLink active edit, NAS archive).
+- Domain Root templates define top-level storage taxonomy contracts (verify for drift).
+- Project Container templates define per-project scaffolding.
 
 ## Rules
 
@@ -16,11 +16,12 @@
 
 ## Files
 
-Legacy templates:
-- `nas_production_template.json`
-- `dropbox_project_template.json`
+Domain Root templates:
+- `domain_dropbox_root.json`
+- `domain_lucidlink_root.json`
+- `domain_nas_root.json`
 
-Container templates:
+Project Container templates:
 - `dropbox_project_container.json`
 - `lucidlink_production_container.json`
 - `nas_archive_container.json`

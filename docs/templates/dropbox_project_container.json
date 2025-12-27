@@ -8,9 +8,11 @@
     "children": [
       {
         "name": "00_Admin",
+        "kind": "folder",
         "children": [
           {
             "name": ".mgf",
+            "kind": "folder",
             "children": [
               { "kind": "file", "name": "project_metadata.json" },
               { "kind": "file", "name": "folder_manifest.json" }
@@ -23,6 +25,7 @@
       },
       {
         "name": "01_Intake",
+        "kind": "folder",
         "children": [
           { "name": "FromClient" },
           { "name": "Uploads" },
@@ -31,6 +34,7 @@
       },
       {
         "name": "02_Exchange",
+        "kind": "folder",
         "children": [
           { "name": "Asset_Handoff" },
           { "name": "Proxy_Packages" }
@@ -38,6 +42,7 @@
       },
       {
         "name": "03_Reviews_Client",
+        "kind": "folder",
         "children": [
           { "name": "Exports_For_Client" },
           { "name": "Client_Notes" }
@@ -45,6 +50,7 @@
       },
       {
         "name": "04_Deliverables",
+        "kind": "folder",
         "children": [
           { "name": "Client_Proofs" },
           { "name": "Final_Masters" },

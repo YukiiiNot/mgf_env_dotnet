@@ -11,19 +11,23 @@
       },
       {
         "name": "01_Edit",
+        "kind": "folder",
         "children": [
           { "name": "MASTER" },
           {
             "name": "WORKING",
+            "kind": "folder",
             "children": [
               { "name": "{EDITOR_INITIALS}" }
             ]
           },
           {
             "name": "EXTERNALS",
+            "kind": "folder",
             "children": [
               {
                 "name": "AE",
+                "kind": "folder",
                 "children": [
                   { "name": "MASTER" },
                   { "name": "{EDITOR_INITIALS}" }
@@ -31,6 +35,7 @@
               },
               {
                 "name": "PS",
+                "kind": "folder",
                 "children": [
                   { "name": "MASTER" },
                   { "name": "{EDITOR_INITIALS}" }
@@ -38,6 +43,7 @@
               },
               {
                 "name": "AI",
+                "kind": "folder",
                 "children": [
                   { "name": "MASTER" },
                   { "name": "{EDITOR_INITIALS}" }
@@ -45,6 +51,7 @@
               },
               {
                 "name": "AUD",
+                "kind": "folder",
                 "children": [
                   { "name": "MASTER" },
                   { "name": "{EDITOR_INITIALS}" }
@@ -56,6 +63,7 @@
       },
       {
         "name": "02_Media",
+        "kind": "folder",
         "children": [
           { "name": "PROXIES" },
           { "name": "AUDIO" },
@@ -64,6 +72,7 @@
       },
       {
         "name": "03_Renders_Internal",
+        "kind": "folder",
         "children": [
           { "name": "From_Premiere" },
           { "name": "From_AE" }
