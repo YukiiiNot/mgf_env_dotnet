@@ -5,8 +5,9 @@ Read-only NAS audit tool for legacy cleanup planning. Scans a UNC root and produ
 ## Run
 
 ```powershell
-$env:MGF_ENV = "Dev"
-dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --out "C:\mgf_audit_out\OFFLOAD_2_2025-01-05"
+# Writes are gated: use --apply to write reports.
+# Output defaults under .\runtime\legacy_audit\outputs\<root>_<timestamp>
+dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --apply
 ```
 
 ## Profiles
@@ -17,23 +18,23 @@ dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k p
 ## Examples (real NAS roots)
 
 ```powershell
-# OFFLOAD 2
-dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --out "C:\mgf_audit_out\OFFLOAD_2_2025-01-05"
+# OFFLOAD 2 (default output under ./runtime)
+dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --apply
 
 # OFDLOAD 3 (spelling as-is)
-dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFDLOAD 3" --out "C:\mgf_audit_out\OFDLOAD_3_2025-01-05"
+dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFDLOAD 3" --apply
 
 # OFFLOAD 4 (empty)
-dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 4" --out "C:\mgf_audit_out\OFFLOAD_4_2025-01-05"
+dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 4" --apply
 
 # OFFLOAD 5 (empty)
-dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 5" --out "C:\mgf_audit_out\OFFLOAD_5_2025-01-05"
+dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 5" --apply
 
 # ZANA Sector 2
-dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zana 10tb - 01\Sector 2" --out "C:\mgf_audit_out\ZANA10_Sector2_2025-01-05"
+dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zana 10tb - 01\Sector 2" --apply
 
 # ZANA Sector 01
-dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zana 20tb - 00\SECTOR 01" --out "C:\mgf_audit_out\ZANA20_Sector01_2025-01-05"
+dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zana 20tb - 00\SECTOR 01" --apply
 ```
 
 ## Classifications
@@ -52,7 +53,8 @@ The tool does not attempt to label personal vs business. It only surfaces struct
 
 ## Outputs
 
-All outputs are written to the `--out` folder. CSVs include `root_share`, `relative_path`, and human-readable size columns:
+Outputs are written to `--out` when provided. If omitted, output defaults under `.\runtime\legacy_audit\outputs\...`.
+CSV exports include `root_share`, `relative_path`, and human-readable size columns:
 
 - `scan_report.json` (full machine-readable report)
 - `scan_summary.txt` (human summary)
