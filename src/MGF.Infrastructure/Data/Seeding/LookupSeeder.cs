@@ -297,6 +297,7 @@ public static class LookupSeeder
             rows:
             [
                 ("dropbox.create_project_structure", "Dropbox: Create Project Structure"),
+                ("project.bootstrap", "Project: Bootstrap"),
                 ("notion.sync_booking", "Notion: Sync Booking"),
                 ("square.reconcile.payments", "Square: Reconcile Payments"),
                 ("square.payment.upsert", "Square: Upsert Payment"),

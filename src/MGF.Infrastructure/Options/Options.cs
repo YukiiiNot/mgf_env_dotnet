@@ -3,6 +3,7 @@
 public sealed class StorageRootsOptions
 {
     public string DropboxRoot { get; init; } = string.Empty;
+    public string LucidLinkRoot { get; init; } = string.Empty;
     public string NasRoot { get; init; } = string.Empty;
     public string RuntimeRoot { get; init; } = string.Empty;
 }

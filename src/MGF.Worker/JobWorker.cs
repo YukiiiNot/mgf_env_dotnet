@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
 using MGF.Infrastructure.Data;
 using MGF.Worker.Square;
+using MGF.Worker.ProjectBootstrap;
 
 public sealed class JobWorker : BackgroundService
 {
@@ -179,6 +180,16 @@ public sealed class JobWorker : BackgroundService
                 return;
             }
 
+            if (string.Equals(job.JobTypeKey, "project.bootstrap", StringComparison.Ordinal))
+            {
+                var succeeded = await HandleProjectBootstrapAsync(db, job, cancellationToken);
+                if (succeeded)
+                {
+                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                }
+                return;
+            }
+
             throw new InvalidOperationException($"Unknown job_type_key: {job.JobTypeKey}");
         }
         catch (Exception ex)
@@ -206,6 +217,68 @@ public sealed class JobWorker : BackgroundService
         );
 
         return Task.CompletedTask;
+    }
+
+    private async Task<bool> HandleProjectBootstrapAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
+    {
+        ProjectBootstrapPayload payload;
+        try
+        {
+            payload = ProjectBootstrapper.ParsePayload(job.PayloadJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "MGF.Worker: project.bootstrap payload invalid (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+
+        logger.LogInformation(
+            "MGF.Worker: project.bootstrap start (job_id={JobId}, project_id={ProjectId})",
+            job.JobId,
+            payload.ProjectId
+        );
+
+        try
+        {
+            var bootstrapper = new ProjectBootstrapper(configuration);
+            var result = await bootstrapper.RunAsync(db, payload, job.JobId, cancellationToken);
+
+            logger.LogInformation(
+                "MGF.Worker: project.bootstrap completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
+                result.JobId,
+                result.ProjectId,
+                result.Domains.Count,
+                result.HasErrors
+            );
+
+            if (result.HasErrors)
+            {
+                await MarkFailedAsync(
+                    db,
+                    job,
+                    new InvalidOperationException("project.bootstrap completed with provisioning errors."),
+                    cancellationToken
+                );
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "MGF.Worker: project.bootstrap failed (job_id={JobId}, project_id={ProjectId})",
+                job.JobId,
+                payload.ProjectId
+            );
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
     }
 
     private async Task<bool> HandleSquareWebhookEventProcessAsync(

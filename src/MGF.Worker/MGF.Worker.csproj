@@ -14,5 +14,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MGF.Infrastructure\MGF.Infrastructure.csproj" />
+    <ProjectReference Include="..\MGF.Tools.Provisioner\MGF.Tools.Provisioner.csproj" />
   </ItemGroup>
 </Project>

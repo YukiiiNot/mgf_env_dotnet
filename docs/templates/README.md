@@ -5,6 +5,8 @@
 - Domain Root templates define top-level storage taxonomy contracts (verify for drift).
 - Project Container templates define per-project scaffolding.
 
+Templates are versioned infrastructure. Schema validation + tests are mandatory. See `docs/infra/contracts.md`.
+
 ## Rules
 
 - Top-level folders must use numeric prefixes only (e.g., `00_Admin`, `01_PreProduction`).
