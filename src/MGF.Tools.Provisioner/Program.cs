@@ -6,15 +6,16 @@ using MGF.Tools.Provisioner;
 
 var root = new RootCommand("MGF Folder Template Provisioner");
 
-root.AddCommand(CreateCommand("plan", ProvisioningMode.Plan, includeForce: false));
-root.AddCommand(CreateCommand("apply", ProvisioningMode.Apply, includeForce: false));
-root.AddCommand(CreateCommand("verify", ProvisioningMode.Verify, includeForce: false));
-root.AddCommand(CreateCommand("repair", ProvisioningMode.Repair, includeForce: true));
+root.AddCommand(CreateProvisionCommand("plan", ProvisioningMode.Plan, includeForce: false));
+root.AddCommand(CreateProvisionCommand("apply", ProvisioningMode.Apply, includeForce: false));
+root.AddCommand(CreateProvisionCommand("verify", ProvisioningMode.Verify, includeForce: false));
+root.AddCommand(CreateProvisionCommand("repair", ProvisioningMode.Repair, includeForce: true));
+root.AddCommand(CreateValidateCommand());
 
 var parser = new CommandLineBuilder(root).UseDefaults().Build();
 return await parser.InvokeAsync(args);
 
-static Command CreateCommand(string name, ProvisioningMode mode, bool includeForce)
+static Command CreateProvisionCommand(string name, ProvisioningMode mode, bool includeForce)
 {
     var command = new Command(name, $"{name} a folder template (mode={mode}).");
 
@@ -24,15 +25,15 @@ static Command CreateCommand(string name, ProvisioningMode mode, bool includeFor
         IsRequired = true
     };
 
-    var baseOption = new Option<string>("--base")
+    var baseOption = new Option<string?>("--base")
     {
-        Description = "Base directory where the project root folder will be created.",
-        IsRequired = true
+        Description = "Base directory where the project root folder will be created. Defaults to .\\runtime\\provisioner_runs.",
+        IsRequired = false
     };
 
     var schemaOption = new Option<string?>("--schema")
     {
-        Description = "Optional path to the folder template JSON schema. Defaults to the template's $schema.",
+        Description = "Optional path to the folder template JSON schema. Defaults to .\\docs\\schemas\\mgf.folderTemplate.schema.json.",
         IsRequired = false
     };
 
@@ -90,7 +91,7 @@ static Command CreateCommand(string name, ProvisioningMode mode, bool includeFor
     command.SetHandler(async context =>
     {
         var template = context.ParseResult.GetValueForOption(templateOption) ?? string.Empty;
-        var basePath = context.ParseResult.GetValueForOption(baseOption) ?? string.Empty;
+        var basePath = context.ParseResult.GetValueForOption(baseOption);
         var schema = context.ParseResult.GetValueForOption(schemaOption);
         var seeds = context.ParseResult.GetValueForOption(seedsOption);
         var projectCode = context.ParseResult.GetValueForOption(projectCodeOption) ?? string.Empty;
@@ -106,10 +107,41 @@ static Command CreateCommand(string name, ProvisioningMode mode, bool includeFor
     return command;
 }
 
+static Command CreateValidateCommand()
+{
+    var command = new Command("validate", "validate a folder template against the schema.");
+
+    var templateOption = new Option<string>("--template")
+    {
+        Description = "Path to the folder template JSON file.",
+        IsRequired = true
+    };
+
+    var schemaOption = new Option<string?>("--schema")
+    {
+        Description = "Optional path to the folder template JSON schema. Defaults to .\\docs\\schemas\\mgf.folderTemplate.schema.json.",
+        IsRequired = false
+    };
+
+    command.AddOption(templateOption);
+    command.AddOption(schemaOption);
+
+    command.SetHandler(async context =>
+    {
+        var template = context.ParseResult.GetValueForOption(templateOption) ?? string.Empty;
+        var schema = context.ParseResult.GetValueForOption(schemaOption);
+
+        var exitCode = await ValidateAsync(template, schema);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
 static async Task<int> RunAsync(
     ProvisioningMode mode,
     string templatePath,
-    string basePath,
+    string? basePath,
     string? schemaPath,
     string? seedsPath,
     string projectCode,
@@ -120,12 +152,15 @@ static async Task<int> RunAsync(
 {
     try
     {
+        var resolvedSchemaPath = ResolveSchemaPath(schemaPath);
+        var resolvedBasePath = ResolveBasePath(basePath);
+
         var tokens = ProvisioningTokens.Create(projectCode, projectName, clientName, editors);
         var request = new ProvisioningRequest(
             Mode: mode,
             TemplatePath: templatePath,
-            BasePath: basePath,
-            SchemaPath: schemaPath,
+            BasePath: resolvedBasePath,
+            SchemaPath: resolvedSchemaPath,
             SeedsPath: seedsPath,
             Tokens: tokens,
             ForceOverwriteSeededFiles: force
@@ -142,4 +177,88 @@ static async Task<int> RunAsync(
         Console.Error.WriteLine($"Provisioner failed: {ex.Message}");
         return 1;
     }
+}
+
+static async Task<int> ValidateAsync(string templatePath, string? schemaPath)
+{
+    try
+    {
+        var resolvedSchemaPath = ResolveSchemaPath(schemaPath);
+        var loader = new FolderTemplateLoader();
+        var loaded = await loader.LoadAsync(templatePath, resolvedSchemaPath, CancellationToken.None);
+
+        Console.WriteLine($"provisioner: validate ok template={loaded.Template.TemplateKey}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Provisioner validation failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static string ResolveSchemaPath(string? schemaPath)
+{
+    if (!string.IsNullOrWhiteSpace(schemaPath))
+    {
+        if (Uri.TryCreate(schemaPath, UriKind.Absolute, out var uri) && (uri.Scheme is "http" or "https"))
+        {
+            throw new InvalidOperationException("Remote schema URLs are not supported. Provide a local schema path.");
+        }
+
+        return Path.GetFullPath(schemaPath);
+    }
+
+    var repoRoot = FindRepoRoot();
+    var defaultSchema = Path.Combine(repoRoot, "docs", "schemas", "mgf.folderTemplate.schema.json");
+    if (!File.Exists(defaultSchema))
+    {
+        throw new InvalidOperationException($"Default schema not found at {defaultSchema}. Provide --schema explicitly.");
+    }
+
+    return defaultSchema;
+}
+
+static string ResolveBasePath(string? basePath)
+{
+    if (!string.IsNullOrWhiteSpace(basePath))
+    {
+        return Path.GetFullPath(basePath);
+    }
+
+    var repoRoot = FindRepoRoot();
+    var defaultBase = Path.Combine(repoRoot, "runtime", "provisioner_runs");
+    var fullDefault = Path.GetFullPath(defaultBase);
+
+    if (!fullDefault.StartsWith(repoRoot, StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException("Default base path must be within the repository.");
+    }
+
+    return fullDefault;
+}
+
+static string FindRepoRoot()
+{
+    var startPaths = new[]
+    {
+        Directory.GetCurrentDirectory(),
+        AppContext.BaseDirectory
+    };
+
+    foreach (var start in startPaths)
+    {
+        var current = new DirectoryInfo(start);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "MGF.sln")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+    }
+
+    throw new InvalidOperationException($"Could not locate repo root (MGF.sln) from {Directory.GetCurrentDirectory()}.");
 }

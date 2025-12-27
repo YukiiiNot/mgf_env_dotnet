@@ -5,6 +5,9 @@
   "type": "object",
   "required": ["templateKey", "root"],
   "properties": {
+    "$schema": {
+      "type": "string"
+    },
     "templateKey": {
       "type": "string",
       "pattern": "^[a-z0-9_-]+$"
@@ -27,7 +30,7 @@
     "namePattern": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?:[A-Za-z0-9 ._()\-]|\\{(PROJECT_CODE|PROJECT_NAME|CLIENT_NAME|EDITOR_INITIALS)\\})+$"
+      "pattern": "^(?:[A-Za-z0-9 ._()-]|\\{(PROJECT_CODE|PROJECT_NAME|CLIENT_NAME|EDITOR_INITIALS)\\})+$"
     },
     "node": {
       "type": "object",

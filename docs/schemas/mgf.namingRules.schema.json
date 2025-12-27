@@ -43,7 +43,7 @@
     "filenamePattern": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^(?:[A-Za-z0-9 ._()\-#]|\\{(PROJECT_CODE|PROJECT_NAME|CLIENT_NAME|EDITOR_INITIALS)\\})+$"
+      "pattern": "^(?:[A-Za-z0-9 ._()#-]|\\{(PROJECT_CODE|PROJECT_NAME|CLIENT_NAME|EDITOR_INITIALS)\\})+$"
     },
     "prprojPattern": {
       "allOf": [
