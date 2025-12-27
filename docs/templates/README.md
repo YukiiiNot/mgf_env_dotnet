@@ -2,8 +2,8 @@
 
 ## Purpose
 
-- NAS template is the authoritative editing workspace for Adobe Premiere Productions.
-- Dropbox template is for intake, delivery, references, and metadata only (not editing).
+- Legacy templates reflect the earlier NAS + Dropbox workflow.
+- Container templates reflect the current storage roles (Dropbox business/exchange, LucidLink active edit, NAS archive).
 
 ## Rules
 
@@ -16,6 +16,13 @@
 
 ## Files
 
+Legacy templates:
 - `nas_production_template.json`
 - `dropbox_project_template.json`
-- Schemas live in `../schemas/`
+
+Container templates:
+- `dropbox_project_container.json`
+- `lucidlink_production_container.json`
+- `nas_archive_container.json`
+
+Schemas live in `../schemas/`

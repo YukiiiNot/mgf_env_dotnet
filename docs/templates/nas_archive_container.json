@@ -1,0 +1,36 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "nas_archive_container",
+  "displayName": "NAS Archive Container",
+  "description": "Cold archive for originals and final deliverables only.",
+  "root": {
+    "name": "{PROJECT_CODE}_{CLIENT_NAME}_{PROJECT_NAME}",
+    "children": [
+      {
+        "name": "00_ProjectInfo",
+        "children": [
+          { "kind": "file", "name": "source_manifest.json" },
+          { "kind": "file", "name": "notes.txt" }
+        ]
+      },
+      {
+        "name": "01_Originals",
+        "children": [
+          { "name": "CameraCards" },
+          { "name": "Audio" },
+          { "name": "Photos_Graphics_Source" }
+        ]
+      },
+      {
+        "name": "02_Deliverables",
+        "children": [
+          { "name": "Final_Masters" }
+        ]
+      },
+      {
+        "name": "99_Legacy",
+        "optional": true
+      }
+    ]
+  }
+}

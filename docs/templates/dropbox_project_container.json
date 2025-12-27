@@ -1,0 +1,59 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "dropbox_project_container",
+  "displayName": "Dropbox Project Container",
+  "description": "Business + exchange container for intake, client reviews, deliverables, and metadata.",
+  "root": {
+    "name": "{PROJECT_CODE}_{CLIENT_NAME}_{PROJECT_NAME}",
+    "children": [
+      {
+        "name": "00_Admin",
+        "children": [
+          {
+            "name": ".mgf",
+            "children": [
+              { "kind": "file", "name": "project_metadata.json" },
+              { "kind": "file", "name": "folder_manifest.json" }
+            ]
+          },
+          { "name": "01_Briefs_Contracts" },
+          { "name": "02_Schedules_CallSheets" },
+          { "name": "03_References_ClientDecks" }
+        ]
+      },
+      {
+        "name": "01_Intake",
+        "children": [
+          { "name": "FromClient" },
+          { "name": "Uploads" },
+          { "name": "Notes_For_Intake" }
+        ]
+      },
+      {
+        "name": "02_Exchange",
+        "children": [
+          { "name": "Asset_Handoff" },
+          { "name": "Proxy_Packages" }
+        ]
+      },
+      {
+        "name": "03_Reviews_Client",
+        "children": [
+          { "name": "Exports_For_Client" },
+          { "name": "Client_Notes" }
+        ]
+      },
+      {
+        "name": "04_Deliverables",
+        "children": [
+          { "name": "Client_Proofs" },
+          { "name": "Final_Masters" },
+          { "name": "Social_Cutdowns" }
+        ]
+      },
+      {
+        "name": "99_Archive"
+      }
+    ]
+  }
+}

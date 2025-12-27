@@ -1,0 +1,74 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "lucidlink_production_container",
+  "displayName": "LucidLink Production Container",
+  "description": "Active editorial workspace (no caches).",
+  "root": {
+    "name": "{PROJECT_CODE}_{CLIENT_NAME}_{PROJECT_NAME}",
+    "children": [
+      {
+        "name": "00_{PROJECT_CODE}_{PROJECT_NAME}_PRODUCTION"
+      },
+      {
+        "name": "01_Edit",
+        "children": [
+          { "name": "MASTER" },
+          {
+            "name": "WORKING",
+            "children": [
+              { "name": "{EDITOR_INITIALS}" }
+            ]
+          },
+          {
+            "name": "EXTERNALS",
+            "children": [
+              {
+                "name": "AE",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              },
+              {
+                "name": "PS",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              },
+              {
+                "name": "AI",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              },
+              {
+                "name": "AUD",
+                "children": [
+                  { "name": "MASTER" },
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "02_Media",
+        "children": [
+          { "name": "PROXIES" },
+          { "name": "AUDIO" },
+          { "name": "GRAPHICS" }
+        ]
+      },
+      {
+        "name": "03_Renders_Internal",
+        "children": [
+          { "name": "From_Premiere" },
+          { "name": "From_AE" }
+        ]
+      }
+    ]
+  }
+}
