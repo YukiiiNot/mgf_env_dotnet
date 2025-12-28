@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using MGF.Domain.Entities;
 using MGF.Infrastructure.Configuration;
 using MGF.Infrastructure.Data;
+using MGF.Tools.ProjectBootstrap;
 using Npgsql;
 
 var root = new RootCommand("MGF Project Bootstrap Job Tool");
@@ -18,6 +19,7 @@ root.AddCommand(CreateArchiveCommand());
 root.AddCommand(CreateRootAuditCommand());
 root.AddCommand(CreateRootRepairCommand());
 root.AddCommand(CreateRootShowCommand());
+root.AddCommand(CreateDevTestCleanCommand());
 root.AddCommand(CreateShowCommand());
 root.AddCommand(CreateListCommand());
 root.AddCommand(CreateTestProjectCommand());
@@ -414,6 +416,65 @@ static Command CreateRootShowCommand()
         var provider = context.ParseResult.GetValueForOption(providerOption) ?? string.Empty;
         var rootKey = context.ParseResult.GetValueForOption(rootKeyOption) ?? "root";
         var exitCode = await ShowRootIntegrityAsync(provider, rootKey);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateDevTestCleanCommand()
+{
+    var command = new Command("devtest-clean", "clean DevTest roots using the root contract (report-only unless --dryRun false).");
+
+    var providerOption = new Option<string>("--provider")
+    {
+        Description = "Storage provider key (dropbox|lucidlink|nas).",
+        IsRequired = true
+    };
+
+    var dryRunOption = new Option<bool?>("--dryRun")
+    {
+        Description = "Report only (default: true). Use --dryRun false to apply.",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+    dryRunOption.SetDefaultValue(true);
+
+    var maxItemsOption = new Option<int?>("--maxItems")
+    {
+        Description = "Max items allowed to quarantine (default: 250).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+    maxItemsOption.SetDefaultValue(250);
+
+    var maxBytesOption = new Option<long?>("--maxBytes")
+    {
+        Description = "Max bytes allowed to quarantine (default: 2GB).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+    maxBytesOption.SetDefaultValue(2L * 1024 * 1024 * 1024);
+
+    var forceUnknownOption = new Option<bool?>("--forceUnknownSize")
+    {
+        Description = "Allow moving unknown-size entries (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+    forceUnknownOption.SetDefaultValue(false);
+
+    command.AddOption(providerOption);
+    command.AddOption(dryRunOption);
+    command.AddOption(maxItemsOption);
+    command.AddOption(maxBytesOption);
+    command.AddOption(forceUnknownOption);
+
+    command.SetHandler(async context =>
+    {
+        var provider = context.ParseResult.GetValueForOption(providerOption) ?? string.Empty;
+        var dryRun = context.ParseResult.GetValueForOption(dryRunOption) ?? true;
+        var maxItems = context.ParseResult.GetValueForOption(maxItemsOption) ?? 250;
+        var maxBytes = context.ParseResult.GetValueForOption(maxBytesOption) ?? (2L * 1024 * 1024 * 1024);
+        var forceUnknown = context.ParseResult.GetValueForOption(forceUnknownOption) ?? false;
+
+        var exitCode = await RunDevTestCleanAsync(provider, dryRun, maxItems, maxBytes, forceUnknown);
         context.ExitCode = exitCode;
     });
 
@@ -1149,6 +1210,222 @@ static async Task<int> ShowRootIntegrityAsync(string provider, string rootKey)
         Console.Error.WriteLine($"root-integrity: show failed: {ex.Message}");
         return 1;
     }
+}
+
+static async Task<int> RunDevTestCleanAsync(
+    string providerKey,
+    bool dryRun,
+    int maxItems,
+    long maxBytes,
+    bool forceUnknownSize)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var rootPath = ResolveRootPath(providerKey, config);
+        if (string.IsNullOrWhiteSpace(rootPath))
+        {
+            Console.Error.WriteLine($"devtest-clean: root path not configured for provider={providerKey}");
+            return 1;
+        }
+
+        if (!IsDevTestRoot(rootPath))
+        {
+            Console.Error.WriteLine($"devtest-clean: refusing to operate outside DevTest root: {rootPath}");
+            return 1;
+        }
+
+        rootPath = Path.GetFullPath(rootPath);
+        if (!Directory.Exists(rootPath))
+        {
+            Console.Error.WriteLine($"devtest-clean: root path does not exist: {rootPath}");
+            return 1;
+        }
+
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        var contract = await LoadRootContractAsync(conn, providerKey, rootKey: "root");
+        if (contract is null)
+        {
+            Console.Error.WriteLine($"devtest-clean: no storage_root_contracts row for provider={providerKey} root_key=root");
+            return 1;
+        }
+
+        var effectiveContract = ApplyDevTestOverrides(providerKey, contract!);
+
+        var options = new DevTestRootOptions(
+            DryRun: dryRun,
+            MaxItems: maxItems,
+            MaxBytes: maxBytes,
+            ForceUnknownSize: forceUnknownSize,
+            AllowMeasure: true,
+            TimestampUtc: DateTimeOffset.UtcNow
+        );
+
+        var plan = DevTestRootCleaner.Plan(rootPath, effectiveContract, options);
+
+        Console.WriteLine($"devtest-clean: provider={providerKey} root={rootPath}");
+        Console.WriteLine($"devtest-clean: dryRun={dryRun} maxItems={maxItems} maxBytes={maxBytes} forceUnknownSize={forceUnknownSize}");
+        Console.WriteLine($"devtest-clean: missing_required={plan.MissingRequired.Count} missing_optional={plan.MissingOptional.Count} unknown={plan.UnknownEntries.Count} root_files={plan.RootFiles.Count} legacy_manifests={plan.LegacyManifestFiles.Count} guardrail_blocks={plan.GuardrailBlocks.Count}");
+
+        if (plan.MissingRequired.Count > 0)
+        {
+            Console.WriteLine("devtest-clean: missing_required:");
+            foreach (var missing in plan.MissingRequired)
+            {
+                Console.WriteLine($"  - {missing}");
+            }
+        }
+
+        if (plan.UnknownMovePlans.Count > 0)
+        {
+            Console.WriteLine("devtest-clean: quarantine_candidates:");
+            foreach (var move in plan.UnknownMovePlans)
+            {
+                Console.WriteLine($"  - {move.Name} ({move.Kind})");
+            }
+        }
+
+        if (plan.LegacyManifestFiles.Count > 0)
+        {
+            Console.WriteLine("devtest-clean: legacy_manifest_files:");
+            foreach (var legacy in plan.LegacyManifestFiles)
+            {
+                Console.WriteLine($"  - {legacy.SourcePath}");
+            }
+        }
+
+        if (dryRun)
+        {
+            return 0;
+        }
+
+        var applyResult = DevTestRootCleaner.Apply(plan, effectiveContract, options);
+
+        Console.WriteLine($"devtest-clean: actions={applyResult.Actions.Count} errors={applyResult.Errors.Count}");
+        foreach (var action in applyResult.Actions)
+        {
+            Console.WriteLine($"  - {action}");
+        }
+
+        foreach (var error in applyResult.Errors)
+        {
+            Console.WriteLine($"  - error:{error}");
+        }
+
+        return applyResult.Errors.Count == 0 ? 0 : 2;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"devtest-clean: failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static string? ResolveRootPath(string providerKey, IConfiguration config)
+{
+    return providerKey.ToLowerInvariant() switch
+    {
+        "dropbox" => config["Storage:DropboxRoot"],
+        "lucidlink" => config["Storage:LucidLinkRoot"],
+        "nas" => config["Storage:NasRoot"],
+        _ => null
+    };
+}
+
+static bool IsDevTestRoot(string rootPath)
+{
+    return rootPath.IndexOf("06_DevTest", StringComparison.OrdinalIgnoreCase) >= 0;
+}
+
+static DevTestRootContract ApplyDevTestOverrides(string providerKey, DevTestRootContract contract)
+{
+    var required = new HashSet<string>(contract.RequiredFolders, StringComparer.OrdinalIgnoreCase)
+    {
+        "00_Admin",
+        "99_Dump"
+    };
+
+    if (providerKey.Equals("dropbox", StringComparison.OrdinalIgnoreCase)
+        || providerKey.Equals("lucidlink", StringComparison.OrdinalIgnoreCase)
+        || providerKey.Equals("nas", StringComparison.OrdinalIgnoreCase))
+    {
+        required.Add("99_TestRuns");
+    }
+
+    var optional = new HashSet<string>(contract.OptionalFolders, StringComparer.OrdinalIgnoreCase)
+    {
+        "99_Legacy",
+        "04_Staging"
+    };
+
+    return contract with
+    {
+        RequiredFolders = required.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
+        OptionalFolders = optional.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray()
+    };
+}
+
+static async Task<DevTestRootContract?> LoadRootContractAsync(NpgsqlConnection conn, string providerKey, string rootKey)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        SELECT required_folders,
+               optional_folders,
+               allowed_extras,
+               allowed_root_files,
+               quarantine_relpath
+        FROM storage_root_contracts
+        WHERE provider_key = @provider
+          AND root_key = @root_key
+          AND is_active
+        LIMIT 1;
+        """,
+        conn
+    );
+    cmd.Parameters.AddWithValue("provider", providerKey);
+    cmd.Parameters.AddWithValue("root_key", rootKey);
+
+    await using var reader = await cmd.ExecuteReaderAsync();
+    if (!await reader.ReadAsync())
+    {
+        return null;
+    }
+
+    var required = ParseJsonArray(reader.GetString(0));
+    var optional = ParseJsonArray(reader.GetString(1));
+    var allowedExtras = ParseJsonArray(reader.GetString(2));
+    var allowedRootFiles = ParseJsonArray(reader.GetString(3));
+    var quarantineRelpath = reader.IsDBNull(4) ? null : reader.GetString(4);
+
+    return new DevTestRootContract(required, optional, allowedExtras, allowedRootFiles, quarantineRelpath);
+}
+
+static IReadOnlyList<string> ParseJsonArray(string json)
+{
+    if (string.IsNullOrWhiteSpace(json))
+    {
+        return Array.Empty<string>();
+    }
+
+    using var doc = JsonDocument.Parse(json);
+    if (doc.RootElement.ValueKind != JsonValueKind.Array)
+    {
+        return Array.Empty<string>();
+    }
+
+    var list = new List<string>();
+    foreach (var item in doc.RootElement.EnumerateArray())
+    {
+        if (item.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(item.GetString()))
+        {
+            list.Add(item.GetString()!);
+        }
+    }
+
+    return list;
 }
 
 static async Task<int> ListProjectsAsync(int limit)
