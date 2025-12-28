@@ -417,6 +417,16 @@ public static class LookupSeeder
                     true
                 ),
                 (
+                    "dropbox_delivery_root",
+                    "dropbox_root",
+                    "project_root",
+                    "04_Client_Deliveries",
+                    "Dropbox client deliveries root",
+                    true,
+                    true,
+                    true
+                ),
+                (
                     "nas_archive_root",
                     "nas_root",
                     "project_root",
@@ -441,6 +451,7 @@ public static class LookupSeeder
                         "01_Docs",
                         "02_Projects_Active",
                         "03_Projects_ToArchive",
+                        "04_Client_Deliveries",
                         "05_GlobalAssets",
                         "06_DevTest",
                         "98_Archive",

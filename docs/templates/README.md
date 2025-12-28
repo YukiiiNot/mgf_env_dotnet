@@ -25,6 +25,7 @@ Domain Root templates:
 
 Project Container templates:
 - `dropbox_project_container.json`
+- `dropbox_delivery_container.json`
 - `lucidlink_production_container.json`
 - `nas_archive_container.json`
 
