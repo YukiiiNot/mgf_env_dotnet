@@ -15,6 +15,7 @@ Templates are versioned infrastructure. Schema validation + tests are mandatory.
   - MASTER: `{PROJECT_CODE}_{PROJECT_NAME}_MASTER.prproj`
   - Editor: `{PROJECT_CODE}_{PROJECT_NAME}_{EDITOR_INITIALS}.prproj`
 - Exports/renders use versioned filenames (e.g., `..._EXPORT_v###.mp4`).
+- Delivery containers use a stable `01_Deliverables\Final` folder; versions live under `Final\vN` and `delivery_manifest.json` lists file paths relative to the version folder.
 
 ## Files
 

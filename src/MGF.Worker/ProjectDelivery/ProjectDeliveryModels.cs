@@ -40,6 +40,9 @@ public sealed record ProjectDeliveryDomainResult(
 );
 
 public sealed record DeliveryFileSummary(
+    /// <summary>
+    /// Relative to the version folder (Final\vN).
+    /// </summary>
     string RelativePath,
     long SizeBytes,
     DateTimeOffset LastWriteTimeUtc

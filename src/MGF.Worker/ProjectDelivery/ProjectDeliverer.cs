@@ -234,8 +234,10 @@ public sealed class ProjectDeliverer
 
     internal sealed record DeliveryVersionPlan(
         string VersionLabel,
-        string DestinationRoot,
-        bool IsNewVersion
+        string StableRoot,
+        string VersionRoot,
+        bool IsNewVersion,
+        bool LegacyFinalFiles
     );
 
     private async Task<DeliverySourceInfo> ResolveLucidlinkSourceAsync(
@@ -510,14 +512,22 @@ public sealed class ProjectDeliverer
         }
 
         var finalRoot = Path.Combine(targetPath, "01_Deliverables", "Final");
+        Directory.CreateDirectory(finalRoot);
         var versionPlan = DetermineVersion(finalRoot, source.Files);
+
+        notes.Add(versionPlan.IsNewVersion
+            ? $"Created new delivery version {versionPlan.VersionLabel}."
+            : $"Reusing existing delivery version {versionPlan.VersionLabel}.");
+        if (versionPlan.LegacyFinalFiles)
+        {
+            notes.Add("Legacy files detected directly under Final; no automatic normalization performed.");
+        }
 
         if (versionPlan.IsNewVersion)
         {
-            Directory.CreateDirectory(versionPlan.DestinationRoot);
             foreach (var file in source.Files)
             {
-                var destPath = Path.Combine(versionPlan.DestinationRoot, file.RelativePath);
+                var destPath = Path.Combine(versionPlan.VersionRoot, file.RelativePath);
                 var destDir = Path.GetDirectoryName(destPath);
                 if (!string.IsNullOrWhiteSpace(destDir))
                 {
@@ -537,7 +547,8 @@ public sealed class ProjectDeliverer
             payload.ProjectId,
             tokens,
             source.SourcePath ?? string.Empty,
-            versionPlan.DestinationRoot,
+            versionPlan.StableRoot,
+            versionPlan.VersionRoot,
             versionPlan.VersionLabel,
             retentionUntil,
             source.Files
@@ -546,7 +557,7 @@ public sealed class ProjectDeliverer
         await WriteDeliveryManifestAsync(manifestPath, manifest, cancellationToken);
 
         return new DeliveryTargetInfo(
-            DestinationPath: versionPlan.DestinationRoot,
+            DestinationPath: versionPlan.StableRoot,
             VersionLabel: versionPlan.VersionLabel,
             RetentionUntilUtc: retentionUntil,
             DomainResult: new ProjectDeliveryDomainResult(
@@ -556,7 +567,7 @@ public sealed class ProjectDeliverer
                 DeliveryContainerProvisioning: verifySummary,
                 Deliverables: source.Files.Select(ToSummary).ToArray(),
                 VersionLabel: versionPlan.VersionLabel,
-                DestinationPath: versionPlan.DestinationRoot,
+                DestinationPath: versionPlan.StableRoot,
                 Notes: notes
             )
         );
@@ -648,46 +659,51 @@ public sealed class ProjectDeliverer
 
     internal static DeliveryVersionPlan DetermineVersion(string finalRoot, IReadOnlyList<DeliveryFile> sourceFiles)
     {
-        Directory.CreateDirectory(finalRoot);
-
         var sourceSet = BuildFileSet(sourceFiles);
         var versionDirs = Directory.GetDirectories(finalRoot)
             .Where(dir => IsVersionFolderName(Path.GetFileName(dir)))
             .ToArray();
 
-        var versionNumbers = versionDirs.Select(dir => ParseVersionNumber(Path.GetFileName(dir))).Where(n => n > 0).ToArray();
+        var legacySet = BuildFileSet(finalRoot, versionDirs);
+        var legacyHasFiles = legacySet.Count > 0;
 
-        var baseSet = BuildFileSet(finalRoot, versionDirs);
-        if (sourceSet.Count > 0 && baseSet.Count > 0 && SetsMatch(sourceSet, baseSet))
+        if (versionDirs.Length > 0)
         {
-            return new DeliveryVersionPlan("v1", finalRoot, false);
-        }
+            var latestVersion = versionDirs
+                .Select(dir => new { Dir = dir, Version = ParseVersionNumber(Path.GetFileName(dir)) })
+                .Where(entry => entry.Version > 0)
+                .OrderByDescending(entry => entry.Version)
+                .FirstOrDefault();
 
-        foreach (var versionDir in versionDirs.OrderByDescending(dir => ParseVersionNumber(Path.GetFileName(dir))))
-        {
-            var set = BuildFileSet(versionDir, Array.Empty<string>());
-            if (sourceSet.Count > 0 && set.Count > 0 && SetsMatch(sourceSet, set))
+            if (latestVersion is not null)
             {
-                var label = Path.GetFileName(versionDir);
-                return new DeliveryVersionPlan(label, versionDir, false);
+                var latestSet = BuildFileSet(latestVersion.Dir, Array.Empty<string>());
+                if (sourceSet.Count > 0 && latestSet.Count > 0 && SetsMatch(sourceSet, latestSet))
+                {
+                    var label = Path.GetFileName(latestVersion.Dir);
+                    return new DeliveryVersionPlan(label, finalRoot, latestVersion.Dir, false, legacyHasFiles);
+                }
+
+                var nextVersion = latestVersion.Version + 1;
+                var nextLabel = $"v{nextVersion}";
+                var destination = Path.Combine(finalRoot, nextLabel);
+                return new DeliveryVersionPlan(nextLabel, finalRoot, destination, true, legacyHasFiles);
             }
         }
 
-        var baseHasFiles = baseSet.Count > 0;
-        var nextVersion = versionNumbers.Length > 0
-            ? versionNumbers.Max() + 1
-            : baseHasFiles
-                ? 2
-                : 1;
-
-        if (nextVersion <= 1)
+        if (legacyHasFiles)
         {
-            return new DeliveryVersionPlan("v1", finalRoot, true);
+            if (sourceSet.Count > 0 && SetsMatch(sourceSet, legacySet))
+            {
+                return new DeliveryVersionPlan("v1", finalRoot, finalRoot, false, true);
+            }
+
+            var versionRoot = Path.Combine(finalRoot, "v1");
+            return new DeliveryVersionPlan("v1", finalRoot, versionRoot, true, true);
         }
 
-        var versionLabel = $"v{nextVersion}";
-        var destination = Path.Combine(finalRoot, versionLabel);
-        return new DeliveryVersionPlan(versionLabel, destination, true);
+        var initialVersionRoot = Path.Combine(finalRoot, "v1");
+        return new DeliveryVersionPlan("v1", finalRoot, initialVersionRoot, true, false);
     }
 
     private static Dictionary<string, DeliveryFingerprint> BuildFileSet(
@@ -842,18 +858,19 @@ public sealed class ProjectDeliverer
         await File.WriteAllTextAsync(manifestPath, json, cancellationToken);
     }
 
-    private static DeliveryManifest BuildDeliveryManifest(
+    internal static DeliveryManifest BuildDeliveryManifest(
         string projectId,
         ProvisioningTokens tokens,
         string sourcePath,
-        string destinationPath,
+        string stablePath,
+        string versionPath,
         string versionLabel,
         DateTimeOffset retentionUntilUtc,
         IReadOnlyList<DeliveryFile> files)
     {
         return new DeliveryManifest
         {
-            SchemaVersion = 1,
+            SchemaVersion = 2,
             DeliveryRunId = Guid.NewGuid().ToString("N"),
             CreatedAtUtc = DateTimeOffset.UtcNow,
             ProjectId = projectId,
@@ -861,8 +878,11 @@ public sealed class ProjectDeliverer
             ProjectName = tokens.ProjectName ?? string.Empty,
             ClientName = tokens.ClientName ?? string.Empty,
             SourcePath = sourcePath,
-            DestinationPath = destinationPath,
+            DestinationPath = stablePath,
+            StablePath = stablePath,
+            VersionPath = versionPath,
             VersionLabel = versionLabel,
+            CurrentVersion = versionLabel,
             RetentionUntilUtc = retentionUntilUtc,
             Files = files.Select(ToSummary).ToArray()
         };
@@ -870,7 +890,7 @@ public sealed class ProjectDeliverer
 
     private sealed record DeliveryFingerprint(long SizeBytes, DateTimeOffset LastWriteTimeUtc);
 
-    private sealed record DeliveryManifest
+    internal sealed record DeliveryManifest
     {
         public int SchemaVersion { get; init; }
         public string DeliveryRunId { get; init; } = string.Empty;
@@ -881,7 +901,10 @@ public sealed class ProjectDeliverer
         public string ClientName { get; init; } = string.Empty;
         public string SourcePath { get; init; } = string.Empty;
         public string DestinationPath { get; init; } = string.Empty;
+        public string StablePath { get; init; } = string.Empty;
+        public string VersionPath { get; init; } = string.Empty;
         public string VersionLabel { get; init; } = string.Empty;
+        public string CurrentVersion { get; init; } = string.Empty;
         public DateTimeOffset RetentionUntilUtc { get; init; }
         public IReadOnlyList<DeliveryFileSummary> Files { get; init; } = Array.Empty<DeliveryFileSummary>();
     }
