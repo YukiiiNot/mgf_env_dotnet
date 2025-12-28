@@ -14,7 +14,7 @@ The Provisioner:
 - validates templates against schemas before use
 - plans and applies in a deterministic, idempotent way
 - never deletes files
-- writes a manifest (`folder_manifest.json`) describing what it did
+- writes a manifest (`folder_manifest.json`) under `00_Admin\.mgf\manifest\` describing what it did
 
 ## What Bootstrap guarantees
 

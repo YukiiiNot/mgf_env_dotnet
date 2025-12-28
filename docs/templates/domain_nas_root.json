@@ -6,8 +6,21 @@
   "root": {
     "name": "NAS_ROOT",
     "children": [
-      { "name": "00_Admin" },
+      {
+        "name": "00_Admin",
+        "kind": "folder",
+        "children": [
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              { "name": "manifest", "kind": "folder" }
+            ]
+          }
+        ]
+      },
       { "name": "01_Projects_Archive" },
+      { "name": "99_Dump" },
       { "name": "99_Legacy", "optional": true }
     ]
   }

@@ -15,7 +15,13 @@
             "kind": "folder",
             "children": [
               { "kind": "file", "name": "project_metadata.json" },
-              { "kind": "file", "name": "folder_manifest.json" }
+              {
+                "name": "manifest",
+                "kind": "folder",
+                "children": [
+                  { "kind": "file", "name": "folder_manifest.json" }
+                ]
+              }
             ]
           },
           { "name": "01_Briefs_Contracts" },
@@ -59,6 +65,9 @@
       },
       {
         "name": "99_Archive"
+      },
+      {
+        "name": "99_Dump"
       }
     ]
   }

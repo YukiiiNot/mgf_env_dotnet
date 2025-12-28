@@ -110,9 +110,9 @@ NAS template `04_Edit` structure (legacy conventions):
 - `Externals/{AE,AI,AUD,PP,PS}/{MASTER|{EDITOR_INITIALS}}/`
 - `Autosaves/{MASTER|{EDITOR_INITIALS}}/`
 
-Dropbox template includes `.mgf/` under `00_Admin/` with:
-- `project_metadata.json`
-- `folder_manifest.json`
+Dropbox template includes `00_Admin\.mgf\manifest\` with:
+- `project_metadata.json` (stored under `.mgf/`)
+- `manifest/folder_manifest.json`
 
 ## Creating migrations (local)
 

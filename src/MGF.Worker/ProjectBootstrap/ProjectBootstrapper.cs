@@ -601,16 +601,16 @@ public sealed class ProjectBootstrapper
         return Path.GetFullPath(Path.Combine(templateDir, "seeds"));
     }
 
-    private static string ResolveManifestPath(FolderPlan plan)
+    internal static string ResolveManifestPath(FolderPlan plan)
     {
-        var mgfFolderRelative = Path.Combine("00_Admin", ".mgf");
-        var mgfFolder = plan.Items.FirstOrDefault(
+        var manifestFolderRelative = Path.Combine("00_Admin", ".mgf", "manifest");
+        var manifestFolder = plan.Items.FirstOrDefault(
             item =>
                 item.Kind == PlanItemKind.Folder
-                && string.Equals(item.RelativePath, mgfFolderRelative, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(item.RelativePath, manifestFolderRelative, StringComparison.OrdinalIgnoreCase)
         );
 
-        var manifestDir = mgfFolder?.AbsolutePath ?? plan.TargetRoot;
+        var manifestDir = manifestFolder?.AbsolutePath ?? Path.Combine(plan.TargetRoot, manifestFolderRelative);
         return Path.Combine(manifestDir, "folder_manifest.json");
     }
 

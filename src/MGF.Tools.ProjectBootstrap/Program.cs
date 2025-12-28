@@ -13,6 +13,11 @@ using Npgsql;
 var root = new RootCommand("MGF Project Bootstrap Job Tool");
 root.AddCommand(CreateEnqueueCommand());
 root.AddCommand(CreateReadyCommand());
+root.AddCommand(CreateToArchiveCommand());
+root.AddCommand(CreateArchiveCommand());
+root.AddCommand(CreateRootAuditCommand());
+root.AddCommand(CreateRootRepairCommand());
+root.AddCommand(CreateRootShowCommand());
 root.AddCommand(CreateShowCommand());
 root.AddCommand(CreateListCommand());
 root.AddCommand(CreateTestProjectCommand());
@@ -151,6 +156,270 @@ static Command CreateReadyCommand()
     return command;
 }
 
+static Command CreateToArchiveCommand()
+{
+    var command = new Command("to-archive", "mark a project as to_archive.");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID to mark to_archive.",
+        IsRequired = true
+    };
+
+    command.AddOption(projectIdOption);
+
+    command.SetHandler(async context =>
+    {
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var exitCode = await MarkToArchiveAsync(projectId);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateArchiveCommand()
+{
+    var command = new Command("archive", "enqueue a project.archive job.");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID to archive (e.g., prj_...).",
+        IsRequired = true
+    };
+
+    var editorsOption = new Option<string[]>("--editors")
+    {
+        Description = "Comma-separated editor initials (e.g., ER,AB) or repeatable values.",
+        Arity = ArgumentArity.ZeroOrMore
+    };
+    editorsOption.AllowMultipleArgumentsPerToken = true;
+
+    var testModeOption = new Option<bool?>("--testMode")
+    {
+        Description = "Use 99_TestRuns per domain (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var allowTestCleanupOption = new Option<bool?>("--allowTestCleanup")
+    {
+        Description = "Allow cleanup of existing test target folder when testMode=true (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var allowNonRealOption = new Option<bool?>("--allowNonReal")
+    {
+        Description = "Allow archiving non-real data_profile projects (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var forceOption = new Option<bool?>("--force")
+    {
+        Description = "Force archive even if project status is not to_archive (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    command.AddOption(projectIdOption);
+    command.AddOption(editorsOption);
+    command.AddOption(testModeOption);
+    command.AddOption(allowTestCleanupOption);
+    command.AddOption(allowNonRealOption);
+    command.AddOption(forceOption);
+
+    command.SetHandler(async context =>
+    {
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var payload = new ProjectArchiveJobPayload(
+            ProjectId: projectId,
+            EditorInitials: ParseEditors(context.ParseResult.GetValueForOption(editorsOption) ?? Array.Empty<string>()),
+            TestMode: context.ParseResult.GetValueForOption(testModeOption) ?? false,
+            AllowTestCleanup: context.ParseResult.GetValueForOption(allowTestCleanupOption) ?? false,
+            AllowNonReal: context.ParseResult.GetValueForOption(allowNonRealOption) ?? false,
+            Force: context.ParseResult.GetValueForOption(forceOption) ?? false
+        );
+
+        var exitCode = await EnqueueArchiveAsync(payload);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateRootAuditCommand()
+{
+    var command = new Command("root-audit", "enqueue a domain.root_integrity job (report-only).");
+
+    var providerOption = new Option<string>("--provider")
+    {
+        Description = "Storage provider key (dropbox|lucidlink|nas).",
+        IsRequired = true
+    };
+
+    var rootKeyOption = new Option<string>("--rootKey")
+    {
+        Description = "Root key (default: root).",
+        IsRequired = false
+    };
+    rootKeyOption.SetDefaultValue("root");
+
+    var dryRunOption = new Option<bool>("--dryRun")
+    {
+        Description = "Report only (default: true).",
+        IsRequired = false
+    };
+    dryRunOption.SetDefaultValue(true);
+
+    var maxItemsOption = new Option<int?>("--maxItems")
+    {
+        Description = "Max items allowed for quarantine move (optional).",
+        IsRequired = false
+    };
+
+    var maxBytesOption = new Option<long?>("--maxBytes")
+    {
+        Description = "Max bytes allowed for quarantine move (optional).",
+        IsRequired = false
+    };
+
+    var quarantineOption = new Option<string?>("--quarantineRelpath")
+    {
+        Description = "Override quarantine relpath (optional).",
+        IsRequired = false
+    };
+
+    command.AddOption(providerOption);
+    command.AddOption(rootKeyOption);
+    command.AddOption(dryRunOption);
+    command.AddOption(maxItemsOption);
+    command.AddOption(maxBytesOption);
+    command.AddOption(quarantineOption);
+
+    command.SetHandler(async context =>
+    {
+        var payload = new RootIntegrityJobPayload(
+            ProviderKey: context.ParseResult.GetValueForOption(providerOption) ?? string.Empty,
+            RootKey: context.ParseResult.GetValueForOption(rootKeyOption) ?? "root",
+            Mode: "report",
+            DryRun: context.ParseResult.GetValueForOption(dryRunOption),
+            QuarantineRelpath: context.ParseResult.GetValueForOption(quarantineOption),
+            MaxItems: context.ParseResult.GetValueForOption(maxItemsOption),
+            MaxBytes: context.ParseResult.GetValueForOption(maxBytesOption)
+        );
+
+        var exitCode = await EnqueueRootIntegrityAsync(payload);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateRootRepairCommand()
+{
+    var command = new Command("root-repair", "enqueue a domain.root_integrity job in repair mode (explicit dryRun=false required).");
+
+    var providerOption = new Option<string>("--provider")
+    {
+        Description = "Storage provider key (dropbox|lucidlink|nas).",
+        IsRequired = true
+    };
+
+    var rootKeyOption = new Option<string>("--rootKey")
+    {
+        Description = "Root key (default: root).",
+        IsRequired = false
+    };
+    rootKeyOption.SetDefaultValue("root");
+
+    var dryRunOption = new Option<bool>("--dryRun")
+    {
+        Description = "If true, report only. To execute repair, set --dryRun false.",
+        IsRequired = false
+    };
+    dryRunOption.SetDefaultValue(true);
+
+    var maxItemsOption = new Option<int?>("--maxItems")
+    {
+        Description = "Max items allowed for quarantine move (optional).",
+        IsRequired = false
+    };
+
+    var maxBytesOption = new Option<long?>("--maxBytes")
+    {
+        Description = "Max bytes allowed for quarantine move (optional).",
+        IsRequired = false
+    };
+
+    var quarantineOption = new Option<string?>("--quarantineRelpath")
+    {
+        Description = "Override quarantine relpath (optional).",
+        IsRequired = false
+    };
+
+    command.AddOption(providerOption);
+    command.AddOption(rootKeyOption);
+    command.AddOption(dryRunOption);
+    command.AddOption(maxItemsOption);
+    command.AddOption(maxBytesOption);
+    command.AddOption(quarantineOption);
+
+    command.SetHandler(async context =>
+    {
+        var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+        if (dryRun)
+        {
+            Console.Error.WriteLine("root-repair: refusing to enqueue repair without --dryRun false.");
+            context.ExitCode = 1;
+            return;
+        }
+
+        var payload = new RootIntegrityJobPayload(
+            ProviderKey: context.ParseResult.GetValueForOption(providerOption) ?? string.Empty,
+            RootKey: context.ParseResult.GetValueForOption(rootKeyOption) ?? "root",
+            Mode: "repair",
+            DryRun: dryRun,
+            QuarantineRelpath: context.ParseResult.GetValueForOption(quarantineOption),
+            MaxItems: context.ParseResult.GetValueForOption(maxItemsOption),
+            MaxBytes: context.ParseResult.GetValueForOption(maxBytesOption)
+        );
+
+        var exitCode = await EnqueueRootIntegrityAsync(payload);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateRootShowCommand()
+{
+    var command = new Command("root-show", "show latest root integrity jobs for a provider/root.");
+
+    var providerOption = new Option<string>("--provider")
+    {
+        Description = "Storage provider key (dropbox|lucidlink|nas).",
+        IsRequired = true
+    };
+
+    var rootKeyOption = new Option<string>("--rootKey")
+    {
+        Description = "Root key (default: root).",
+        IsRequired = false
+    };
+    rootKeyOption.SetDefaultValue("root");
+
+    command.AddOption(providerOption);
+    command.AddOption(rootKeyOption);
+
+    command.SetHandler(async context =>
+    {
+        var provider = context.ParseResult.GetValueForOption(providerOption) ?? string.Empty;
+        var rootKey = context.ParseResult.GetValueForOption(rootKeyOption) ?? "root";
+        var exitCode = await ShowRootIntegrityAsync(provider, rootKey);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
 static Command CreateShowCommand()
 {
     var command = new Command("show", "show project metadata for a project id.");
@@ -198,20 +467,29 @@ static Command CreateListCommand()
 
 static Command CreateResetJobsCommand()
 {
-    var command = new Command("reset-jobs", "reset queued/running project.bootstrap jobs for a project.");
+    var command = new Command("reset-jobs", "reset queued/running jobs for a project.");
 
     var projectIdOption = new Option<string>("--projectId")
     {
-        Description = "Project ID whose bootstrap jobs should be reset.",
+        Description = "Project ID whose jobs should be reset.",
         IsRequired = true
     };
 
+    var jobTypeOption = new Option<string>("--jobType")
+    {
+        Description = "Job type to reset (default: project.bootstrap).",
+        IsRequired = false
+    };
+    jobTypeOption.SetDefaultValue("project.bootstrap");
+
     command.AddOption(projectIdOption);
+    command.AddOption(jobTypeOption);
 
     command.SetHandler(async context =>
     {
         var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
-        var exitCode = await ResetBootstrapJobsAsync(projectId);
+        var jobTypeKey = context.ParseResult.GetValueForOption(jobTypeOption) ?? "project.bootstrap";
+        var exitCode = await ResetJobsAsync(projectId, jobTypeKey);
         context.ExitCode = exitCode;
     });
 
@@ -368,6 +646,103 @@ static async Task<int> EnqueueAsync(ProjectBootstrapJobPayload payload)
     }
 }
 
+static async Task<int> EnqueueArchiveAsync(ProjectArchiveJobPayload payload)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        await EnsureArchiveJobTypeExistsAsync(conn);
+
+        var existing = await FindExistingArchiveJobAsync(conn, payload.ProjectId);
+        if (!ArchiveJobGuard.ShouldEnqueue(existing, out var reason))
+        {
+            Console.WriteLine($"archive: {reason} for project_id={payload.ProjectId}");
+            return 0;
+        }
+
+        var jobId = EntityIds.NewWithPrefix("job");
+        var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            INSERT INTO public.jobs (job_id, job_type_key, payload, status_key, run_after, entity_type_key, entity_key)
+            VALUES (@job_id, @job_type_key, @payload::jsonb, 'queued', now(), @entity_type_key, @entity_key);
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("job_id", jobId);
+        cmd.Parameters.AddWithValue("job_type_key", "project.archive");
+        cmd.Parameters.AddWithValue("payload", payloadJson);
+        cmd.Parameters.AddWithValue("entity_type_key", "project");
+        cmd.Parameters.AddWithValue("entity_key", payload.ProjectId);
+
+        await cmd.ExecuteNonQueryAsync();
+
+        Console.WriteLine($"archive: enqueued job_id={jobId} project_id={payload.ProjectId}");
+        Console.WriteLine($"archive: payload={payloadJson}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"archive: enqueue failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static async Task<int> EnqueueRootIntegrityAsync(RootIntegrityJobPayload payload)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        await EnsureRootIntegrityJobTypeExistsAsync(conn);
+
+        var jobId = EntityIds.NewWithPrefix("job");
+        var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            INSERT INTO public.jobs (job_id, job_type_key, payload, status_key, run_after, entity_type_key, entity_key)
+            VALUES (@job_id, @job_type_key, @payload::jsonb, 'queued', now(), @entity_type_key, @entity_key);
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("job_id", jobId);
+        cmd.Parameters.AddWithValue("job_type_key", "domain.root_integrity");
+        cmd.Parameters.AddWithValue("payload", payloadJson);
+        cmd.Parameters.AddWithValue("entity_type_key", "storage_root");
+        cmd.Parameters.AddWithValue("entity_key", $"{payload.ProviderKey}:{payload.RootKey}");
+
+        await cmd.ExecuteNonQueryAsync();
+
+        Console.WriteLine($"root-integrity: enqueued job_id={jobId} provider={payload.ProviderKey} root_key={payload.RootKey}");
+        Console.WriteLine($"root-integrity: payload={payloadJson}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"root-integrity: enqueue failed: {ex.Message}");
+        return 1;
+    }
+}
+
 static async Task<int> MarkReadyAsync(string projectId)
 {
     try
@@ -407,6 +782,45 @@ static async Task<int> MarkReadyAsync(string projectId)
     }
 }
 
+static async Task<int> MarkToArchiveAsync(string projectId)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            UPDATE public.projects
+            SET status_key = 'to_archive',
+                updated_at = now()
+            WHERE project_id = @project_id;
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("project_id", projectId);
+
+        var rows = await cmd.ExecuteNonQueryAsync();
+        if (rows == 0)
+        {
+            Console.Error.WriteLine($"archive: project not found: {projectId}");
+            return 1;
+        }
+
+        Console.WriteLine($"archive: project marked to_archive (project_id={projectId})");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"archive: to-archive failed: {ex.Message}");
+        return 1;
+    }
+}
+
 static async Task EnsureJobTypeExistsAsync(NpgsqlConnection conn)
 {
     await using var cmd = new NpgsqlCommand(
@@ -424,6 +838,40 @@ static async Task EnsureJobTypeExistsAsync(NpgsqlConnection conn)
     await cmd.ExecuteNonQueryAsync();
 }
 
+static async Task EnsureArchiveJobTypeExistsAsync(NpgsqlConnection conn)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        INSERT INTO public.job_types (job_type_key, display_name)
+        VALUES (@job_type_key, @display_name)
+        ON CONFLICT (job_type_key) DO UPDATE
+        SET display_name = EXCLUDED.display_name;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("job_type_key", "project.archive");
+    cmd.Parameters.AddWithValue("display_name", "Project: Archive");
+    await cmd.ExecuteNonQueryAsync();
+}
+
+static async Task EnsureRootIntegrityJobTypeExistsAsync(NpgsqlConnection conn)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        INSERT INTO public.job_types (job_type_key, display_name)
+        VALUES (@job_type_key, @display_name)
+        ON CONFLICT (job_type_key) DO UPDATE
+        SET display_name = EXCLUDED.display_name;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("job_type_key", "domain.root_integrity");
+    cmd.Parameters.AddWithValue("display_name", "Domain: Root Integrity Check");
+    await cmd.ExecuteNonQueryAsync();
+}
+
 static async Task<ExistingJob?> FindExistingJobAsync(NpgsqlConnection conn, string projectId)
 {
     await using var cmd = new NpgsqlCommand(
@@ -431,6 +879,33 @@ static async Task<ExistingJob?> FindExistingJobAsync(NpgsqlConnection conn, stri
         SELECT job_id, status_key
         FROM public.jobs
         WHERE job_type_key = 'project.bootstrap'
+          AND entity_type_key = 'project'
+          AND entity_key = @project_id
+          AND status_key IN ('queued', 'running')
+        ORDER BY created_at DESC
+        LIMIT 1;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("project_id", projectId);
+
+    await using var reader = await cmd.ExecuteReaderAsync();
+    if (!await reader.ReadAsync())
+    {
+        return null;
+    }
+
+    return new ExistingJob(reader.GetString(0), reader.GetString(1));
+}
+
+static async Task<ExistingJob?> FindExistingArchiveJobAsync(NpgsqlConnection conn, string projectId)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        SELECT job_id, status_key
+        FROM public.jobs
+        WHERE job_type_key = 'project.archive'
           AND entity_type_key = 'project'
           AND entity_key = @project_id
           AND status_key IN ('queued', 'running')
@@ -576,11 +1051,102 @@ static async Task<int> ShowProjectAsync(string projectId)
                 Console.WriteLine("- (none)");
             }
         }
+
+        await using (var archiveJobsCmd = new NpgsqlCommand(
+                         """
+                         SELECT job_id, status_key, attempt_count, run_after, locked_until
+                         FROM public.jobs
+                         WHERE job_type_key = 'project.archive'
+                           AND entity_type_key = 'project'
+                           AND entity_key = @project_id
+                         ORDER BY created_at DESC;
+                         """,
+                         conn
+                     ))
+        {
+            archiveJobsCmd.Parameters.AddWithValue("project_id", projectId);
+
+            await using var archiveReader = await archiveJobsCmd.ExecuteReaderAsync();
+            Console.WriteLine("archive_jobs:");
+            var hadArchiveJobs = false;
+            while (await archiveReader.ReadAsync())
+            {
+                hadArchiveJobs = true;
+                var jobId = archiveReader.GetString(0);
+                var status = archiveReader.GetString(1);
+                var attempt = archiveReader.GetInt32(2);
+                var runAfter = archiveReader.GetFieldValue<DateTimeOffset>(3);
+                var lockedUntil = archiveReader.IsDBNull(4) ? (DateTimeOffset?)null : archiveReader.GetFieldValue<DateTimeOffset>(4);
+                Console.WriteLine($"- {jobId}\t{status}\tattempts={attempt}\trun_after={runAfter:O}\tlocked_until={(lockedUntil.HasValue ? lockedUntil.Value.ToString("O") : "(null)")}");
+            }
+
+            if (!hadArchiveJobs)
+            {
+                Console.WriteLine("- (none)");
+            }
+        }
         return 0;
     }
     catch (Exception ex)
     {
         Console.Error.WriteLine($"bootstrap: show failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static async Task<int> ShowRootIntegrityAsync(string provider, string rootKey)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            SELECT job_id, status_key, attempt_count, run_after, locked_until, payload::text
+            FROM public.jobs
+            WHERE job_type_key = 'domain.root_integrity'
+              AND entity_type_key = 'storage_root'
+              AND entity_key = @entity_key
+            ORDER BY created_at DESC
+            LIMIT 5;
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("entity_key", $"{provider}:{rootKey}");
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        Console.WriteLine($"root_integrity_jobs ({provider}:{rootKey}):");
+
+        var hadRows = false;
+        while (await reader.ReadAsync())
+        {
+            hadRows = true;
+            var jobId = reader.GetString(0);
+            var status = reader.GetString(1);
+            var attempt = reader.GetInt32(2);
+            var runAfter = reader.GetFieldValue<DateTimeOffset>(3);
+            var lockedUntil = reader.IsDBNull(4) ? (DateTimeOffset?)null : reader.GetFieldValue<DateTimeOffset>(4);
+            var payloadJson = reader.GetString(5);
+
+            var summary = SummarizeRootIntegrityPayload(payloadJson);
+            Console.WriteLine($"- {jobId}\t{status}\tattempts={attempt}\trun_after={runAfter:O}\tlocked_until={(lockedUntil.HasValue ? lockedUntil.Value.ToString("O") : "(null)")} {summary}");
+        }
+
+        if (!hadRows)
+        {
+            Console.WriteLine("- (none)");
+        }
+
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"root-integrity: show failed: {ex.Message}");
         return 1;
     }
 }
@@ -619,6 +1185,43 @@ static async Task<int> ListProjectsAsync(int limit)
     {
         Console.Error.WriteLine($"bootstrap: list failed: {ex.Message}");
         return 1;
+    }
+}
+
+static string SummarizeRootIntegrityPayload(string payloadJson)
+{
+    try
+    {
+        using var doc = JsonDocument.Parse(payloadJson);
+        var root = doc.RootElement;
+
+        var provider = root.TryGetProperty("providerKey", out var providerElement) ? providerElement.GetString() : null;
+        var rootKey = root.TryGetProperty("rootKey", out var rootKeyElement) ? rootKeyElement.GetString() : null;
+        var mode = root.TryGetProperty("mode", out var modeElement) ? modeElement.GetString() : null;
+        var dryRun = root.TryGetProperty("dryRun", out var dryRunElement) && dryRunElement.ValueKind == JsonValueKind.True
+            ? "dryRun=true"
+            : "dryRun=false";
+
+        if (!root.TryGetProperty("result", out var resultElement))
+        {
+            return $"provider={provider} root_key={rootKey} mode={mode} {dryRun}";
+        }
+
+        var missingRequired = resultElement.TryGetProperty("missingRequired", out var missingElement) && missingElement.ValueKind == JsonValueKind.Array
+            ? missingElement.GetArrayLength()
+            : 0;
+        var unknown = resultElement.TryGetProperty("unknownEntries", out var unknownElement) && unknownElement.ValueKind == JsonValueKind.Array
+            ? unknownElement.GetArrayLength()
+            : 0;
+        var errors = resultElement.TryGetProperty("errors", out var errorElement) && errorElement.ValueKind == JsonValueKind.Array
+            ? errorElement.GetArrayLength()
+            : 0;
+
+        return $"provider={provider} root_key={rootKey} mode={mode} {dryRun} missing_required={missingRequired} unknown={unknown} errors={errors}";
+    }
+    catch
+    {
+        return "(payload parse failed)";
     }
 }
 
@@ -765,7 +1368,7 @@ static async Task<int> CreateTestProjectAsync(
     }
 }
 
-static async Task<int> ResetBootstrapJobsAsync(string projectId)
+static async Task<int> ResetJobsAsync(string projectId, string jobTypeKey)
 {
     try
     {
@@ -782,7 +1385,7 @@ static async Task<int> ResetBootstrapJobsAsync(string projectId)
                 run_after = now(),
                 locked_by = NULL,
                 locked_until = NULL
-            WHERE job_type_key = 'project.bootstrap'
+            WHERE job_type_key = @job_type_key
               AND entity_type_key = 'project'
               AND entity_key = @project_id
               AND status_key IN ('queued','running');
@@ -791,9 +1394,10 @@ static async Task<int> ResetBootstrapJobsAsync(string projectId)
         );
 
         cmd.Parameters.AddWithValue("project_id", projectId);
+        cmd.Parameters.AddWithValue("job_type_key", jobTypeKey);
 
         var rows = await cmd.ExecuteNonQueryAsync();
-        Console.WriteLine($"bootstrap: reset {rows} job(s) for project_id={projectId}");
+        Console.WriteLine($"bootstrap: reset {rows} job(s) for project_id={projectId} (job_type_key={jobTypeKey})");
         return 0;
     }
     catch (Exception ex)
@@ -966,6 +1570,25 @@ sealed record ProjectBootstrapJobPayload(
     bool Force,
     bool TestMode,
     bool AllowTestCleanup
+);
+
+sealed record ProjectArchiveJobPayload(
+    string ProjectId,
+    IReadOnlyList<string> EditorInitials,
+    bool TestMode,
+    bool AllowTestCleanup,
+    bool AllowNonReal,
+    bool Force
+);
+
+sealed record RootIntegrityJobPayload(
+    string ProviderKey,
+    string RootKey,
+    string Mode,
+    bool DryRun,
+    string? QuarantineRelpath,
+    int? MaxItems,
+    long? MaxBytes
 );
 
 sealed record ExistingJob(string JobId, string StatusKey);

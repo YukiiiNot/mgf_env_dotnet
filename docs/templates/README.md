@@ -10,7 +10,7 @@ Templates are versioned infrastructure. Schema validation + tests are mandatory.
 ## Rules
 
 - Top-level folders must use numeric prefixes only (e.g., `00_Admin`, `01_PreProduction`).
-- `.mgf` metadata folder exists only under `00_Admin` in the Dropbox template.
+- `.mgf` metadata folder exists only under `00_Admin` (all templates) and must contain `manifest/`.
 - `.prproj` filenames are stable:
   - MASTER: `{PROJECT_CODE}_{PROJECT_NAME}_MASTER.prproj`
   - Editor: `{PROJECT_CODE}_{PROJECT_NAME}_{EDITOR_INITIALS}.prproj`
