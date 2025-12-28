@@ -735,23 +735,39 @@ public sealed class ProjectBootstrapper
         string folderRelpath,
         CancellationToken cancellationToken)
     {
-        var storageRootId = EntityIds.NewWithPrefix("psr");
-        var parameters = new[]
+        try
         {
-            new NpgsqlParameter("project_storage_root_id", storageRootId),
-            new NpgsqlParameter("project_id", projectId),
-            new NpgsqlParameter("storage_provider_key", storageProviderKey),
-            new NpgsqlParameter("root_key", rootKey),
-            new NpgsqlParameter("folder_relpath", folderRelpath),
-        };
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        var rows = await db.Database.ExecuteSqlRawAsync(
-            ProjectStorageRootSql.UpsertStorageRoot,
-            parameters,
-            cancellationToken
-        );
+            var storageRootId = EntityIds.NewWithPrefix("psr");
+            var parameters = new[]
+            {
+                new NpgsqlParameter("project_storage_root_id", storageRootId),
+                new NpgsqlParameter("project_id", projectId),
+                new NpgsqlParameter("storage_provider_key", storageProviderKey),
+                new NpgsqlParameter("root_key", rootKey),
+                new NpgsqlParameter("folder_relpath", folderRelpath),
+            };
 
-        return rows == 0 ? "Storage root upsert did not affect any rows." : null;
+            await db.Database.ExecuteSqlRawAsync(
+                ProjectStorageRootSql.UpsertStorageRoot,
+                parameters,
+                cancellationToken
+            );
+
+            await db.Database.ExecuteSqlRawAsync(
+                ProjectStorageRootSql.UpdateIsPrimaryForProvider,
+                parameters,
+                cancellationToken
+            );
+
+            await transaction.CommitAsync(cancellationToken);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            return $"Storage root upsert failed: {ex.Message}";
+        }
     }
 
     private static bool ReadBoolean(JsonElement root, string name, bool defaultValue)
