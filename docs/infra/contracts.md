@@ -25,6 +25,11 @@ Project Bootstrap:
 - validates templates before any plan/apply/verify
 - records results into project metadata for auditing
 
+## Storage provider placeholders
+
+- `nextcloud` is seeded as a placeholder `storage_providers` entry only.
+- It is not used by bootstrap/provisioning yet; integration will require a provider adapter decision and workflow changes.
+
 ## What must not change silently
 
 - Template structure or naming rules without schema updates + review

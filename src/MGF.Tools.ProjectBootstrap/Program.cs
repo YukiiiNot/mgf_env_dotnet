@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using MGF.Domain.Entities;
@@ -14,6 +15,9 @@ root.AddCommand(CreateEnqueueCommand());
 root.AddCommand(CreateReadyCommand());
 root.AddCommand(CreateShowCommand());
 root.AddCommand(CreateListCommand());
+root.AddCommand(CreateTestProjectCommand());
+root.AddCommand(CreateResetJobsCommand());
+root.AddCommand(CreateJobsRequeueStaleCommand());
 
 var parser = new CommandLineBuilder(root).UseDefaults().Build();
 return await parser.InvokeAsync(args);
@@ -192,6 +196,126 @@ static Command CreateListCommand()
     return command;
 }
 
+static Command CreateResetJobsCommand()
+{
+    var command = new Command("reset-jobs", "reset queued/running project.bootstrap jobs for a project.");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID whose bootstrap jobs should be reset.",
+        IsRequired = true
+    };
+
+    command.AddOption(projectIdOption);
+
+    command.SetHandler(async context =>
+    {
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var exitCode = await ResetBootstrapJobsAsync(projectId);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+static Command CreateTestProjectCommand()
+{
+    var command = new Command("create-test", "create a test client/editor/project for repeatable provisioning.");
+
+    var testKeyOption = new Option<string>("--testKey")
+    {
+        Description = "Metadata key to identify the test project (default: bootstrap_test).",
+        IsRequired = false
+    };
+    testKeyOption.SetDefaultValue("bootstrap_test");
+
+    var clientNameOption = new Option<string>("--clientName")
+    {
+        Description = "Client display name for the test project.",
+        IsRequired = false
+    };
+    clientNameOption.SetDefaultValue("MGF Test Client");
+
+    var projectNameOption = new Option<string>("--projectName")
+    {
+        Description = "Project name for the test project.",
+        IsRequired = false
+    };
+    projectNameOption.SetDefaultValue("MGF Bootstrap Test");
+
+    var editorFirstOption = new Option<string>("--editorFirstName")
+    {
+        Description = "Editor first name.",
+        IsRequired = false
+    };
+    editorFirstOption.SetDefaultValue("Test");
+
+    var editorLastOption = new Option<string>("--editorLastName")
+    {
+        Description = "Editor last name.",
+        IsRequired = false
+    };
+    editorLastOption.SetDefaultValue("Editor");
+
+    var editorInitialsOption = new Option<string>("--editorInitials")
+    {
+        Description = "Editor initials.",
+        IsRequired = false
+    };
+    editorInitialsOption.SetDefaultValue("TE");
+
+    var forceNewOption = new Option<bool>("--forceNew")
+    {
+        Description = "Create a new test project even if one already exists.",
+        IsRequired = false
+    };
+
+    command.AddOption(testKeyOption);
+    command.AddOption(clientNameOption);
+    command.AddOption(projectNameOption);
+    command.AddOption(editorFirstOption);
+    command.AddOption(editorLastOption);
+    command.AddOption(editorInitialsOption);
+    command.AddOption(forceNewOption);
+
+    command.SetHandler(async context =>
+    {
+        var exitCode = await CreateTestProjectAsync(
+            testKey: context.ParseResult.GetValueForOption(testKeyOption) ?? "bootstrap_test",
+            clientName: context.ParseResult.GetValueForOption(clientNameOption) ?? "MGF Test Client",
+            projectName: context.ParseResult.GetValueForOption(projectNameOption) ?? "MGF Bootstrap Test",
+            editorFirstName: context.ParseResult.GetValueForOption(editorFirstOption) ?? "Test",
+            editorLastName: context.ParseResult.GetValueForOption(editorLastOption) ?? "Editor",
+            editorInitials: context.ParseResult.GetValueForOption(editorInitialsOption) ?? "TE",
+            forceNew: context.ParseResult.GetValueForOption(forceNewOption)
+        );
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateJobsRequeueStaleCommand()
+{
+    var command = new Command("jobs-requeue-stale", "requeue stale running jobs with expired locks.");
+
+    var dryRunOption = new Option<bool>("--dryRun")
+    {
+        Description = "If true, only report how many rows would be reset.",
+        IsRequired = false
+    };
+    dryRunOption.SetDefaultValue(true);
+
+    command.AddOption(dryRunOption);
+
+    command.SetHandler(async context =>
+    {
+        var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+        var exitCode = await RequeueStaleJobsAsync(dryRun);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
 static async Task<int> EnqueueAsync(ProjectBootstrapJobPayload payload)
 {
     try
@@ -337,29 +461,36 @@ static async Task<int> ShowProjectAsync(string projectId)
         await using var conn = new NpgsqlConnection(connectionString);
         await conn.OpenAsync();
 
-        await using var cmd = new NpgsqlCommand(
-            """
-            SELECT project_id, project_code, name, status_key, data_profile, metadata::text
-            FROM public.projects
-            WHERE project_id = @project_id;
-            """,
-            conn
-        );
+        string projectCode;
+        string name;
+        string statusKey;
+        string dataProfile;
+        string metadataJson;
 
-        cmd.Parameters.AddWithValue("project_id", projectId);
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        if (!await reader.ReadAsync())
+        await using (var cmd = new NpgsqlCommand(
+                         """
+                         SELECT project_id, project_code, name, status_key, data_profile, metadata::text
+                         FROM public.projects
+                         WHERE project_id = @project_id;
+                         """,
+                         conn
+                     ))
         {
-            Console.Error.WriteLine($"bootstrap: project not found: {projectId}");
-            return 1;
-        }
+            cmd.Parameters.AddWithValue("project_id", projectId);
 
-        var projectCode = reader.GetString(1);
-        var name = reader.GetString(2);
-        var statusKey = reader.GetString(3);
-        var dataProfile = reader.GetString(4);
-        var metadataJson = reader.GetString(5);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync())
+            {
+                Console.Error.WriteLine($"bootstrap: project not found: {projectId}");
+                return 1;
+            }
+
+            projectCode = reader.GetString(1);
+            name = reader.GetString(2);
+            statusKey = reader.GetString(3);
+            dataProfile = reader.GetString(4);
+            metadataJson = reader.GetString(5);
+        }
 
         Console.WriteLine($"project_id={projectId}");
         Console.WriteLine($"project_code={projectCode}");
@@ -373,6 +504,78 @@ static async Task<int> ShowProjectAsync(string projectId)
         );
         Console.WriteLine("metadata:");
         Console.WriteLine(pretty);
+
+        await using (var rootsCmd = new NpgsqlCommand(
+                         """
+                         SELECT project_storage_root_id,
+                                storage_provider_key,
+                                root_key,
+                                folder_relpath,
+                                is_primary,
+                                created_at
+                         FROM public.project_storage_roots
+                         WHERE project_id = @project_id
+                         ORDER BY created_at DESC;
+                         """,
+                         conn
+                     ))
+        {
+            rootsCmd.Parameters.AddWithValue("project_id", projectId);
+
+            await using var rootsReader = await rootsCmd.ExecuteReaderAsync();
+            Console.WriteLine("storage_roots:");
+            var hadRows = false;
+            while (await rootsReader.ReadAsync())
+            {
+                hadRows = true;
+                var rootId = rootsReader.GetString(0);
+                var provider = rootsReader.GetString(1);
+                var rootKey = rootsReader.GetString(2);
+                var relpath = rootsReader.GetString(3);
+                var isPrimary = rootsReader.GetBoolean(4);
+                var createdAt = rootsReader.GetFieldValue<DateTimeOffset>(5);
+                Console.WriteLine($"- {rootId}\t{provider}\t{rootKey}\t{relpath}\tis_primary={isPrimary}\tcreated_at={createdAt:O}");
+            }
+
+            if (!hadRows)
+            {
+                Console.WriteLine("- (none)");
+            }
+        }
+
+        await using (var jobsCmd = new NpgsqlCommand(
+                         """
+                         SELECT job_id, status_key, attempt_count, run_after, locked_until
+                         FROM public.jobs
+                         WHERE job_type_key = 'project.bootstrap'
+                           AND entity_type_key = 'project'
+                           AND entity_key = @project_id
+                         ORDER BY created_at DESC;
+                         """,
+                         conn
+                     ))
+        {
+            jobsCmd.Parameters.AddWithValue("project_id", projectId);
+
+            await using var jobsReader = await jobsCmd.ExecuteReaderAsync();
+            Console.WriteLine("bootstrap_jobs:");
+            var hadJobs = false;
+            while (await jobsReader.ReadAsync())
+            {
+                hadJobs = true;
+                var jobId = jobsReader.GetString(0);
+                var status = jobsReader.GetString(1);
+                var attempt = jobsReader.GetInt32(2);
+                var runAfter = jobsReader.GetFieldValue<DateTimeOffset>(3);
+                var lockedUntil = jobsReader.IsDBNull(4) ? (DateTimeOffset?)null : jobsReader.GetFieldValue<DateTimeOffset>(4);
+                Console.WriteLine($"- {jobId}\t{status}\tattempts={attempt}\trun_after={runAfter:O}\tlocked_until={(lockedUntil.HasValue ? lockedUntil.Value.ToString("O") : "(null)")}");
+            }
+
+            if (!hadJobs)
+            {
+                Console.WriteLine("- (none)");
+            }
+        }
         return 0;
     }
     catch (Exception ex)
@@ -419,6 +622,318 @@ static async Task<int> ListProjectsAsync(int limit)
     }
 }
 
+static async Task<int> CreateTestProjectAsync(
+    string testKey,
+    string clientName,
+    string projectName,
+    string editorFirstName,
+    string editorLastName,
+    string editorInitials,
+    bool forceNew
+)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        if (!forceNew)
+        {
+            var existing = await FindTestProjectAsync(conn, testKey);
+            if (existing is not null)
+            {
+                Console.WriteLine("bootstrap: existing test project found (use --forceNew to create another)");
+                Console.WriteLine($"project_id={existing.ProjectId}");
+                Console.WriteLine($"project_code={existing.ProjectCode}");
+                Console.WriteLine($"name={existing.ProjectName}");
+                Console.WriteLine($"client_id={existing.ClientId}");
+                return 0;
+            }
+        }
+
+        await using var tx = await conn.BeginTransactionAsync();
+
+        var personId = EntityIds.NewPersonId();
+        var clientId = EntityIds.NewClientId();
+        var projectId = EntityIds.NewProjectId();
+        var projectMemberId = EntityIds.NewWithPrefix("prm");
+
+        var projectCode = await AllocateProjectCodeAsync(conn, tx);
+        var metadataJson = JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            ["test_key"] = testKey,
+            ["test_type"] = "bootstrap",
+            ["created_by"] = "MGF.Tools.ProjectBootstrap",
+            ["created_at"] = DateTimeOffset.UtcNow.ToString("O")
+        });
+
+        await using (var personCmd = new NpgsqlCommand(
+                         """
+                         INSERT INTO public.people (person_id, first_name, last_name, initials, status_key, data_profile)
+                         VALUES (@person_id, @first_name, @last_name, @initials, 'active', 'real');
+                         """,
+                         conn,
+                         tx
+                     ))
+        {
+            personCmd.Parameters.AddWithValue("person_id", personId);
+            personCmd.Parameters.AddWithValue("first_name", editorFirstName);
+            personCmd.Parameters.AddWithValue("last_name", editorLastName);
+            personCmd.Parameters.AddWithValue("initials", editorInitials);
+            await personCmd.ExecuteNonQueryAsync();
+        }
+
+        await using (var clientCmd = new NpgsqlCommand(
+                         """
+                         INSERT INTO public.clients (client_id, display_name, client_type_key, status_key, data_profile, primary_contact_person_id)
+                         VALUES (@client_id, @display_name, 'organization', 'active', 'real', @primary_contact_person_id);
+                         """,
+                         conn,
+                         tx
+                     ))
+        {
+            clientCmd.Parameters.AddWithValue("client_id", clientId);
+            clientCmd.Parameters.AddWithValue("display_name", clientName);
+            clientCmd.Parameters.AddWithValue("primary_contact_person_id", personId);
+            await clientCmd.ExecuteNonQueryAsync();
+        }
+
+        await using (var roleCmd = new NpgsqlCommand(
+                         """
+                         INSERT INTO public.person_roles (person_id, role_key)
+                         VALUES (@person_id, 'editor')
+                         ON CONFLICT (person_id, role_key) DO NOTHING;
+                         """,
+                         conn,
+                         tx
+                     ))
+        {
+            roleCmd.Parameters.AddWithValue("person_id", personId);
+            await roleCmd.ExecuteNonQueryAsync();
+        }
+
+        await using (var projectCmd = new NpgsqlCommand(
+                         """
+                         INSERT INTO public.projects (project_id, project_code, client_id, name, status_key, phase_key, data_profile, metadata)
+                         VALUES (@project_id, @project_code, @client_id, @name, 'active', 'planning', 'real', @metadata::jsonb);
+                         """,
+                         conn,
+                         tx
+                     ))
+        {
+            projectCmd.Parameters.AddWithValue("project_id", projectId);
+            projectCmd.Parameters.AddWithValue("project_code", projectCode);
+            projectCmd.Parameters.AddWithValue("client_id", clientId);
+            projectCmd.Parameters.AddWithValue("name", projectName);
+            projectCmd.Parameters.AddWithValue("metadata", metadataJson);
+            await projectCmd.ExecuteNonQueryAsync();
+        }
+
+        await using (var memberCmd = new NpgsqlCommand(
+                         """
+                         INSERT INTO public.project_members (project_member_id, project_id, person_id, role_key, assigned_at)
+                         VALUES (@project_member_id, @project_id, @person_id, 'editor', now());
+                         """,
+                         conn,
+                         tx
+                     ))
+        {
+            memberCmd.Parameters.AddWithValue("project_member_id", projectMemberId);
+            memberCmd.Parameters.AddWithValue("project_id", projectId);
+            memberCmd.Parameters.AddWithValue("person_id", personId);
+            await memberCmd.ExecuteNonQueryAsync();
+        }
+
+        await tx.CommitAsync();
+
+        Console.WriteLine("bootstrap: created test project");
+        Console.WriteLine($"project_id={projectId}");
+        Console.WriteLine($"project_code={projectCode}");
+        Console.WriteLine($"name={projectName}");
+        Console.WriteLine($"client_id={clientId}");
+        Console.WriteLine($"person_id={personId}");
+        Console.WriteLine($"editor_initials={editorInitials}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: create-test failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static async Task<int> ResetBootstrapJobsAsync(string projectId)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            UPDATE public.jobs
+            SET status_key = 'queued',
+                run_after = now(),
+                locked_by = NULL,
+                locked_until = NULL
+            WHERE job_type_key = 'project.bootstrap'
+              AND entity_type_key = 'project'
+              AND entity_key = @project_id
+              AND status_key IN ('queued','running');
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("project_id", projectId);
+
+        var rows = await cmd.ExecuteNonQueryAsync();
+        Console.WriteLine($"bootstrap: reset {rows} job(s) for project_id={projectId}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: reset-jobs failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static async Task<int> RequeueStaleJobsAsync(bool dryRun)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        if (dryRun)
+        {
+            await using var countCmd = new NpgsqlCommand(
+                """
+                SELECT count(*)
+                FROM public.jobs
+                WHERE status_key = 'running'
+                  AND (
+                    (locked_until IS NOT NULL AND locked_until < now())
+                    OR (
+                      locked_until IS NULL
+                      AND started_at IS NOT NULL
+                      AND started_at < now() - interval '60 minutes'
+                    )
+                  );
+                """,
+                conn
+            );
+
+            var result = await countCmd.ExecuteScalarAsync();
+            var count = result is null || result is DBNull ? 0 : Convert.ToInt32(result, CultureInfo.InvariantCulture);
+            Console.WriteLine($"bootstrap: stale running jobs (dry-run) count={count}");
+            return 0;
+        }
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            WITH reset AS (
+              UPDATE public.jobs
+              SET status_key = 'queued',
+                  run_after = now(),
+                  locked_by = NULL,
+                  locked_until = NULL,
+                  last_error = CASE
+                    WHEN locked_until IS NULL
+                      THEN 'reaped stale running job (no lock, started_at stale)'
+                    ELSE 'reaped stale running job (expired lock)'
+                  END
+              WHERE status_key = 'running'
+                AND (
+                  (locked_until IS NOT NULL AND locked_until < now())
+                  OR (
+                    locked_until IS NULL
+                    AND started_at IS NOT NULL
+                    AND started_at < now() - interval '60 minutes'
+                  )
+                )
+              RETURNING 1
+            )
+            SELECT count(*) FROM reset;
+            """,
+            conn
+        );
+
+        var updated = await cmd.ExecuteScalarAsync();
+        var countUpdated = updated is null || updated is DBNull ? 0 : Convert.ToInt32(updated, CultureInfo.InvariantCulture);
+        Console.WriteLine($"bootstrap: requeued stale running jobs count={countUpdated}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: jobs-requeue-stale failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static async Task<TestProjectInfo?> FindTestProjectAsync(NpgsqlConnection conn, string testKey)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        SELECT project_id, project_code, name, client_id
+        FROM public.projects
+        WHERE metadata->>'test_key' = @test_key
+        ORDER BY created_at DESC
+        LIMIT 1;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("test_key", testKey);
+
+    await using var reader = await cmd.ExecuteReaderAsync();
+    if (!await reader.ReadAsync())
+    {
+        return null;
+    }
+
+    return new TestProjectInfo(
+        reader.GetString(0),
+        reader.GetString(1),
+        reader.GetString(2),
+        reader.GetString(3)
+    );
+}
+
+static async Task<string> AllocateProjectCodeAsync(NpgsqlConnection conn, NpgsqlTransaction tx)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        WITH ensured AS (
+          INSERT INTO public.project_code_counters(prefix, year_2, next_seq)
+          VALUES ('MGF', (EXTRACT(YEAR FROM now())::int % 100)::smallint, 1)
+          ON CONFLICT (prefix, year_2) DO NOTHING
+        ),
+        updated AS (
+          UPDATE public.project_code_counters
+          SET next_seq = next_seq + 1, updated_at = now()
+          WHERE prefix = 'MGF' AND year_2 = (EXTRACT(YEAR FROM now())::int % 100)::smallint
+          RETURNING year_2, (next_seq - 1) AS allocated_seq
+        )
+        SELECT 'MGF' || lpad(year_2::text, 2, '0') || '-' || lpad(allocated_seq::text, 4, '0')
+        FROM updated;
+        """,
+        conn,
+        tx
+    );
+
+    var result = await cmd.ExecuteScalarAsync();
+    return result?.ToString() ?? throw new InvalidOperationException("Failed to allocate project code.");
+}
+
 static IConfiguration BuildConfiguration()
 {
     var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
@@ -454,3 +969,5 @@ sealed record ProjectBootstrapJobPayload(
 );
 
 sealed record ExistingJob(string JobId, string StatusKey);
+
+sealed record TestProjectInfo(string ProjectId, string ProjectCode, string ProjectName, string ClientId);

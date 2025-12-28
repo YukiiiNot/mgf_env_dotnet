@@ -5,8 +5,10 @@ using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MGF.Domain.Entities;
 using MGF.Infrastructure.Data;
 using MGF.Tools.Provisioner;
+using Npgsql;
 
 public sealed class ProjectBootstrapper
 {
@@ -136,20 +138,17 @@ public sealed class ProjectBootstrapper
         {
             foreach (var domain in domains)
             {
-                var result = await ProcessDomainAsync(domain, payload, tokens, repoRoot, cancellationToken);
+                var result = await ProcessDomainAsync(db, domain, payload, tokens, repoRoot, cancellationToken);
                 results.Add(result);
-
-                if (result.DomainRootProvisioning is { Success: false }
-                    || result.ProjectContainerProvisioning is { Success: false }
-                    || IsErrorRootState(result.RootState))
-                {
-                    hasErrors = true;
-                }
             }
+
+            var anySuccess = results.Any(IsDomainSuccess);
+            var hardFailures = results.Any(IsHardFailure);
+            hasErrors = hardFailures || !anySuccess;
 
             if (hasErrors)
             {
-                lastError = BuildLastError(results);
+                lastError = BuildLastError(results, anySuccess, hardFailures);
             }
 
             var runResult = new ProjectBootstrapRunResult(
@@ -234,6 +233,7 @@ public sealed class ProjectBootstrapper
     }
 
     private async Task<ProjectBootstrapDomainResult> ProcessDomainAsync(
+        AppDbContext db,
         DomainDefinition domain,
         ProjectBootstrapPayload payload,
         ProvisioningTokens tokens,
@@ -334,6 +334,7 @@ public sealed class ProjectBootstrapper
         }
 
         ProvisioningSummary? containerProvisioning = null;
+        ProvisioningResult? containerResult = null;
         if (payload.ProvisionProjectContainers && rootExists && IsRootReady(rootState))
         {
             var containerBasePath = payload.TestMode
@@ -344,23 +345,38 @@ public sealed class ProjectBootstrapper
                 ? ProjectBootstrapGuards.BuildTestContainerTargetPath(rootPath, tokens)
                 : null;
 
-            if (payload.TestMode && testTargetPath is not null && Directory.Exists(testTargetPath))
+        if (payload.TestMode && testTargetPath is not null && Directory.Exists(testTargetPath))
+        {
+            if (!ProjectBootstrapGuards.TryValidateTestCleanup(rootPath, testTargetPath, payload.AllowTestCleanup, out var cleanupError))
             {
-                if (!ProjectBootstrapGuards.TryValidateTestCleanup(rootPath, testTargetPath, payload.AllowTestCleanup, out var cleanupError))
-                {
-                    notes.Add(cleanupError ?? "Test cleanup blocked.");
-                    return new ProjectBootstrapDomainResult(
-                        DomainKey: domain.DomainKey,
-                        RootPath: rootPath,
-                        RootState: "blocked_test_cleanup",
-                        DomainRootProvisioning: domainRootProvisioning,
-                        ProjectContainerProvisioning: null,
-                        Notes: notes
-                    );
-                }
-
-                Directory.Delete(testTargetPath, recursive: true);
+                notes.Add(cleanupError ?? "Test cleanup blocked.");
+                return new ProjectBootstrapDomainResult(
+                    DomainKey: domain.DomainKey,
+                    RootPath: rootPath,
+                    RootState: "blocked_test_cleanup",
+                    DomainRootProvisioning: domainRootProvisioning,
+                    ProjectContainerProvisioning: null,
+                    Notes: notes
+                );
             }
+
+            var cleanup = await ProjectBootstrapCleanupHelper.TryDeleteWithRetryAsync(
+                testTargetPath,
+                cancellationToken
+            );
+            if (!cleanup.Success)
+            {
+                notes.Add(cleanup.Error ?? "Test cleanup failed (locked; cleanup skipped).");
+                return new ProjectBootstrapDomainResult(
+                    DomainKey: domain.DomainKey,
+                    RootPath: rootPath,
+                    RootState: "cleanup_locked",
+                    DomainRootProvisioning: domainRootProvisioning,
+                    ProjectContainerProvisioning: null,
+                    Notes: notes
+                );
+            }
+        }
 
             var applied = await ExecuteTemplateAsync(
                 templatePath: domain.ProjectContainerTemplatePath,
@@ -372,8 +388,6 @@ public sealed class ProjectBootstrapper
                 cancellationToken: cancellationToken
             );
 
-            containerProvisioning = ToSummary(applied);
-
             var verified = await VerifyOrRepairAsync(
                 templatePath: domain.ProjectContainerTemplatePath,
                 basePath: containerBasePath,
@@ -383,6 +397,7 @@ public sealed class ProjectBootstrapper
                 cancellationToken: cancellationToken
             );
 
+            containerResult = verified;
             containerProvisioning = ToSummary(verified);
         }
         else if (payload.ProvisionProjectContainers && !IsRootReady(rootState))
@@ -392,6 +407,39 @@ public sealed class ProjectBootstrapper
         else if (!payload.ProvisionProjectContainers)
         {
             notes.Add("Project containers skipped (ProvisionProjectContainers=false).");
+        }
+
+        if (ProjectStorageRootHelper.ShouldUpsert(rootState, containerProvisioning))
+        {
+            var relpathError = "Container result was missing.";
+            if (containerResult is not null
+                && ProjectStorageRootHelper.TryBuildFolderRelpath(
+                    rootPath,
+                    containerResult.TargetRoot,
+                    out var folderRelpath,
+                    out relpathError))
+            {
+                var rootKey = ProjectStorageRootHelper.GetRootKey(payload.TestMode);
+                var upsertError = await UpsertProjectStorageRootAsync(
+                    db,
+                    payload.ProjectId,
+                    domain.StorageProviderKey,
+                    rootKey,
+                    folderRelpath,
+                    cancellationToken
+                );
+
+                if (!string.IsNullOrWhiteSpace(upsertError))
+                {
+                    notes.Add(upsertError);
+                    rootState = "storage_root_failed";
+                }
+            }
+            else
+            {
+                notes.Add(relpathError);
+                rootState = "storage_root_failed";
+            }
         }
 
         return new ProjectBootstrapDomainResult(
@@ -679,6 +727,33 @@ public sealed class ProjectBootstrapper
         return rootState is "ready_existing_root" or "root_created" or "root_verified";
     }
 
+    private static async Task<string?> UpsertProjectStorageRootAsync(
+        AppDbContext db,
+        string projectId,
+        string storageProviderKey,
+        string rootKey,
+        string folderRelpath,
+        CancellationToken cancellationToken)
+    {
+        var storageRootId = EntityIds.NewWithPrefix("psr");
+        var parameters = new[]
+        {
+            new NpgsqlParameter("project_storage_root_id", storageRootId),
+            new NpgsqlParameter("project_id", projectId),
+            new NpgsqlParameter("storage_provider_key", storageProviderKey),
+            new NpgsqlParameter("root_key", rootKey),
+            new NpgsqlParameter("folder_relpath", folderRelpath),
+        };
+
+        var rows = await db.Database.ExecuteSqlRawAsync(
+            ProjectStorageRootSql.UpsertStorageRoot,
+            parameters,
+            cancellationToken
+        );
+
+        return rows == 0 ? "Storage root upsert did not affect any rows." : null;
+    }
+
     private static bool ReadBoolean(JsonElement root, string name, bool defaultValue)
     {
         if (root.TryGetProperty(name, out var element) && element.ValueKind is JsonValueKind.True or JsonValueKind.False)
@@ -764,11 +839,25 @@ public sealed class ProjectBootstrapper
     private static bool IsErrorRootState(string rootState)
     {
         return rootState.StartsWith("blocked_", StringComparison.OrdinalIgnoreCase)
-            || rootState.EndsWith("_failed", StringComparison.OrdinalIgnoreCase);
+            || rootState.EndsWith("_failed", StringComparison.OrdinalIgnoreCase)
+            || rootState.StartsWith("cleanup_", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string? BuildLastError(IEnumerable<ProjectBootstrapDomainResult> results)
+    private static string? BuildLastError(
+        IReadOnlyList<ProjectBootstrapDomainResult> results,
+        bool anySuccess,
+        bool hardFailures)
     {
+        if (!anySuccess)
+        {
+            return "No domain provisioning succeeded.";
+        }
+
+        if (!hardFailures)
+        {
+            return null;
+        }
+
         foreach (var result in results)
         {
             if (result.DomainRootProvisioning?.Errors.Count > 0)
@@ -790,24 +879,62 @@ public sealed class ProjectBootstrapper
         return "project.bootstrap completed with provisioning errors.";
     }
 
+    private static bool IsDomainSuccess(ProjectBootstrapDomainResult result)
+    {
+        return result.ProjectContainerProvisioning?.Success == true;
+    }
+
+    private static bool IsHardFailure(ProjectBootstrapDomainResult result)
+    {
+        if (result.RootState.StartsWith("blocked_", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (result.RootState.StartsWith("cleanup_", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (result.RootState.EndsWith("_failed", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (result.DomainRootProvisioning?.Errors.Count > 0)
+        {
+            return true;
+        }
+
+        if (result.ProjectContainerProvisioning?.Errors.Count > 0)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private static IReadOnlyList<DomainDefinition> BuildDomainDefinitions(string repoRoot)
     {
         return new[]
         {
             new DomainDefinition(
                 DomainKey: "dropbox",
+                StorageProviderKey: "dropbox",
                 DomainRootTemplatePath: Path.Combine(repoRoot, "docs", "templates", "domain_dropbox_root.json"),
                 ProjectContainerTemplatePath: Path.Combine(repoRoot, "docs", "templates", "dropbox_project_container.json"),
                 ProjectContainerSubfolder: "02_Projects_Active"
             ),
             new DomainDefinition(
                 DomainKey: "lucidlink",
+                StorageProviderKey: "lucidlink",
                 DomainRootTemplatePath: Path.Combine(repoRoot, "docs", "templates", "domain_lucidlink_root.json"),
                 ProjectContainerTemplatePath: Path.Combine(repoRoot, "docs", "templates", "lucidlink_production_container.json"),
                 ProjectContainerSubfolder: "01_Productions_Active"
             ),
             new DomainDefinition(
                 DomainKey: "nas",
+                StorageProviderKey: "nas",
                 DomainRootTemplatePath: Path.Combine(repoRoot, "docs", "templates", "domain_nas_root.json"),
                 ProjectContainerTemplatePath: Path.Combine(repoRoot, "docs", "templates", "nas_archive_container.json"),
                 ProjectContainerSubfolder: "01_Projects_Archive"
@@ -837,6 +964,7 @@ public sealed class ProjectBootstrapper
 
     private sealed record DomainDefinition(
         string DomainKey,
+        string StorageProviderKey,
         string DomainRootTemplatePath,
         string ProjectContainerTemplatePath,
         string ProjectContainerSubfolder

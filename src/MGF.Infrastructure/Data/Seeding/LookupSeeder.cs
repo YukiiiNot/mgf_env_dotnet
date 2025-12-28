@@ -398,6 +398,8 @@ public static class LookupSeeder
             rows:
             [
                 ("dropbox", "Dropbox", 10),
+                ("nextcloud", "Nextcloud", 12),
+                ("lucidlink", "LucidLink", 15),
                 ("nas", "NAS", 20),
                 ("supabase_storage", "Supabase Storage", 30),
             ]

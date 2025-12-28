@@ -52,6 +52,12 @@ public sealed class JobWorker : BackgroundService
                 await using var scope = scopeFactory.CreateAsyncScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+                var reaped = await ReapStaleRunningJobsAsync(db, stoppingToken);
+                if (reaped > 0)
+                {
+                    logger.LogInformation("MGF.Worker: reaped {ReapedCount} stale running jobs", reaped);
+                }
+
                 var job = await TryClaimJobAsync(db, stoppingToken);
                 if (job is null)
                 {
@@ -138,6 +144,28 @@ public sealed class JobWorker : BackgroundService
             );
 
             return new ClaimedJob(jobId, jobTypeKey, attemptCount, maxAttempts, payloadJson);
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
+    }
+
+    private async Task<int> ReapStaleRunningJobsAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        try
+        {
+            await using var cmd = db.Database.GetDbConnection().CreateCommand();
+            cmd.CommandText = JobReaperSql.ReapStaleRunningJobs;
+
+            var result = await cmd.ExecuteScalarAsync(cancellationToken);
+            if (result is null || result is DBNull)
+            {
+                return 0;
+            }
+
+            return Convert.ToInt32(result, CultureInfo.InvariantCulture);
         }
         finally
         {

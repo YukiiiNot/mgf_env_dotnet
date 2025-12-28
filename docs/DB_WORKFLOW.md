@@ -91,6 +91,17 @@ dotnet test .\MGF.sln
 - Folder: `src/MGF.Infrastructure/Migrations/`
 - Files: `*_<Name>.cs`, `*_<Name>.Designer.cs`, and `AppDbContextModelSnapshot.cs`
 
+## Preflight: project_storage_roots unique index
+
+Before applying the `project_storage_roots` unique index migration, check for duplicates:
+
+```sql
+SELECT project_id, storage_provider_key, root_key, COUNT(*) AS dup_count
+FROM public.project_storage_roots
+GROUP BY project_id, storage_provider_key, root_key
+HAVING COUNT(*) > 1;
+```
+
 ## Common EF commands (with explanations)
 
 ### List migrations
