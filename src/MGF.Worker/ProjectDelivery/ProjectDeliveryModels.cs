@@ -6,7 +6,8 @@ public sealed record ProjectDeliveryPayload(
     bool TestMode,
     bool AllowTestCleanup,
     bool AllowNonReal,
-    bool Force
+    bool Force,
+    bool RefreshShareLink
 );
 
 public sealed record ProjectDeliveryRunResult(
@@ -25,7 +26,11 @@ public sealed record ProjectDeliveryRunResult(
     IReadOnlyList<DeliveryFileSummary> Files,
     IReadOnlyList<ProjectDeliveryDomainResult> Domains,
     bool HasErrors,
-    string? LastError
+    string? LastError,
+    string? ShareStatus,
+    string? ShareUrl,
+    string? ShareId,
+    string? ShareError
 );
 
 public sealed record ProjectDeliveryDomainResult(

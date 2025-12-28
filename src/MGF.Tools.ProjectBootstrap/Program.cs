@@ -313,12 +313,19 @@ static Command CreateDeliverCommand()
         Arity = ArgumentArity.ZeroOrOne
     };
 
+    var refreshShareLinkOption = new Option<bool?>("--refreshShareLink")
+    {
+        Description = "Refresh/recreate the Dropbox stable share link (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
     command.AddOption(projectIdOption);
     command.AddOption(editorInitialsOption);
     command.AddOption(testModeOption);
     command.AddOption(allowTestCleanupOption);
     command.AddOption(allowNonRealOption);
     command.AddOption(forceOption);
+    command.AddOption(refreshShareLinkOption);
 
     command.SetHandler(async context =>
     {
@@ -330,7 +337,8 @@ static Command CreateDeliverCommand()
             TestMode: context.ParseResult.GetValueForOption(testModeOption) ?? false,
             AllowTestCleanup: context.ParseResult.GetValueForOption(allowTestCleanupOption) ?? false,
             AllowNonReal: context.ParseResult.GetValueForOption(allowNonRealOption) ?? false,
-            Force: context.ParseResult.GetValueForOption(forceOption) ?? false
+            Force: context.ParseResult.GetValueForOption(forceOption) ?? false,
+            RefreshShareLink: context.ParseResult.GetValueForOption(refreshShareLinkOption) ?? false
         );
 
         var exitCode = await EnqueueDeliveryAsync(payload);
@@ -2123,7 +2131,8 @@ sealed record ProjectDeliveryJobPayload(
     bool TestMode,
     bool AllowTestCleanup,
     bool AllowNonReal,
-    bool Force
+    bool Force,
+    bool RefreshShareLink
 );
 
 sealed record RootIntegrityJobPayload(

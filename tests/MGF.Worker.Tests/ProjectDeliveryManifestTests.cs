@@ -20,7 +20,8 @@ public sealed class ProjectDeliveryManifestTests
             versionPath,
             "v1",
             DateTimeOffset.UtcNow.AddMonths(3),
-            Array.Empty<ProjectDeliverer.DeliveryFile>());
+            Array.Empty<ProjectDeliverer.DeliveryFile>(),
+            "https://dropbox.test/share");
 
         Assert.Equal(2, manifest.SchemaVersion);
         Assert.Equal(stablePath, manifest.DestinationPath);
@@ -28,5 +29,6 @@ public sealed class ProjectDeliveryManifestTests
         Assert.Equal(versionPath, manifest.VersionPath);
         Assert.Equal("v1", manifest.VersionLabel);
         Assert.Equal("v1", manifest.CurrentVersion);
+        Assert.Equal("https://dropbox.test/share", manifest.StableShareUrl);
     }
 }
