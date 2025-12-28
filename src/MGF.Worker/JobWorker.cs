@@ -467,7 +467,7 @@ public sealed class JobWorker : BackgroundService
 
         try
         {
-            var deliverer = new ProjectDeliverer(configuration);
+        var deliverer = new ProjectDeliverer(configuration, logger: logger);
             var result = await deliverer.RunAsync(db, payload, job.JobId, cancellationToken);
 
             logger.LogInformation(

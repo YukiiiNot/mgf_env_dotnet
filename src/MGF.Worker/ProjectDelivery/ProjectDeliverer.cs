@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MGF.Infrastructure.Data;
 using MGF.Tools.Provisioner;
 using MGF.Worker.ProjectBootstrap;
@@ -24,12 +25,17 @@ public sealed class ProjectDeliverer
     private readonly LocalFileStore fileStore = new();
     private readonly FolderProvisioner provisioner;
     private readonly IDropboxShareLinkClient shareLinkClient;
+    private readonly ILogger? logger;
 
-    public ProjectDeliverer(IConfiguration configuration, IDropboxShareLinkClient? shareLinkClient = null)
+    public ProjectDeliverer(
+        IConfiguration configuration,
+        IDropboxShareLinkClient? shareLinkClient = null,
+        ILogger? logger = null)
     {
         this.configuration = configuration;
         provisioner = new FolderProvisioner(fileStore);
         this.shareLinkClient = shareLinkClient ?? new DropboxShareLinkClient(new HttpClient(), configuration);
+        this.logger = logger;
     }
 
     public async Task<ProjectDeliveryRunResult> RunAsync(
@@ -943,6 +949,11 @@ public sealed class ProjectDeliverer
             ?? configuration["Dropbox:AccessToken"]
             ?? string.Empty;
 
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            LogDropboxTokenSource(configuration, logger);
+        }
+
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return new DeliveryShareOutcome(
@@ -968,7 +979,9 @@ public sealed class ProjectDeliverer
 
         try
         {
-            var dropboxPath = BuildDropboxApiPath(dropboxRootPath, stablePath);
+            var apiRoot = ResolveDropboxApiRoot(dropboxRootPath);
+            var dropboxPath = BuildDropboxApiPath(apiRoot, stablePath);
+            logger?.LogInformation("MGF.Worker: Dropbox share link path={DropboxPath}", dropboxPath);
             var shared = await shareLinkClient.GetOrCreateSharedLinkAsync(accessToken, dropboxPath, cancellationToken);
             return new DeliveryShareOutcome(
                 ShareStatus: shared.IsNew ? "created" : "reused",
@@ -1042,6 +1055,73 @@ public sealed class ProjectDeliverer
         var trimmed = relative.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         var dropboxPath = "/" + trimmed.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
         return dropboxPath;
+    }
+
+    private string ResolveDropboxApiRoot(string dropboxRootPath)
+    {
+        var configured = configuration["Integrations:Dropbox:SyncRoot"]
+            ?? configuration["Dropbox:SyncRoot"];
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return configured;
+        }
+
+        return TryInferDropboxSyncRoot(dropboxRootPath) ?? dropboxRootPath;
+    }
+
+    private static string? TryInferDropboxSyncRoot(string dropboxRootPath)
+    {
+        if (string.IsNullOrWhiteSpace(dropboxRootPath))
+        {
+            return null;
+        }
+
+        var current = new DirectoryInfo(dropboxRootPath);
+        while (current is not null)
+        {
+            var name = current.Name;
+            var isDropboxRoot =
+                string.Equals(name, "Dropbox", StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith("Dropbox ", StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith("Dropbox(", StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith("Dropbox (", StringComparison.OrdinalIgnoreCase);
+
+            if (isDropboxRoot)
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
+    }
+
+    private static void LogDropboxTokenSource(IConfiguration configuration, ILogger? logger)
+    {
+        if (logger is null)
+        {
+            return;
+        }
+
+        var integrationsToken = configuration["Integrations:Dropbox:AccessToken"];
+        if (!string.IsNullOrWhiteSpace(integrationsToken))
+        {
+            var fromEnv = !string.IsNullOrWhiteSpace(
+                Environment.GetEnvironmentVariable("Integrations__Dropbox__AccessToken"));
+            var source = fromEnv ? "env:Integrations__Dropbox__AccessToken" : "config/user-secrets";
+            logger.LogInformation("MGF.Worker: Dropbox share link token source={Source}", source);
+            return;
+        }
+
+        var dropboxToken = configuration["Dropbox:AccessToken"];
+        if (!string.IsNullOrWhiteSpace(dropboxToken))
+        {
+            var fromEnv = !string.IsNullOrWhiteSpace(
+                Environment.GetEnvironmentVariable("Dropbox__AccessToken"));
+            var source = fromEnv ? "env:Dropbox__AccessToken" : "config/user-secrets";
+            logger.LogInformation("MGF.Worker: Dropbox share link token source={Source}", source);
+        }
     }
 
     internal static bool IsStableSharePath(string path)
@@ -1284,6 +1364,7 @@ public sealed class ProjectDeliverer
 
         if (runResult.ShareStatus is "created" or "reused")
         {
+            current.Remove("shareError");
             current["lastShareVerifiedAtUtc"] = DateTimeOffset.UtcNow;
         }
 
