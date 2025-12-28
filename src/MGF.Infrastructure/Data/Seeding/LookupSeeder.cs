@@ -65,6 +65,9 @@ public static class LookupSeeder
             rows:
             [
                 ("active", "Active", 10),
+                ("ready_to_provision", "Ready to Provision", 20),
+                ("provisioning", "Provisioning", 30),
+                ("provision_failed", "Provision Failed", 80),
                 ("archived", "Archived", 90),
             ]
         ),

@@ -260,7 +260,7 @@ public sealed class JobWorker : BackgroundService
                 await MarkFailedAsync(
                     db,
                     job,
-                    new InvalidOperationException("project.bootstrap completed with provisioning errors."),
+                    new InvalidOperationException(result.LastError ?? "project.bootstrap completed with provisioning errors."),
                     cancellationToken
                 );
                 return false;

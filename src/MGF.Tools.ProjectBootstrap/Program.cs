@@ -11,6 +11,7 @@ using Npgsql;
 
 var root = new RootCommand("MGF Project Bootstrap Job Tool");
 root.AddCommand(CreateEnqueueCommand());
+root.AddCommand(CreateReadyCommand());
 root.AddCommand(CreateShowCommand());
 root.AddCommand(CreateListCommand());
 
@@ -64,6 +65,30 @@ static Command CreateEnqueueCommand()
         Arity = ArgumentArity.ZeroOrOne
     };
 
+    var allowNonRealOption = new Option<bool?>("--allowNonReal")
+    {
+        Description = "Allow provisioning non-real data_profile projects (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var forceOption = new Option<bool?>("--force")
+    {
+        Description = "Force provisioning even if project status is not ready_to_provision (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var testModeOption = new Option<bool?>("--testMode")
+    {
+        Description = "Provision containers under 99_TestRuns per domain (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var allowTestCleanupOption = new Option<bool?>("--allowTestCleanup")
+    {
+        Description = "Allow cleanup of existing test target folder when testMode=true (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
     command.AddOption(projectIdOption);
     command.AddOption(verifyOption);
     command.AddOption(createOption);
@@ -71,6 +96,10 @@ static Command CreateEnqueueCommand()
     command.AddOption(repairOption);
     command.AddOption(editorsOption);
     command.AddOption(sandboxOption);
+    command.AddOption(allowNonRealOption);
+    command.AddOption(forceOption);
+    command.AddOption(testModeOption);
+    command.AddOption(allowTestCleanupOption);
 
     command.SetHandler(async context =>
     {
@@ -82,10 +111,36 @@ static Command CreateEnqueueCommand()
             CreateDomainRoots: context.ParseResult.GetValueForOption(createOption) ?? false,
             ProvisionProjectContainers: context.ParseResult.GetValueForOption(provisionOption) ?? false,
             AllowRepair: context.ParseResult.GetValueForOption(repairOption) ?? false,
-            ForceSandbox: context.ParseResult.GetValueForOption(sandboxOption) ?? false
+            ForceSandbox: context.ParseResult.GetValueForOption(sandboxOption) ?? false,
+            AllowNonReal: context.ParseResult.GetValueForOption(allowNonRealOption) ?? false,
+            Force: context.ParseResult.GetValueForOption(forceOption) ?? false,
+            TestMode: context.ParseResult.GetValueForOption(testModeOption) ?? false,
+            AllowTestCleanup: context.ParseResult.GetValueForOption(allowTestCleanupOption) ?? false
         );
 
         var exitCode = await EnqueueAsync(payload);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateReadyCommand()
+{
+    var command = new Command("ready", "mark a project as ready_to_provision.");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID to mark ready.",
+        IsRequired = true
+    };
+
+    command.AddOption(projectIdOption);
+
+    command.SetHandler(async context =>
+    {
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var exitCode = await MarkReadyAsync(projectId);
         context.ExitCode = exitCode;
     });
 
@@ -149,6 +204,13 @@ static async Task<int> EnqueueAsync(ProjectBootstrapJobPayload payload)
 
         await EnsureJobTypeExistsAsync(conn);
 
+        var existing = await FindExistingJobAsync(conn, payload.ProjectId);
+        if (!BootstrapJobGuard.ShouldEnqueue(existing, out var reason))
+        {
+            Console.WriteLine($"bootstrap: {reason} for project_id={payload.ProjectId}");
+            return 0;
+        }
+
         var jobId = EntityIds.NewWithPrefix("job");
         var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
         {
@@ -182,6 +244,45 @@ static async Task<int> EnqueueAsync(ProjectBootstrapJobPayload payload)
     }
 }
 
+static async Task<int> MarkReadyAsync(string projectId)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            UPDATE public.projects
+            SET status_key = 'ready_to_provision',
+                updated_at = now()
+            WHERE project_id = @project_id;
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("project_id", projectId);
+
+        var rows = await cmd.ExecuteNonQueryAsync();
+        if (rows == 0)
+        {
+            Console.Error.WriteLine($"bootstrap: project not found: {projectId}");
+            return 1;
+        }
+
+        Console.WriteLine($"bootstrap: project marked ready_to_provision (project_id={projectId})");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: ready failed: {ex.Message}");
+        return 1;
+    }
+}
+
 static async Task EnsureJobTypeExistsAsync(NpgsqlConnection conn)
 {
     await using var cmd = new NpgsqlCommand(
@@ -199,6 +300,33 @@ static async Task EnsureJobTypeExistsAsync(NpgsqlConnection conn)
     await cmd.ExecuteNonQueryAsync();
 }
 
+static async Task<ExistingJob?> FindExistingJobAsync(NpgsqlConnection conn, string projectId)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        SELECT job_id, status_key
+        FROM public.jobs
+        WHERE job_type_key = 'project.bootstrap'
+          AND entity_type_key = 'project'
+          AND entity_key = @project_id
+          AND status_key IN ('queued', 'running')
+        ORDER BY created_at DESC
+        LIMIT 1;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("project_id", projectId);
+
+    await using var reader = await cmd.ExecuteReaderAsync();
+    if (!await reader.ReadAsync())
+    {
+        return null;
+    }
+
+    return new ExistingJob(reader.GetString(0), reader.GetString(1));
+}
+
 static async Task<int> ShowProjectAsync(string projectId)
 {
     try
@@ -211,7 +339,7 @@ static async Task<int> ShowProjectAsync(string projectId)
 
         await using var cmd = new NpgsqlCommand(
             """
-            SELECT project_id, project_code, name, metadata::text
+            SELECT project_id, project_code, name, status_key, data_profile, metadata::text
             FROM public.projects
             WHERE project_id = @project_id;
             """,
@@ -229,11 +357,15 @@ static async Task<int> ShowProjectAsync(string projectId)
 
         var projectCode = reader.GetString(1);
         var name = reader.GetString(2);
-        var metadataJson = reader.GetString(3);
+        var statusKey = reader.GetString(3);
+        var dataProfile = reader.GetString(4);
+        var metadataJson = reader.GetString(5);
 
         Console.WriteLine($"project_id={projectId}");
         Console.WriteLine($"project_code={projectCode}");
         Console.WriteLine($"name={name}");
+        Console.WriteLine($"status_key={statusKey}");
+        Console.WriteLine($"data_profile={dataProfile}");
 
         var pretty = JsonSerializer.Serialize(
             JsonDocument.Parse(metadataJson).RootElement,
@@ -314,5 +446,11 @@ sealed record ProjectBootstrapJobPayload(
     bool CreateDomainRoots,
     bool ProvisionProjectContainers,
     bool AllowRepair,
-    bool ForceSandbox
+    bool ForceSandbox,
+    bool AllowNonReal,
+    bool Force,
+    bool TestMode,
+    bool AllowTestCleanup
 );
+
+sealed record ExistingJob(string JobId, string StatusKey);
