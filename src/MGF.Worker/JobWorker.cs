@@ -9,6 +9,7 @@ using MGF.Infrastructure.Data;
 using MGF.Worker.Square;
 using MGF.Worker.ProjectArchive;
 using MGF.Worker.ProjectBootstrap;
+using MGF.Worker.ProjectDelivery;
 using MGF.Worker.RootIntegrity;
 
 public sealed class JobWorker : BackgroundService
@@ -268,6 +269,16 @@ public sealed class JobWorker : BackgroundService
                 return;
             }
 
+            if (string.Equals(job.JobTypeKey, "project.delivery", StringComparison.Ordinal))
+            {
+                var succeeded = await HandleProjectDeliveryAsync(db, job, cancellationToken);
+                if (succeeded)
+                {
+                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                }
+                return;
+            }
+
             if (string.Equals(job.JobTypeKey, "domain.root_integrity", StringComparison.Ordinal))
             {
                 var succeeded = await HandleRootIntegrityAsync(db, job, cancellationToken);
@@ -423,6 +434,68 @@ public sealed class JobWorker : BackgroundService
             logger.LogError(
                 ex,
                 "MGF.Worker: project.archive failed (job_id={JobId}, project_id={ProjectId})",
+                job.JobId,
+                payload.ProjectId
+            );
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleProjectDeliveryAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
+    {
+        ProjectDeliveryPayload payload;
+        try
+        {
+            payload = ProjectDeliverer.ParsePayload(job.PayloadJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "MGF.Worker: project.delivery payload invalid (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+
+        logger.LogInformation(
+            "MGF.Worker: project.delivery start (job_id={JobId}, project_id={ProjectId})",
+            job.JobId,
+            payload.ProjectId
+        );
+
+        try
+        {
+            var deliverer = new ProjectDeliverer(configuration);
+            var result = await deliverer.RunAsync(db, payload, job.JobId, cancellationToken);
+
+            logger.LogInformation(
+                "MGF.Worker: project.delivery completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
+                result.JobId,
+                result.ProjectId,
+                result.Domains.Count,
+                result.HasErrors
+            );
+
+            if (result.HasErrors)
+            {
+                await MarkFailedAsync(
+                    db,
+                    job,
+                    new InvalidOperationException(result.LastError ?? "project.delivery completed with errors."),
+                    cancellationToken
+                );
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "MGF.Worker: project.delivery failed (job_id={JobId}, project_id={ProjectId})",
                 job.JobId,
                 payload.ProjectId
             );

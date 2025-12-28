@@ -16,6 +16,8 @@ root.AddCommand(CreateEnqueueCommand());
 root.AddCommand(CreateReadyCommand());
 root.AddCommand(CreateToArchiveCommand());
 root.AddCommand(CreateArchiveCommand());
+root.AddCommand(CreateToDeliverCommand());
+root.AddCommand(CreateDeliverCommand());
 root.AddCommand(CreateRootAuditCommand());
 root.AddCommand(CreateRootRepairCommand());
 root.AddCommand(CreateRootShowCommand());
@@ -180,6 +182,28 @@ static Command CreateToArchiveCommand()
     return command;
 }
 
+static Command CreateToDeliverCommand()
+{
+    var command = new Command("to-deliver", "mark a project as ready_to_deliver.");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID to mark ready_to_deliver.",
+        IsRequired = true
+    };
+
+    command.AddOption(projectIdOption);
+
+    command.SetHandler(async context =>
+    {
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var exitCode = await MarkToDeliverAsync(projectId);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
 static Command CreateArchiveCommand()
 {
     var command = new Command("archive", "enqueue a project.archive job.");
@@ -190,12 +214,12 @@ static Command CreateArchiveCommand()
         IsRequired = true
     };
 
-    var editorsOption = new Option<string[]>("--editors")
+    var editorInitialsOption = new Option<string>("--editorInitials")
     {
-        Description = "Comma-separated editor initials (e.g., ER,AB) or repeatable values.",
-        Arity = ArgumentArity.ZeroOrMore
+        Description = "Comma-separated editor initials (e.g., ER,AB).",
+        Arity = ArgumentArity.ZeroOrOne
     };
-    editorsOption.AllowMultipleArgumentsPerToken = true;
+    editorInitialsOption.SetDefaultValue("TE");
 
     var testModeOption = new Option<bool?>("--testMode")
     {
@@ -222,7 +246,7 @@ static Command CreateArchiveCommand()
     };
 
     command.AddOption(projectIdOption);
-    command.AddOption(editorsOption);
+    command.AddOption(editorInitialsOption);
     command.AddOption(testModeOption);
     command.AddOption(allowTestCleanupOption);
     command.AddOption(allowNonRealOption);
@@ -231,9 +255,10 @@ static Command CreateArchiveCommand()
     command.SetHandler(async context =>
     {
         var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var editorInitials = context.ParseResult.GetValueForOption(editorInitialsOption) ?? "TE";
         var payload = new ProjectArchiveJobPayload(
             ProjectId: projectId,
-            EditorInitials: ParseEditors(context.ParseResult.GetValueForOption(editorsOption) ?? Array.Empty<string>()),
+            EditorInitials: ParseEditors(new[] { editorInitials }),
             TestMode: context.ParseResult.GetValueForOption(testModeOption) ?? false,
             AllowTestCleanup: context.ParseResult.GetValueForOption(allowTestCleanupOption) ?? false,
             AllowNonReal: context.ParseResult.GetValueForOption(allowNonRealOption) ?? false,
@@ -247,6 +272,73 @@ static Command CreateArchiveCommand()
     return command;
 }
 
+static Command CreateDeliverCommand()
+{
+    var command = new Command("deliver", "enqueue a project.delivery job.");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID to deliver (e.g., prj_...).",
+        IsRequired = true
+    };
+
+    var editorInitialsOption = new Option<string>("--editorInitials")
+    {
+        Description = "Comma-separated editor initials (e.g., ER,AB).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+    editorInitialsOption.SetDefaultValue("TE");
+
+    var testModeOption = new Option<bool?>("--testMode")
+    {
+        Description = "Use 99_TestRuns per domain (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var allowTestCleanupOption = new Option<bool?>("--allowTestCleanup")
+    {
+        Description = "Allow cleanup of existing test target folder when testMode=true (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var allowNonRealOption = new Option<bool?>("--allowNonReal")
+    {
+        Description = "Allow delivery for non-real data_profile projects (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var forceOption = new Option<bool?>("--force")
+    {
+        Description = "Force delivery even if project status is not ready_to_deliver (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    command.AddOption(projectIdOption);
+    command.AddOption(editorInitialsOption);
+    command.AddOption(testModeOption);
+    command.AddOption(allowTestCleanupOption);
+    command.AddOption(allowNonRealOption);
+    command.AddOption(forceOption);
+
+    command.SetHandler(async context =>
+    {
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var editorInitials = context.ParseResult.GetValueForOption(editorInitialsOption) ?? "TE";
+        var payload = new ProjectDeliveryJobPayload(
+            ProjectId: projectId,
+            EditorInitials: ParseEditors(new[] { editorInitials }),
+            TestMode: context.ParseResult.GetValueForOption(testModeOption) ?? false,
+            AllowTestCleanup: context.ParseResult.GetValueForOption(allowTestCleanupOption) ?? false,
+            AllowNonReal: context.ParseResult.GetValueForOption(allowNonRealOption) ?? false,
+            Force: context.ParseResult.GetValueForOption(forceOption) ?? false
+        );
+
+        var exitCode = await EnqueueDeliveryAsync(payload);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
 static Command CreateRootAuditCommand()
 {
     var command = new Command("root-audit", "enqueue a domain.root_integrity job (report-only).");
@@ -759,6 +851,72 @@ static async Task<int> EnqueueArchiveAsync(ProjectArchiveJobPayload payload)
     }
 }
 
+static async Task<int> EnqueueDeliveryAsync(ProjectDeliveryJobPayload payload)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        var existingJob = await FindExistingDeliveryJobAsync(conn, payload.ProjectId);
+        if (!DeliveryJobGuard.ShouldEnqueue(existingJob, out var reason))
+        {
+            Console.Error.WriteLine($"bootstrap: delivery enqueue blocked: {reason}");
+            return 2;
+        }
+
+        var jobId = EntityIds.NewWithPrefix("job");
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            INSERT INTO public.jobs (
+                job_id,
+                job_type_key,
+                status_key,
+                attempt_count,
+                max_attempts,
+                run_after,
+                payload,
+                entity_type_key,
+                entity_key
+            )
+            VALUES (
+                @job_id,
+                'project.delivery',
+                'queued',
+                0,
+                5,
+                now(),
+                @payload::jsonb,
+                'project',
+                @project_id
+            );
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("job_id", jobId);
+        cmd.Parameters.AddWithValue("payload", json);
+        cmd.Parameters.AddWithValue("project_id", payload.ProjectId);
+
+        await cmd.ExecuteNonQueryAsync();
+        Console.WriteLine($"bootstrap: project.delivery enqueued job_id={jobId} project_id={payload.ProjectId}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: delivery enqueue failed: {ex.Message}");
+        return 1;
+    }
+}
+
 static async Task<int> EnqueueRootIntegrityAsync(RootIntegrityJobPayload payload)
 {
     try
@@ -897,6 +1055,45 @@ static async Task EnsureJobTypeExistsAsync(NpgsqlConnection conn)
     cmd.Parameters.AddWithValue("job_type_key", "project.bootstrap");
     cmd.Parameters.AddWithValue("display_name", "Project: Bootstrap");
     await cmd.ExecuteNonQueryAsync();
+}
+
+static async Task<int> MarkToDeliverAsync(string projectId)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            UPDATE public.projects
+            SET status_key = 'ready_to_deliver',
+                updated_at = now()
+            WHERE project_id = @project_id;
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("project_id", projectId);
+
+        var rows = await cmd.ExecuteNonQueryAsync();
+        if (rows == 0)
+        {
+            Console.Error.WriteLine($"bootstrap: project not found: {projectId}");
+            return 1;
+        }
+
+        Console.WriteLine($"bootstrap: project marked ready_to_deliver: {projectId}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: ready_to_deliver failed: {ex.Message}");
+        return 1;
+    }
 }
 
 static async Task EnsureArchiveJobTypeExistsAsync(NpgsqlConnection conn)
@@ -1146,6 +1343,41 @@ static async Task<int> ShowProjectAsync(string projectId)
                 Console.WriteLine("- (none)");
             }
         }
+
+        await using (var deliveryJobsCmd = new NpgsqlCommand(
+                         """
+                         SELECT job_id, status_key, attempt_count, run_after, locked_until
+                         FROM public.jobs
+                         WHERE job_type_key = 'project.delivery'
+                           AND entity_type_key = 'project'
+                           AND entity_key = @project_id
+                         ORDER BY created_at DESC;
+                         """,
+                         conn
+                     ))
+        {
+            deliveryJobsCmd.Parameters.AddWithValue("project_id", projectId);
+
+            await using var deliveryReader = await deliveryJobsCmd.ExecuteReaderAsync();
+            Console.WriteLine("delivery_jobs:");
+            var hadDeliveryJobs = false;
+            while (await deliveryReader.ReadAsync())
+            {
+                hadDeliveryJobs = true;
+                var jobId = deliveryReader.GetString(0);
+                var status = deliveryReader.GetString(1);
+                var attempt = deliveryReader.GetInt32(2);
+                var runAfter = deliveryReader.GetFieldValue<DateTimeOffset>(3);
+                var lockedUntil = deliveryReader.IsDBNull(4) ? (DateTimeOffset?)null : deliveryReader.GetFieldValue<DateTimeOffset>(4);
+                var lockedUntilText = lockedUntil.HasValue ? lockedUntil.Value.ToString("O") : "(null)";
+                Console.WriteLine($"- {jobId}\t{status}\tattempts={attempt}\trun_after={runAfter:O}\tlocked_until={lockedUntilText}");
+            }
+
+            if (!hadDeliveryJobs)
+            {
+                Console.WriteLine("- (none)");
+            }
+        }
         return 0;
     }
     catch (Exception ex)
@@ -1153,6 +1385,33 @@ static async Task<int> ShowProjectAsync(string projectId)
         Console.Error.WriteLine($"bootstrap: show failed: {ex.Message}");
         return 1;
     }
+}
+
+static async Task<ExistingJob?> FindExistingDeliveryJobAsync(NpgsqlConnection conn, string projectId)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        SELECT job_id, status_key
+        FROM public.jobs
+        WHERE job_type_key = 'project.delivery'
+          AND entity_type_key = 'project'
+          AND entity_key = @project_id
+          AND status_key IN ('queued', 'running')
+        ORDER BY created_at DESC
+        LIMIT 1;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("project_id", projectId);
+
+    await using var reader = await cmd.ExecuteReaderAsync();
+    if (!await reader.ReadAsync())
+    {
+        return null;
+    }
+
+    return new ExistingJob(reader.GetString(0), reader.GetString(1));
 }
 
 static async Task<int> ShowRootIntegrityAsync(string provider, string rootKey)
@@ -1850,6 +2109,15 @@ sealed record ProjectBootstrapJobPayload(
 );
 
 sealed record ProjectArchiveJobPayload(
+    string ProjectId,
+    IReadOnlyList<string> EditorInitials,
+    bool TestMode,
+    bool AllowTestCleanup,
+    bool AllowNonReal,
+    bool Force
+);
+
+sealed record ProjectDeliveryJobPayload(
     string ProjectId,
     IReadOnlyList<string> EditorInitials,
     bool TestMode,
