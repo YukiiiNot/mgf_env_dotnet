@@ -1,10 +1,12 @@
-namespace MGF.Worker.Integrations.Email;
+namespace MGF.Worker.Email.Sending;
 
 using System.Text;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;
 using Microsoft.Extensions.Configuration;
+using MGF.Worker.Email.Models;
+using MGF.Worker.Email.Registry;
 
 internal sealed class SmtpEmailSender : IEmailSender
 {
@@ -25,9 +27,11 @@ internal sealed class SmtpEmailSender : IEmailSender
             return Failed(request, "Email sending disabled (Integrations:Email:Enabled=false).");
         }
 
-        if (!IsAllowedFromAddress(request.FromAddress))
+        var profile = EmailProfileResolver.Resolve(configuration, request.ProfileKey);
+        if (!EmailProfileResolver.IsAllowedFrom(profile, request.FromAddress))
         {
-            return Failed(request, "SMTP fromAddress must be deliveries@mgfilms.pro or info@mgfilms.pro.");
+            var allowed = EmailProfileResolver.AllowedFromDisplay(profile);
+            return Failed(request, $"SMTP fromAddress must be {allowed}.");
         }
 
         var host = configuration["Integrations:Email:Smtp:Host"] ?? string.Empty;
@@ -92,12 +96,6 @@ internal sealed class SmtpEmailSender : IEmailSender
             TemplateVersion: request.TemplateVersion,
             ReplyTo: request.ReplyTo
         );
-    }
-
-    private static bool IsAllowedFromAddress(string value)
-    {
-        return string.Equals(value, "deliveries@mgfilms.pro", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(value, "info@mgfilms.pro", StringComparison.OrdinalIgnoreCase);
     }
 
     internal static MailMessage BuildMessage(DeliveryEmailRequest request)

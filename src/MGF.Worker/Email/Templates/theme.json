@@ -1,0 +1,10 @@
+{
+  "fontStack": "'Glacial Indifference','Garet','Segoe UI',Arial,sans-serif",
+  "backgroundColor": "#2b2b2b",
+  "cardBackgroundColor": "#111111",
+  "textColor": "#f5f5f5",
+  "mutedTextColor": "#b3b3b3",
+  "linkColor": "#3d7bff",
+  "buttonBackground": "#3d7bff",
+  "buttonTextColor": "#ffffff"
+}

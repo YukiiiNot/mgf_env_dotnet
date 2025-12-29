@@ -1,4 +1,4 @@
-namespace MGF.Worker.Integrations.Email;
+namespace MGF.Worker.Email.Sending;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

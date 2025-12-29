@@ -9,7 +9,12 @@ using Microsoft.Extensions.Configuration;
 using MGF.Domain.Entities;
 using MGF.Infrastructure.Configuration;
 using MGF.Infrastructure.Data;
+using MGF.Tools.Provisioner;
 using MGF.Tools.ProjectBootstrap;
+using MGF.Worker.Email.Composition;
+using MGF.Worker.Email.Models;
+using MGF.Worker.Email.Registry;
+using MGF.Worker.ProjectDelivery;
 using Npgsql;
 
 var root = new RootCommand("MGF Project Bootstrap Job Tool");
@@ -20,6 +25,7 @@ root.AddCommand(CreateArchiveCommand());
 root.AddCommand(CreateToDeliverCommand());
 root.AddCommand(CreateDeliverCommand());
 root.AddCommand(CreateDeliveryEmailCommand());
+root.AddCommand(CreateEmailPreviewCommand());
 root.AddCommand(CreateSeedDeliverablesCommand());
 root.AddCommand(CreateRootAuditCommand());
 root.AddCommand(CreateRootRepairCommand());
@@ -431,6 +437,66 @@ static Command CreateDeliveryEmailCommand()
         );
 
         var exitCode = await EnqueueDeliveryEmailAsync(payload);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateEmailPreviewCommand()
+{
+    var command = new Command("email-preview", "render a delivery-ready email to disk without sending.");
+
+    var kindOption = new Option<string>("--kind")
+    {
+        Description = "Email kind (delivery_ready only for now).",
+        IsRequired = false
+    };
+    kindOption.SetDefaultValue("delivery_ready");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID to preview (e.g., prj_...).",
+        IsRequired = true
+    };
+
+    var outOption = new Option<string>("--out")
+    {
+        Description = "Output directory for preview.html/preview.txt/preview.json.",
+        IsRequired = true
+    };
+
+    var toOption = new Option<string[]>("--to")
+    {
+        Description = "Preview recipient(s) (optional; default info@mgfilms.pro).",
+        Arity = ArgumentArity.ZeroOrMore
+    };
+    toOption.AllowMultipleArgumentsPerToken = true;
+
+    command.AddOption(kindOption);
+    command.AddOption(projectIdOption);
+    command.AddOption(outOption);
+    command.AddOption(toOption);
+
+    command.SetHandler(async context =>
+    {
+        var kind = (context.ParseResult.GetValueForOption(kindOption) ?? "delivery_ready").Trim();
+        if (!kind.Equals("delivery_ready", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine($"bootstrap: email-preview kind '{kind}' is not supported.");
+            context.ExitCode = 1;
+            return;
+        }
+
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var outDir = context.ParseResult.GetValueForOption(outOption) ?? string.Empty;
+        var toEmails = ParseEmails(context.ParseResult.GetValueForOption(toOption) ?? Array.Empty<string>());
+        if (toEmails.Count == 0)
+        {
+            toEmails = new[] { "info@mgfilms.pro" };
+        }
+
+        var exitCode = await RenderDeliveryPreviewAsync(projectId, outDir, toEmails);
         context.ExitCode = exitCode;
     });
 
@@ -1742,6 +1808,17 @@ static string? TryGetString(JsonElement element, string name)
     };
 }
 
+static DateTimeOffset? TryGetDateTimeOffset(JsonElement element, string name)
+{
+    var raw = TryGetString(element, name);
+    if (string.IsNullOrWhiteSpace(raw))
+    {
+        return null;
+    }
+
+    return DateTimeOffset.TryParse(raw, out var parsed) ? parsed : null;
+}
+
 static IReadOnlyList<string> TryGetStringArray(JsonElement element, string name)
 {
     if (!element.TryGetProperty(name, out var prop) || prop.ValueKind != JsonValueKind.Array)
@@ -2489,6 +2566,365 @@ static async Task<int> RequeueStaleJobsAsync(bool dryRun)
     }
 }
 
+static async Task<int> RenderDeliveryPreviewAsync(
+    string projectId,
+    string outDir,
+    IReadOnlyList<string> toEmails)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        var project = await LoadProjectPreviewAsync(conn, projectId);
+        if (project is null)
+        {
+            Console.Error.WriteLine($"bootstrap: email-preview project not found: {projectId}");
+            return 1;
+        }
+
+        var clientName = await LoadClientNameAsync(conn, project.ClientId);
+        var current = ReadDeliveryCurrentState(project.MetadataJson);
+        if (string.IsNullOrWhiteSpace(current.ShareUrl))
+        {
+            Console.Error.WriteLine("bootstrap: email-preview stableShareUrl missing; run delivery first.");
+            return 1;
+        }
+
+        var context = await TryBuildPreviewContextAsync(current, project.MetadataJson);
+        if (context is null)
+        {
+            Console.Error.WriteLine("bootstrap: email-preview unable to build context from manifest or metadata.");
+            return 1;
+        }
+
+        var tokens = ProvisioningTokens.Create(project.ProjectCode, project.ProjectName, clientName, Array.Empty<string>());
+        var profile = EmailProfileResolver.Resolve(config, EmailProfiles.Deliveries);
+        var replyTo = profile.DefaultReplyTo ?? "info@mgfilms.pro";
+        var fromName = profile.DefaultFromName ?? "MG Films";
+
+        var emailContext = new DeliveryReadyEmailContext(
+            tokens,
+            current.ShareUrl,
+            context.VersionLabel,
+            context.RetentionUntilUtc,
+            context.Files,
+            toEmails,
+            replyTo,
+            profile.LogoUrl,
+            fromName);
+
+        var composer = EmailComposerRegistry.CreateDefault().Get(EmailKind.DeliveryReady);
+        var message = composer.Build(emailContext);
+
+        Directory.CreateDirectory(outDir);
+        var previewTextPath = Path.Combine(outDir, "preview.txt");
+        var previewHtmlPath = Path.Combine(outDir, "preview.html");
+        var previewJsonPath = Path.Combine(outDir, "preview.json");
+
+        await File.WriteAllTextAsync(previewTextPath, message.BodyText);
+        await File.WriteAllTextAsync(previewHtmlPath, message.HtmlBody ?? message.BodyText);
+
+        var preview = new
+        {
+            kind = "delivery_ready",
+            projectId = project.ProjectId,
+            projectCode = project.ProjectCode,
+            projectName = project.ProjectName,
+            clientName,
+            subject = message.Subject,
+            stablePath = current.StablePath,
+            apiStablePath = current.ApiStablePath,
+            stableShareUrl = current.ShareUrl,
+            currentVersion = context.VersionLabel,
+            retentionUntilUtc = context.RetentionUntilUtc,
+            recipients = toEmails,
+            replyTo,
+            fromName,
+            logoUrl = profile.LogoUrl,
+            files = context.Files.Select(file => new
+            {
+                relativePath = file.RelativePath,
+                sizeBytes = file.SizeBytes,
+                lastWriteTimeUtc = file.LastWriteTimeUtc
+            })
+        };
+
+        var json = JsonSerializer.Serialize(preview, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(previewJsonPath, json);
+
+        Console.WriteLine($"bootstrap: email-preview wrote {previewTextPath}");
+        Console.WriteLine($"bootstrap: email-preview wrote {previewHtmlPath}");
+        Console.WriteLine($"bootstrap: email-preview wrote {previewJsonPath}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: email-preview failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static async Task<DeliveryPreviewProject?> LoadProjectPreviewAsync(NpgsqlConnection conn, string projectId)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        SELECT project_id, project_code, name, client_id, metadata
+        FROM public.projects
+        WHERE project_id = @project_id
+        LIMIT 1;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("project_id", projectId);
+
+    await using var reader = await cmd.ExecuteReaderAsync();
+    if (!await reader.ReadAsync())
+    {
+        return null;
+    }
+
+    return new DeliveryPreviewProject(
+        reader.GetString(0),
+        reader.GetString(1),
+        reader.GetString(2),
+        reader.GetString(3),
+        reader.GetString(4));
+}
+
+static async Task<string?> LoadClientNameAsync(NpgsqlConnection conn, string clientId)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        SELECT display_name
+        FROM public.clients
+        WHERE client_id = @client_id
+        LIMIT 1;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("client_id", clientId);
+
+    var result = await cmd.ExecuteScalarAsync();
+    return result is DBNull ? null : result?.ToString();
+}
+
+static DeliveryPreviewCurrent ReadDeliveryCurrentState(string metadataJson)
+{
+    try
+    {
+        using var doc = JsonDocument.Parse(metadataJson);
+        if (!doc.RootElement.TryGetProperty("delivery", out var delivery))
+        {
+            return new DeliveryPreviewCurrent(null, null, null, null, null);
+        }
+
+        if (!delivery.TryGetProperty("current", out var current))
+        {
+            return new DeliveryPreviewCurrent(null, null, null, null, null);
+        }
+
+        return new DeliveryPreviewCurrent(
+            StablePath: TryGetString(current, "stablePath"),
+            ApiStablePath: TryGetString(current, "apiStablePath"),
+            ShareUrl: TryGetString(current, "stableShareUrl") ?? TryGetString(current, "shareUrl"),
+            CurrentVersion: TryGetString(current, "currentVersion"),
+            RetentionUntilUtc: TryGetDateTimeOffset(current, "retentionUntilUtc")
+        );
+    }
+    catch
+    {
+        return new DeliveryPreviewCurrent(null, null, null, null, null);
+    }
+}
+
+static async Task<DeliveryPreviewContext?> TryBuildPreviewContextAsync(
+    DeliveryPreviewCurrent current,
+    string metadataJson)
+{
+    if (!string.IsNullOrWhiteSpace(current.ApiStablePath))
+    {
+        return TryBuildContextFromMetadata(metadataJson);
+    }
+
+    if (!string.IsNullOrWhiteSpace(current.StablePath))
+    {
+        if (TryResolveContainerRoot(current.StablePath, out var containerRoot, out _))
+        {
+            var manifestPath = Path.Combine(containerRoot, "00_Admin", ".mgf", "manifest", "delivery_manifest.json");
+            var manifest = await TryReadManifestContextAsync(manifestPath);
+            if (manifest is not null)
+            {
+                return manifest;
+            }
+        }
+    }
+
+    return TryBuildContextFromMetadata(metadataJson);
+}
+
+static async Task<DeliveryPreviewContext?> TryReadManifestContextAsync(string manifestPath)
+{
+    if (!File.Exists(manifestPath))
+    {
+        return null;
+    }
+
+    try
+    {
+        var json = await File.ReadAllTextAsync(manifestPath);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        var files = root.TryGetProperty("files", out var filesElement) && filesElement.ValueKind == JsonValueKind.Array
+            ? ReadDeliveryFiles(filesElement)
+            : new List<DeliveryFileSummary>();
+
+        var versionLabel = TryGetString(root, "currentVersion") ?? TryGetString(root, "versionLabel") ?? "v1";
+        var retentionUntil = TryGetDateTimeOffset(root, "retentionUntilUtc") ?? DateTimeOffset.UtcNow.AddMonths(3);
+
+        if (files.Count == 0)
+        {
+            return null;
+        }
+
+        return new DeliveryPreviewContext(files, versionLabel, retentionUntil);
+    }
+    catch
+    {
+        return null;
+    }
+}
+
+static DeliveryPreviewContext? TryBuildContextFromMetadata(string metadataJson)
+{
+    try
+    {
+        using var doc = JsonDocument.Parse(metadataJson);
+        if (!doc.RootElement.TryGetProperty("delivery", out var delivery))
+        {
+            return null;
+        }
+
+        var currentVersion = string.Empty;
+        var retentionUntil = DateTimeOffset.UtcNow.AddMonths(3);
+        if (delivery.TryGetProperty("current", out var current))
+        {
+            currentVersion = TryGetString(current, "currentVersion") ?? string.Empty;
+            retentionUntil = TryGetDateTimeOffset(current, "retentionUntilUtc") ?? retentionUntil;
+        }
+
+        if (!delivery.TryGetProperty("runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        for (var index = runs.GetArrayLength() - 1; index >= 0; index--)
+        {
+            var run = runs[index];
+            if (run.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var versionLabel = TryGetString(run, "versionLabel") ?? currentVersion;
+            if (string.IsNullOrWhiteSpace(versionLabel))
+            {
+                versionLabel = "v1";
+            }
+
+            var runRetention = TryGetDateTimeOffset(run, "retentionUntilUtc") ?? retentionUntil;
+
+            if (run.TryGetProperty("files", out var filesElement) && filesElement.ValueKind == JsonValueKind.Array)
+            {
+                var files = ReadDeliveryFiles(filesElement);
+                if (files.Count > 0)
+                {
+                    return new DeliveryPreviewContext(files, versionLabel, runRetention);
+                }
+            }
+        }
+
+        return null;
+    }
+    catch
+    {
+        return null;
+    }
+}
+
+static bool TryResolveContainerRoot(string stablePath, out string containerRoot, out string error)
+{
+    containerRoot = string.Empty;
+    error = string.Empty;
+
+    var trimmed = stablePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    var finalSegment = Path.GetFileName(trimmed);
+    if (!string.Equals(finalSegment, "Final", StringComparison.OrdinalIgnoreCase))
+    {
+        error = $"Stable path does not point to Final folder: {stablePath}";
+        return false;
+    }
+
+    var deliverablesDir = Path.GetDirectoryName(trimmed);
+    if (string.IsNullOrWhiteSpace(deliverablesDir))
+    {
+        error = "Delivery path missing deliverables parent.";
+        return false;
+    }
+
+    var deliverablesSegment = Path.GetFileName(deliverablesDir);
+    if (!string.Equals(deliverablesSegment, "01_Deliverables", StringComparison.OrdinalIgnoreCase))
+    {
+        error = "Delivery path missing 01_Deliverables segment.";
+        return false;
+    }
+
+    var container = Path.GetDirectoryName(deliverablesDir);
+    if (string.IsNullOrWhiteSpace(container))
+    {
+        error = "Delivery container root could not be resolved.";
+        return false;
+    }
+
+    containerRoot = container;
+    return true;
+}
+
+static List<DeliveryFileSummary> ReadDeliveryFiles(JsonElement filesElement)
+{
+    var list = new List<DeliveryFileSummary>();
+    foreach (var element in filesElement.EnumerateArray())
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            continue;
+        }
+
+        var relative = TryGetString(element, "relativePath");
+        if (string.IsNullOrWhiteSpace(relative))
+        {
+            continue;
+        }
+
+        var sizeRaw = TryGetString(element, "sizeBytes");
+        if (!long.TryParse(sizeRaw, out var sizeBytes))
+        {
+            sizeBytes = 0;
+        }
+
+        var lastWrite = TryGetDateTimeOffset(element, "lastWriteTimeUtc") ?? DateTimeOffset.MinValue;
+        list.Add(new DeliveryFileSummary(relative, sizeBytes, lastWrite));
+    }
+
+    return list;
+}
+
 static async Task<TestProjectInfo?> FindTestProjectAsync(NpgsqlConnection conn, string testKey)
 {
     await using var cmd = new NpgsqlCommand(
@@ -2628,3 +3064,22 @@ sealed record RootIntegrityJobPayload(
 sealed record ExistingJob(string JobId, string StatusKey);
 
 sealed record TestProjectInfo(string ProjectId, string ProjectCode, string ProjectName, string ClientId);
+
+sealed record DeliveryPreviewProject(
+    string ProjectId,
+    string ProjectCode,
+    string ProjectName,
+    string ClientId,
+    string MetadataJson);
+
+sealed record DeliveryPreviewContext(
+    IReadOnlyList<DeliveryFileSummary> Files,
+    string VersionLabel,
+    DateTimeOffset RetentionUntilUtc);
+
+sealed record DeliveryPreviewCurrent(
+    string? StablePath,
+    string? ApiStablePath,
+    string? ShareUrl,
+    string? CurrentVersion,
+    DateTimeOffset? RetentionUntilUtc);

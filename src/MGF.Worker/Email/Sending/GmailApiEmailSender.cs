@@ -1,4 +1,4 @@
-namespace MGF.Worker.Integrations.Email;
+namespace MGF.Worker.Email.Sending;
 
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -6,6 +6,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MGF.Worker.Email.Models;
+using MGF.Worker.Email.Registry;
 
 internal sealed class GmailApiEmailSender : IEmailSender
 {
@@ -34,6 +36,13 @@ internal sealed class GmailApiEmailSender : IEmailSender
         if (!enabled)
         {
             return Failed(request, "Email sending disabled (Integrations:Email:Enabled=false).");
+        }
+
+        var profile = EmailProfileResolver.Resolve(configuration, request.ProfileKey);
+        if (!EmailProfileResolver.IsAllowedFrom(profile, request.FromAddress))
+        {
+            var allowed = EmailProfileResolver.AllowedFromDisplay(profile);
+            return Failed(request, $"Gmail fromAddress must be {allowed}.");
         }
 
         var serviceAccount = configuration["Integrations:Email:Gmail:ServiceAccountEmail"]

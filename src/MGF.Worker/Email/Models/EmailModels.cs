@@ -1,4 +1,4 @@
-namespace MGF.Worker.Integrations.Email;
+namespace MGF.Worker.Email.Models;
 
 public sealed record DeliveryEmailRequest(
     string FromAddress,
@@ -8,7 +8,8 @@ public sealed record DeliveryEmailRequest(
     string BodyText,
     string? HtmlBody,
     string TemplateVersion,
-    string? ReplyTo);
+    string? ReplyTo,
+    string ProfileKey = EmailProfiles.Deliveries);
 
 public sealed record DeliveryEmailResult(
     string Status,
@@ -21,8 +22,3 @@ public sealed record DeliveryEmailResult(
     string? Error,
     string TemplateVersion,
     string? ReplyTo);
-
-public interface IEmailSender
-{
-    Task<DeliveryEmailResult> SendAsync(DeliveryEmailRequest request, CancellationToken cancellationToken);
-}

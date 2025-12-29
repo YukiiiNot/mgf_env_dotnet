@@ -5,8 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Infrastructure.Data;
+using MGF.Worker.Email;
+using MGF.Worker.Email.Composition;
+using MGF.Worker.Email.Models;
+using MGF.Worker.Email.Registry;
+using MGF.Worker.Email.Sending;
 using MGF.Tools.Provisioner;
-using MGF.Worker.Integrations.Email;
 
 public sealed class ProjectDeliveryEmailer
 {
@@ -14,7 +18,7 @@ public sealed class ProjectDeliveryEmailer
     private const string DeliveryEmailTemplateVersion = "v1-html";
 
     private readonly IConfiguration configuration;
-    private readonly IEmailSender emailSender;
+    private readonly EmailService emailService;
     private readonly ILogger? logger;
 
     public ProjectDeliveryEmailer(
@@ -23,7 +27,7 @@ public sealed class ProjectDeliveryEmailer
         ILogger? logger = null)
     {
         this.configuration = configuration;
-        this.emailSender = emailSender ?? EmailSenderFactory.Create(configuration, logger);
+        emailService = new EmailService(configuration, sender: emailSender, logger: logger);
         this.logger = logger;
     }
 
@@ -92,9 +96,10 @@ public sealed class ProjectDeliveryEmailer
 
         var tokens = ProvisioningTokens.Create(project.ProjectCode, project.Name, clientName, payload.EditorInitials);
         var subject = ProjectDeliverer.BuildDeliverySubject(tokens);
+        var profile = EmailProfileResolver.Resolve(configuration, EmailProfiles.Deliveries);
         var replyTo = !string.IsNullOrWhiteSpace(payload.ReplyToEmail)
             ? payload.ReplyToEmail
-            : DefaultReplyToAddress;
+            : profile.DefaultReplyTo ?? DefaultReplyToAddress;
 
         var recipients = NormalizeEmailList(payload.ToEmails);
         if (recipients.Count == 0)
@@ -107,24 +112,22 @@ public sealed class ProjectDeliveryEmailer
         var files = context.Files;
         var versionLabel = context.VersionLabel;
         var retentionUntil = context.RetentionUntilUtc;
-        var logoUrl = configuration["Integrations:Email:Branding:LogoUrl"];
-        var fromName = configuration["Integrations:Email:FromName"] ?? "MG Films";
-        var request = ProjectDeliverer.BuildDeliveryEmailRequest(
-            subject,
-            current.ShareUrl,
-            versionLabel,
-            retentionUntil,
-            files,
-            recipients,
-            replyTo,
-            tokens,
-            logoUrl,
-            fromName);
-
+        var logoUrl = profile.LogoUrl;
+        var fromName = profile.DefaultFromName ?? "MG Films";
         DeliveryEmailResult result;
         try
         {
-            result = await emailSender.SendAsync(request, cancellationToken);
+            var emailContext = new DeliveryReadyEmailContext(
+                tokens,
+                current.ShareUrl,
+                versionLabel,
+                retentionUntil,
+                files,
+                recipients,
+                replyTo,
+                logoUrl,
+                fromName);
+            result = await emailService.SendAsync(EmailKind.DeliveryReady, emailContext, cancellationToken);
         }
         catch (Exception ex)
         {

@@ -5,38 +5,10 @@ using System.Net.Mime;
 
 namespace MGF.Worker.Tests;
 
-public sealed class SmtpEmailSenderTests
+public sealed class EmailContractTests
 {
     [Fact]
-    public async Task SendAsync_RejectsInvalidFromAddress()
-    {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Integrations:Email:Enabled"] = "true",
-                ["Integrations:Email:Smtp:Host"] = ""
-            })
-            .Build();
-
-        var sender = new SmtpEmailSender(config);
-        var request = new DeliveryEmailRequest(
-            FromAddress: "someone@example.com",
-            FromName: "Someone",
-            To: new[] { "client@example.com" },
-            Subject: "Test",
-            BodyText: "Body",
-            HtmlBody: "<p>Body</p>",
-            TemplateVersion: "v1-html",
-            ReplyTo: null);
-
-        var result = await sender.SendAsync(request, CancellationToken.None);
-
-        Assert.Equal("failed", result.Status);
-        Assert.Contains("deliveries@mgfilms.pro", result.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public void BuildMessage_IncludesHtmlAlternateView()
+    public void BuildMessage_IncludesTextAndHtmlBodies()
     {
         var request = new DeliveryEmailRequest(
             FromAddress: "deliveries@mgfilms.pro",
@@ -50,8 +22,35 @@ public sealed class SmtpEmailSenderTests
 
         var message = SmtpEmailSender.BuildMessage(request);
 
-        Assert.True(message.AlternateViews.Count >= 2);
-        Assert.Contains(message.AlternateViews, view => view.ContentType.MediaType == MediaTypeNames.Text.Html);
         Assert.Contains(message.AlternateViews, view => view.ContentType.MediaType == MediaTypeNames.Text.Plain);
+        Assert.Contains(message.AlternateViews, view => view.ContentType.MediaType == MediaTypeNames.Text.Html);
+    }
+
+    [Fact]
+    public async Task SendAsync_RejectsFromAddressOutsideAllowlist()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Integrations:Email:Enabled"] = "true",
+                ["Integrations:Email:Smtp:Host"] = ""
+            })
+            .Build();
+
+        var sender = new SmtpEmailSender(config);
+        var request = new DeliveryEmailRequest(
+            FromAddress: "noreply@example.com",
+            FromName: "Bad Sender",
+            To: new[] { "client@example.com" },
+            Subject: "Test",
+            BodyText: "Body",
+            HtmlBody: "<p>Body</p>",
+            TemplateVersion: "v1-html",
+            ReplyTo: null);
+
+        var result = await sender.SendAsync(request, CancellationToken.None);
+
+        Assert.Equal("failed", result.Status);
+        Assert.Contains("deliveries@mgfilms.pro", result.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 }

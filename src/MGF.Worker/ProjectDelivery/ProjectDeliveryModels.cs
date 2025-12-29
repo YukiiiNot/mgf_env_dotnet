@@ -1,6 +1,6 @@
 namespace MGF.Worker.ProjectDelivery;
 
-using MGF.Worker.Integrations.Email;
+using MGF.Worker.Email.Models;
 
 public sealed record ProjectDeliveryPayload(
     string ProjectId,

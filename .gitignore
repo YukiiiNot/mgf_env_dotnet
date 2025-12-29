@@ -34,6 +34,7 @@ _ReSharper*/
 
 ## Runtime
 runtime/
+runtime/email_preview/
 TestResults/
 
 ## OS

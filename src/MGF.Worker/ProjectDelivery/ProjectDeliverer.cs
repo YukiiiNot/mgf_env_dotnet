@@ -9,10 +9,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Domain.Entities;
 using MGF.Infrastructure.Data;
+using MGF.Worker.Email;
+using MGF.Worker.Email.Composition;
+using MGF.Worker.Email.Models;
+using MGF.Worker.Email.Registry;
+using MGF.Worker.Email.Sending;
 using MGF.Tools.Provisioner;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.Integrations.Dropbox;
-using MGF.Worker.Integrations.Email;
 
 public sealed class ProjectDeliverer
 {
@@ -34,7 +38,7 @@ public sealed class ProjectDeliverer
     private readonly IDropboxShareLinkClient shareLinkClient;
     private readonly IDropboxAccessTokenProvider accessTokenProvider;
     private readonly IDropboxFilesClient dropboxFilesClient;
-    private readonly IEmailSender emailSender;
+    private readonly EmailService emailService;
     private readonly ILogger? logger;
 
     public ProjectDeliverer(
@@ -51,7 +55,7 @@ public sealed class ProjectDeliverer
         this.accessTokenProvider = accessTokenProvider
             ?? new DropboxAccessTokenProvider(new HttpClient(), configuration, logger);
         this.dropboxFilesClient = dropboxFilesClient ?? new DropboxFilesClient(new HttpClient(), configuration);
-        this.emailSender = emailSender ?? EmailSenderFactory.Create(configuration, logger);
+        emailService = new EmailService(configuration, sender: emailSender, logger: logger);
         this.logger = logger;
     }
 
@@ -1137,9 +1141,10 @@ public sealed class ProjectDeliverer
         var versionLabel = target.VersionLabel ?? "v1";
         var retentionUntil = target.RetentionUntilUtc ?? DateTimeOffset.UtcNow.AddMonths(DefaultRetentionMonths);
         var subject = BuildDeliverySubject(tokens);
+        var profile = EmailProfileResolver.Resolve(configuration, EmailProfiles.Deliveries);
         var replyTo = !string.IsNullOrWhiteSpace(payload.ReplyToEmail)
             ? payload.ReplyToEmail
-            : DefaultReplyToAddress;
+            : profile.DefaultReplyTo ?? DefaultReplyToAddress;
         if (recipients.Count == 0)
         {
             return SkippedEmailResult(
@@ -1159,23 +1164,22 @@ public sealed class ProjectDeliverer
                 replyTo);
         }
 
-        var logoUrl = ResolveLogoUrl(configuration);
-        var fromName = ResolveFromName(configuration);
-        var request = BuildDeliveryEmailRequest(
-            subject,
+        var logoUrl = profile.LogoUrl;
+        var fromName = profile.DefaultFromName ?? "MG Films";
+        var context = new DeliveryReadyEmailContext(
+            tokens,
             shareUrl,
             versionLabel,
             retentionUntil,
             source.Files.Select(ToSummary).ToArray(),
             recipients,
             replyTo,
-            tokens,
             logoUrl,
             fromName);
 
         try
         {
-            return await emailSender.SendAsync(request, cancellationToken);
+            return await emailService.SendAsync(EmailKind.DeliveryReady, context, cancellationToken);
         }
         catch (Exception ex)
         {

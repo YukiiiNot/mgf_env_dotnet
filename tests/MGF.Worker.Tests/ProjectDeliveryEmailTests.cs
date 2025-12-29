@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using MGF.Tools.Provisioner;
-using MGF.Worker.Integrations.Email;
+using MGF.Worker.Email.Models;
+using MGF.Worker.Email.Composition;
 using MGF.Worker.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
@@ -50,6 +51,36 @@ public sealed class ProjectDeliveryEmailTests
         Assert.Contains("https://dropbox.test/final", html, StringComparison.Ordinal);
         Assert.Contains("Current delivery version: v1", html, StringComparison.Ordinal);
         Assert.Contains("Showing 50 of 55 files", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeliveryReadyComposer_BuildsTextAndHtml()
+    {
+        var tokens = ProvisioningTokens.Create("MGF25-TEST", "Sample Project", "Client", new[] { "TE" });
+        var files = new[]
+        {
+            new DeliveryFileSummary("final.mp4", 10, DateTimeOffset.UtcNow),
+            new DeliveryFileSummary("notes.pdf", 20, DateTimeOffset.UtcNow)
+        };
+
+        var context = new DeliveryReadyEmailContext(
+            tokens,
+            "https://dropbox.test/final",
+            "v2",
+            new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            files,
+            new[] { "client@example.com" },
+            "info@mgfilms.pro",
+            "https://logo.test/logo.png",
+            "MG Films");
+        var composer = new DeliveryReadyEmailComposer();
+        var composed = composer.Build(context);
+
+        Assert.Contains("https://dropbox.test/final", composed.BodyText, StringComparison.Ordinal);
+        Assert.Contains("v2", composed.BodyText, StringComparison.Ordinal);
+        Assert.Contains("final.mp4", composed.BodyText, StringComparison.Ordinal);
+        Assert.Contains("https://dropbox.test/final", composed.HtmlBody ?? string.Empty, StringComparison.Ordinal);
+        Assert.Contains("Current delivery version: v2", composed.HtmlBody ?? string.Empty, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -131,4 +162,6 @@ public sealed class ProjectDeliveryEmailTests
         Assert.NotNull(lastEmail);
         Assert.Equal("failed", lastEmail?["status"]?.GetValue<string>());
     }
+
+    // no extra helpers
 }
