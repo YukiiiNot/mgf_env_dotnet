@@ -18,6 +18,7 @@ root.AddCommand(CreateToArchiveCommand());
 root.AddCommand(CreateArchiveCommand());
 root.AddCommand(CreateToDeliverCommand());
 root.AddCommand(CreateDeliverCommand());
+root.AddCommand(CreateDeliveryEmailCommand());
 root.AddCommand(CreateRootAuditCommand());
 root.AddCommand(CreateRootRepairCommand());
 root.AddCommand(CreateRootShowCommand());
@@ -319,6 +320,19 @@ static Command CreateDeliverCommand()
         Arity = ArgumentArity.ZeroOrOne
     };
 
+    var toOption = new Option<string[]>("--to")
+    {
+        Description = "Delivery email recipient(s), comma-separated or repeatable.",
+        Arity = ArgumentArity.ZeroOrMore
+    };
+    toOption.AllowMultipleArgumentsPerToken = true;
+
+    var replyToOption = new Option<string>("--replyTo")
+    {
+        Description = "Optional reply-to email address for delivery emails.",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
     command.AddOption(projectIdOption);
     command.AddOption(editorInitialsOption);
     command.AddOption(testModeOption);
@@ -326,6 +340,8 @@ static Command CreateDeliverCommand()
     command.AddOption(allowNonRealOption);
     command.AddOption(forceOption);
     command.AddOption(refreshShareLinkOption);
+    command.AddOption(toOption);
+    command.AddOption(replyToOption);
 
     command.SetHandler(async context =>
     {
@@ -334,6 +350,8 @@ static Command CreateDeliverCommand()
         var payload = new ProjectDeliveryJobPayload(
             ProjectId: projectId,
             EditorInitials: ParseEditors(new[] { editorInitials }),
+            ToEmails: ParseEmails(context.ParseResult.GetValueForOption(toOption) ?? Array.Empty<string>()),
+            ReplyToEmail: context.ParseResult.GetValueForOption(replyToOption),
             TestMode: context.ParseResult.GetValueForOption(testModeOption) ?? false,
             AllowTestCleanup: context.ParseResult.GetValueForOption(allowTestCleanupOption) ?? false,
             AllowNonReal: context.ParseResult.GetValueForOption(allowNonRealOption) ?? false,
@@ -342,6 +360,74 @@ static Command CreateDeliverCommand()
         );
 
         var exitCode = await EnqueueDeliveryAsync(payload);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateDeliveryEmailCommand()
+{
+    var command = new Command("delivery-email", "send/resend delivery email without copying deliverables.");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID to email (e.g., prj_...).",
+        IsRequired = true
+    };
+
+    var editorInitialsOption = new Option<string>("--editorInitials")
+    {
+        Description = "Comma-separated editor initials (e.g., ER,AB).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+    editorInitialsOption.SetDefaultValue("TE");
+
+    var toOption = new Option<string[]>("--to")
+    {
+        Description = "Delivery email recipient(s), comma-separated or repeatable.",
+        Arity = ArgumentArity.OneOrMore,
+        IsRequired = true
+    };
+    toOption.AllowMultipleArgumentsPerToken = true;
+
+    var replyToOption = new Option<string>("--replyTo")
+    {
+        Description = "Optional reply-to email address.",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+    var fromOption = new Option<string>("--from")
+    {
+        Description = "Optional from address (must be deliveries@mgfilms.pro if provided).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    command.AddOption(projectIdOption);
+    command.AddOption(editorInitialsOption);
+    command.AddOption(toOption);
+    command.AddOption(replyToOption);
+    command.AddOption(fromOption);
+
+    command.SetHandler(async context =>
+    {
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var editorInitials = context.ParseResult.GetValueForOption(editorInitialsOption) ?? "TE";
+        var fromValue = context.ParseResult.GetValueForOption(fromOption);
+        if (!string.IsNullOrWhiteSpace(fromValue)
+            && !string.Equals(fromValue, "deliveries@mgfilms.pro", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.Error.WriteLine("bootstrap: delivery-email --from must be deliveries@mgfilms.pro");
+            context.ExitCode = 1;
+            return;
+        }
+        var payload = new ProjectDeliveryEmailJobPayload(
+            ProjectId: projectId,
+            EditorInitials: ParseEditors(new[] { editorInitials }),
+            ToEmails: ParseEmails(context.ParseResult.GetValueForOption(toOption) ?? Array.Empty<string>()),
+            ReplyToEmail: context.ParseResult.GetValueForOption(replyToOption)
+        );
+
+        var exitCode = await EnqueueDeliveryEmailAsync(payload);
         context.ExitCode = exitCode;
     });
 
@@ -925,6 +1011,72 @@ static async Task<int> EnqueueDeliveryAsync(ProjectDeliveryJobPayload payload)
     }
 }
 
+static async Task<int> EnqueueDeliveryEmailAsync(ProjectDeliveryEmailJobPayload payload)
+{
+    try
+    {
+        var config = BuildConfiguration();
+        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        var existingJob = await FindExistingDeliveryEmailJobAsync(conn, payload.ProjectId);
+        if (!DeliveryEmailJobGuard.ShouldEnqueue(existingJob, out var reason))
+        {
+            Console.Error.WriteLine($"bootstrap: delivery-email enqueue blocked: {reason}");
+            return 2;
+        }
+
+        var jobId = EntityIds.NewWithPrefix("job");
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await using var cmd = new NpgsqlCommand(
+            """
+            INSERT INTO public.jobs (
+                job_id,
+                job_type_key,
+                status_key,
+                attempt_count,
+                max_attempts,
+                run_after,
+                payload,
+                entity_type_key,
+                entity_key
+            )
+            VALUES (
+                @job_id,
+                'project.delivery_email',
+                'queued',
+                0,
+                5,
+                now(),
+                @payload::jsonb,
+                'project',
+                @project_id
+            );
+            """,
+            conn
+        );
+
+        cmd.Parameters.AddWithValue("job_id", jobId);
+        cmd.Parameters.AddWithValue("payload", json);
+        cmd.Parameters.AddWithValue("project_id", payload.ProjectId);
+
+        await cmd.ExecuteNonQueryAsync();
+        Console.WriteLine($"bootstrap: project.delivery_email enqueued job_id={jobId} project_id={payload.ProjectId}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: delivery-email enqueue failed: {ex.Message}");
+        return 1;
+    }
+}
+
 static async Task<int> EnqueueRootIntegrityAsync(RootIntegrityJobPayload payload)
 {
     try
@@ -1402,6 +1554,33 @@ static async Task<ExistingJob?> FindExistingDeliveryJobAsync(NpgsqlConnection co
         SELECT job_id, status_key
         FROM public.jobs
         WHERE job_type_key = 'project.delivery'
+          AND entity_type_key = 'project'
+          AND entity_key = @project_id
+          AND status_key IN ('queued', 'running')
+        ORDER BY created_at DESC
+        LIMIT 1;
+        """,
+        conn
+    );
+
+    cmd.Parameters.AddWithValue("project_id", projectId);
+
+    await using var reader = await cmd.ExecuteReaderAsync();
+    if (!await reader.ReadAsync())
+    {
+        return null;
+    }
+
+    return new ExistingJob(reader.GetString(0), reader.GetString(1));
+}
+
+static async Task<ExistingJob?> FindExistingDeliveryEmailJobAsync(NpgsqlConnection conn, string projectId)
+{
+    await using var cmd = new NpgsqlCommand(
+        """
+        SELECT job_id, status_key
+        FROM public.jobs
+        WHERE job_type_key = 'project.delivery_email'
           AND entity_type_key = 'project'
           AND entity_key = @project_id
           AND status_key IN ('queued', 'running')
@@ -2102,6 +2281,15 @@ static IReadOnlyList<string> ParseEditors(IEnumerable<string> editors)
         .ToArray();
 }
 
+static IReadOnlyList<string> ParseEmails(IEnumerable<string> emails)
+{
+    return emails
+        .SelectMany(value => value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+}
+
 sealed record ProjectBootstrapJobPayload(
     string ProjectId,
     IReadOnlyList<string> EditorInitials,
@@ -2128,11 +2316,20 @@ sealed record ProjectArchiveJobPayload(
 sealed record ProjectDeliveryJobPayload(
     string ProjectId,
     IReadOnlyList<string> EditorInitials,
+    IReadOnlyList<string> ToEmails,
+    string? ReplyToEmail,
     bool TestMode,
     bool AllowTestCleanup,
     bool AllowNonReal,
     bool Force,
     bool RefreshShareLink
+);
+
+sealed record ProjectDeliveryEmailJobPayload(
+    string ProjectId,
+    IReadOnlyList<string> EditorInitials,
+    IReadOnlyList<string> ToEmails,
+    string? ReplyToEmail
 );
 
 sealed record RootIntegrityJobPayload(

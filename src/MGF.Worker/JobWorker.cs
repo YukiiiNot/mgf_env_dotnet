@@ -279,6 +279,16 @@ public sealed class JobWorker : BackgroundService
                 return;
             }
 
+            if (string.Equals(job.JobTypeKey, "project.delivery_email", StringComparison.Ordinal))
+            {
+                var succeeded = await HandleProjectDeliveryEmailAsync(db, job, cancellationToken);
+                if (succeeded)
+                {
+                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                }
+                return;
+            }
+
             if (string.Equals(job.JobTypeKey, "domain.root_integrity", StringComparison.Ordinal))
             {
                 var succeeded = await HandleRootIntegrityAsync(db, job, cancellationToken);
@@ -496,6 +506,60 @@ public sealed class JobWorker : BackgroundService
             logger.LogError(
                 ex,
                 "MGF.Worker: project.delivery failed (job_id={JobId}, project_id={ProjectId})",
+                job.JobId,
+                payload.ProjectId
+            );
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleProjectDeliveryEmailAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
+    {
+        ProjectDeliveryEmailPayload payload;
+        try
+        {
+            payload = ProjectDeliveryEmailer.ParsePayload(job.PayloadJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "MGF.Worker: project.delivery_email payload invalid (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+
+        logger.LogInformation(
+            "MGF.Worker: project.delivery_email start (job_id={JobId}, project_id={ProjectId})",
+            job.JobId,
+            payload.ProjectId
+        );
+
+        try
+        {
+            var emailer = new ProjectDeliveryEmailer(configuration, logger: logger);
+            var result = await emailer.RunAsync(db, payload, job.JobId, cancellationToken);
+
+            if (!string.Equals(result.Status, "sent", StringComparison.OrdinalIgnoreCase))
+            {
+                await MarkFailedAsync(
+                    db,
+                    job,
+                    new InvalidOperationException(result.Error ?? "project.delivery_email failed."),
+                    cancellationToken
+                );
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "MGF.Worker: project.delivery_email failed (job_id={JobId}, project_id={ProjectId})",
                 job.JobId,
                 payload.ProjectId
             );

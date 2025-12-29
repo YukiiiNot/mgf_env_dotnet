@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 
 public interface IDropboxShareLinkClient
 {
+    Task ValidateAccessTokenAsync(string accessToken, CancellationToken cancellationToken);
+
     Task<DropboxShareLinkResult> GetOrCreateSharedLinkAsync(
         string accessToken,
         string dropboxPath,
@@ -25,6 +27,24 @@ internal sealed class DropboxShareLinkClient : IDropboxShareLinkClient
         this.httpClient = httpClient;
         this.configuration = configuration;
         this.httpClient.Timeout = TimeSpan.FromSeconds(30);
+    }
+
+    public async Task ValidateAccessTokenAsync(string accessToken, CancellationToken cancellationToken)
+    {
+        var url = GetApiBaseUrl() + "/users/get_current_account";
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        request.Content = null;
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        throw new InvalidOperationException($"Dropbox token validation failed: {(int)response.StatusCode} {body}");
     }
 
     public async Task<DropboxShareLinkResult> GetOrCreateSharedLinkAsync(

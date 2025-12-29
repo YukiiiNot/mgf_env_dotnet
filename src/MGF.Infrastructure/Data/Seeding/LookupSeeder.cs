@@ -312,6 +312,7 @@ public static class LookupSeeder
                 ("project.bootstrap", "Project: Bootstrap"),
                 ("project.archive", "Project: Archive"),
                 ("project.delivery", "Project: Delivery"),
+                ("project.delivery_email", "Project: Delivery Email"),
                 ("domain.root_integrity", "Domain: Root Integrity Check"),
                 ("notion.sync_booking", "Notion: Sync Booking"),
                 ("square.reconcile.payments", "Square: Reconcile Payments"),

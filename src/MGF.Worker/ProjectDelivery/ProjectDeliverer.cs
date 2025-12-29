@@ -5,16 +5,20 @@ using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MGF.Domain.Entities;
 using MGF.Infrastructure.Data;
 using MGF.Tools.Provisioner;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.Integrations.Dropbox;
+using MGF.Worker.Integrations.Email;
 
 public sealed class ProjectDeliverer
 {
     private const int MaxRunsToKeep = 10;
     private const int DefaultRetentionMonths = 3;
     private const int ShareLinkTtlDays = 7;
+    private const string DeliveryFromAddress = "deliveries@mgfilms.pro";
+    private const string DefaultReplyToAddress = "info@mgfilms.pro";
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -25,16 +29,23 @@ public sealed class ProjectDeliverer
     private readonly LocalFileStore fileStore = new();
     private readonly FolderProvisioner provisioner;
     private readonly IDropboxShareLinkClient shareLinkClient;
+    private readonly IDropboxAccessTokenProvider accessTokenProvider;
+    private readonly IEmailSender emailSender;
     private readonly ILogger? logger;
 
     public ProjectDeliverer(
         IConfiguration configuration,
         IDropboxShareLinkClient? shareLinkClient = null,
+        IDropboxAccessTokenProvider? accessTokenProvider = null,
+        IEmailSender? emailSender = null,
         ILogger? logger = null)
     {
         this.configuration = configuration;
         provisioner = new FolderProvisioner(fileStore);
         this.shareLinkClient = shareLinkClient ?? new DropboxShareLinkClient(new HttpClient(), configuration);
+        this.accessTokenProvider = accessTokenProvider
+            ?? new DropboxAccessTokenProvider(new HttpClient(), configuration, logger);
+        this.emailSender = emailSender ?? EmailSenderFactory.Create(configuration, logger);
         this.logger = logger;
     }
 
@@ -81,7 +92,8 @@ public sealed class ProjectDeliverer
                 ShareStatus: null,
                 ShareUrl: null,
                 ShareId: null,
-                ShareError: null
+                ShareError: null,
+                Email: null
             );
 
             await AppendDeliveryRunAsync(db, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
@@ -113,7 +125,8 @@ public sealed class ProjectDeliverer
                 ShareStatus: null,
                 ShareUrl: null,
                 ShareId: null,
-                ShareError: null
+                ShareError: null,
+                Email: null
             );
 
             await AppendDeliveryRunAsync(db, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
@@ -161,7 +174,8 @@ public sealed class ProjectDeliverer
                 ShareStatus: null,
                 ShareUrl: null,
                 ShareId: null,
-                ShareError: null
+                ShareError: null,
+                Email: null
             );
 
             await AppendDeliveryRunAsync(db, project.ProjectId, project.Metadata, blockedRun, cancellationToken);
@@ -185,6 +199,17 @@ public sealed class ProjectDeliverer
 
         var hasErrors = results.Any(IsDomainError);
         var lastError = hasErrors ? BuildLastError(results) : null;
+        DeliveryEmailResult? emailResult = null;
+        if (!hasErrors)
+        {
+            emailResult = await TrySendDeliveryEmailAsync(
+                payload,
+                project,
+                tokens,
+                sourceResult,
+                dropboxResult,
+                cancellationToken);
+        }
 
         var runResult = new ProjectDeliveryRunResult(
             JobId: jobId,
@@ -206,7 +231,8 @@ public sealed class ProjectDeliverer
             ShareStatus: dropboxResult.ShareStatus,
             ShareUrl: dropboxResult.ShareUrl,
             ShareId: dropboxResult.ShareId,
-            ShareError: dropboxResult.ShareError
+            ShareError: dropboxResult.ShareError,
+            Email: emailResult
         );
 
         await AppendDeliveryRunAsync(db, project.ProjectId, project.Metadata, runResult, cancellationToken);
@@ -229,10 +255,14 @@ public sealed class ProjectDeliverer
         }
 
         var editorInitials = ReadEditorInitials(root);
+        var toEmails = ReadEmailAddresses(root, "toEmails");
+        var replyToEmail = TryGetString(root, "replyToEmail");
 
         return new ProjectDeliveryPayload(
             ProjectId: projectId,
             EditorInitials: editorInitials,
+            ToEmails: toEmails,
+            ReplyToEmail: replyToEmail,
             TestMode: ReadBoolean(root, "testMode", false),
             AllowTestCleanup: ReadBoolean(root, "allowTestCleanup", false),
             AllowNonReal: ReadBoolean(root, "allowNonReal", false),
@@ -287,6 +317,62 @@ public sealed class ProjectDeliverer
         bool IsNewVersion,
         bool LegacyFinalFiles
     );
+
+    internal static string BuildDeliverySubject(ProvisioningTokens tokens)
+    {
+        var code = tokens.ProjectCode ?? "MGF";
+        var name = tokens.ProjectName ?? "Delivery";
+        return $"Your deliverables are ready - {code} {name}";
+    }
+
+    internal static DeliveryEmailRequest BuildDeliveryEmailRequest(
+        string subject,
+        string shareUrl,
+        string versionLabel,
+        DateTimeOffset retentionUntilUtc,
+        IReadOnlyList<DeliveryFileSummary> files,
+        IReadOnlyList<string> recipients,
+        string? replyTo)
+    {
+        var body = BuildDeliveryEmailBody(shareUrl, versionLabel, retentionUntilUtc, files);
+        return new DeliveryEmailRequest(
+            FromAddress: DeliveryFromAddress,
+            To: recipients,
+            Subject: subject,
+            BodyText: body,
+            ReplyTo: replyTo);
+    }
+
+    internal static string BuildDeliveryEmailBody(
+        string shareUrl,
+        string versionLabel,
+        DateTimeOffset retentionUntilUtc,
+        IReadOnlyList<DeliveryFileSummary> files)
+    {
+        var lines = new List<string>
+        {
+            "Your MGF delivery is ready.",
+            string.Empty,
+            $"Download link: {shareUrl}",
+            $"Current delivery version: {versionLabel}",
+            $"This link remains active for 3 months (until {retentionUntilUtc:yyyy-MM-dd}).",
+            string.Empty,
+            "Files:"
+        };
+
+        foreach (var file in files)
+        {
+            lines.Add($"- {file.RelativePath}");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("If you have any questions, contact info@mgfilms.pro.");
+        lines.Add(string.Empty);
+        lines.Add("Thank you,");
+        lines.Add("MGF");
+
+        return string.Join(Environment.NewLine, lines);
+    }
 
     private async Task<DeliverySourceInfo> ResolveLucidlinkSourceAsync(
         AppDbContext db,
@@ -614,6 +700,7 @@ public sealed class ProjectDeliverer
         var shareOutcome = await EnsureDropboxShareLinkAsync(
             rootPath,
             finalRoot,
+            dropboxDeliveryRelpath,
             shareState,
             payload.RefreshShareLink,
             payload.TestMode,
@@ -657,6 +744,74 @@ public sealed class ProjectDeliverer
             ShareId: shareOutcome.ShareId,
             ShareError: shareOutcome.ShareError
         );
+    }
+
+    private async Task<DeliveryEmailResult> TrySendDeliveryEmailAsync(
+        ProjectDeliveryPayload payload,
+        Project project,
+        ProvisioningTokens tokens,
+        DeliverySourceInfo source,
+        DeliveryTargetInfo target,
+        CancellationToken cancellationToken)
+    {
+        var recipients = NormalizeEmailList(payload.ToEmails);
+        if (!IsShareSuccess(target.ShareStatus) || string.IsNullOrWhiteSpace(target.ShareUrl))
+        {
+            return SkippedEmailResult(
+                recipients,
+                BuildDeliverySubject(tokens),
+                "Stable Dropbox share link is missing; delivery email skipped.",
+                payload.ReplyToEmail);
+        }
+
+        var versionLabel = target.VersionLabel ?? "v1";
+        var retentionUntil = target.RetentionUntilUtc ?? DateTimeOffset.UtcNow.AddMonths(DefaultRetentionMonths);
+        var subject = BuildDeliverySubject(tokens);
+        var replyTo = !string.IsNullOrWhiteSpace(payload.ReplyToEmail)
+            ? payload.ReplyToEmail
+            : DefaultReplyToAddress;
+        if (recipients.Count == 0)
+        {
+            return SkippedEmailResult(
+                recipients,
+                subject,
+                "No delivery email recipients were provided.",
+                replyTo);
+        }
+
+        var shareUrl = target.ShareUrl;
+        if (string.IsNullOrWhiteSpace(shareUrl))
+        {
+            return SkippedEmailResult(
+                recipients,
+                subject,
+                "Stable Dropbox share link is missing; delivery email skipped.",
+                replyTo);
+        }
+
+        var request = BuildDeliveryEmailRequest(
+            subject,
+            shareUrl,
+            versionLabel,
+            retentionUntil,
+            source.Files.Select(ToSummary).ToArray(),
+            recipients,
+            replyTo);
+
+        try
+        {
+            return await emailSender.SendAsync(request, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return FailedEmailResult(recipients, subject, $"Delivery email failed: {ex.Message}", replyTo);
+        }
+    }
+
+    private static bool IsShareSuccess(string? status)
+    {
+        return string.Equals(status, "created", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "reused", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<ProvisioningSummary> ExecuteTemplateAsync(
@@ -928,6 +1083,7 @@ public sealed class ProjectDeliverer
     private async Task<DeliveryShareOutcome> EnsureDropboxShareLinkAsync(
         string dropboxRootPath,
         string stablePath,
+        string dropboxDeliveryRelpath,
         DeliveryShareState existing,
         bool refreshRequested,
         bool testMode,
@@ -944,23 +1100,14 @@ public sealed class ProjectDeliverer
             );
         }
 
-        var accessToken =
-            configuration["Integrations:Dropbox:AccessToken"]
-            ?? configuration["Dropbox:AccessToken"]
-            ?? string.Empty;
-
-        if (!string.IsNullOrWhiteSpace(accessToken))
-        {
-            LogDropboxTokenSource(configuration, logger);
-        }
-
-        if (string.IsNullOrWhiteSpace(accessToken))
+        var tokenResult = await accessTokenProvider.GetAccessTokenAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(tokenResult.AccessToken))
         {
             return new DeliveryShareOutcome(
                 ShareStatus: "failed",
                 ShareUrl: existing.ShareUrl,
                 ShareId: existing.ShareId,
-                ShareError: "Dropbox access token not configured; share link not created.",
+                ShareError: tokenResult.Error ?? "Dropbox access token not configured; share link not created.",
                 VerifiedAtUtc: null
             );
         }
@@ -979,10 +1126,29 @@ public sealed class ProjectDeliverer
 
         try
         {
-            var apiRoot = ResolveDropboxApiRoot(dropboxRootPath);
-            var dropboxPath = BuildDropboxApiPath(apiRoot, stablePath);
+            var useApiRoot = configuration.GetValue("Integrations:Dropbox:UseApiRootFolder", false)
+                || configuration.GetValue("Dropbox:UseApiRootFolder", false);
+            var apiRoot = ResolveDropboxApiRootFolder();
+            if (useApiRoot && string.IsNullOrWhiteSpace(apiRoot))
+            {
+                return new DeliveryShareOutcome(
+                    ShareStatus: "failed",
+                    ShareUrl: existing.ShareUrl,
+                    ShareId: existing.ShareId,
+                    ShareError: "Dropbox ApiRootFolder not configured; cannot create share link.",
+                    VerifiedAtUtc: null
+                );
+            }
+
+            WarnIfLocalSyncRootMismatch(stablePath);
+
+            var dropboxPath = useApiRoot
+                ? BuildDropboxApiPath(apiRoot, stablePath, dropboxDeliveryRelpath)
+                : BuildDropboxApiPathFromLocalRoot(dropboxRootPath, stablePath);
             logger?.LogInformation("MGF.Worker: Dropbox share link path={DropboxPath}", dropboxPath);
-            var shared = await shareLinkClient.GetOrCreateSharedLinkAsync(accessToken, dropboxPath, cancellationToken);
+
+            await shareLinkClient.ValidateAccessTokenAsync(tokenResult.AccessToken, cancellationToken);
+            var shared = await shareLinkClient.GetOrCreateSharedLinkAsync(tokenResult.AccessToken, dropboxPath, cancellationToken);
             return new DeliveryShareOutcome(
                 ShareStatus: shared.IsNew ? "created" : "reused",
                 ShareUrl: shared.Url,
@@ -1044,84 +1210,118 @@ public sealed class ProjectDeliverer
         return new ShareLinkDecision(true, false, "refresh_fallback");
     }
 
-    private static string BuildDropboxApiPath(string rootPath, string stablePath)
+    internal static string BuildDropboxApiPath(string apiRootFolder, string stablePath, string dropboxDeliveryRelpath)
     {
-        var relative = Path.GetRelativePath(rootPath, stablePath);
+        if (string.IsNullOrWhiteSpace(apiRootFolder))
+        {
+            throw new InvalidOperationException("Dropbox ApiRootFolder is required for share links.");
+        }
+
+        var apiRoot = apiRootFolder.Trim().Trim('/');
+        if (string.IsNullOrWhiteSpace(apiRoot))
+        {
+            throw new InvalidOperationException("Dropbox ApiRootFolder is empty after normalization.");
+        }
+
+        var stableSegments = SplitPathSegments(stablePath);
+        var deliverySegments = SplitPathSegments(dropboxDeliveryRelpath);
+        if (deliverySegments.Length == 0)
+        {
+            throw new InvalidOperationException("Dropbox delivery root relpath is empty.");
+        }
+
+        var startIndex = FindSegmentSequence(stableSegments, deliverySegments);
+        if (startIndex < 0)
+        {
+            throw new InvalidOperationException($"Stable path is outside Dropbox delivery root: {stablePath}");
+        }
+
+        var relativeSegments = stableSegments[startIndex..];
+        var relativePath = string.Join("/", relativeSegments);
+        return "/" + apiRoot + "/" + relativePath;
+    }
+
+    private string ResolveDropboxApiRootFolder()
+    {
+        var configured = configuration["Integrations:Dropbox:ApiRootFolder"]
+            ?? configuration["Dropbox:ApiRootFolder"];
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return string.Empty;
+        }
+
+        return configured;
+    }
+
+    private static string BuildDropboxApiPathFromLocalRoot(string dropboxRootPath, string stablePath)
+    {
+        var root = dropboxRootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var relative = Path.GetRelativePath(root, stablePath);
         if (string.IsNullOrWhiteSpace(relative) || relative.StartsWith("..", StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"Stable path is outside Dropbox root: {stablePath}");
         }
 
         var trimmed = relative.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        var dropboxPath = "/" + trimmed.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
-        return dropboxPath;
+        return "/" + trimmed.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
     }
 
-    private string ResolveDropboxApiRoot(string dropboxRootPath)
+    private void WarnIfLocalSyncRootMismatch(string stablePath)
     {
-        var configured = configuration["Integrations:Dropbox:SyncRoot"]
-            ?? configuration["Dropbox:SyncRoot"];
-        if (!string.IsNullOrWhiteSpace(configured))
+        var hint = configuration["Integrations:Dropbox:LocalSyncRootHint"]
+            ?? configuration["Dropbox:LocalSyncRootHint"];
+        if (string.IsNullOrWhiteSpace(hint))
         {
-            return configured;
+            return;
         }
 
-        return TryInferDropboxSyncRoot(dropboxRootPath) ?? dropboxRootPath;
+        var normalizedHint = hint.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var normalizedPath = stablePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!normalizedPath.StartsWith(normalizedHint + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(normalizedPath, normalizedHint, StringComparison.OrdinalIgnoreCase))
+        {
+            logger?.LogWarning(
+                "MGF.Worker: Dropbox stable path is outside LocalSyncRootHint (stablePath={StablePath}, hint={Hint})",
+                stablePath,
+                hint);
+        }
     }
 
-    private static string? TryInferDropboxSyncRoot(string dropboxRootPath)
+    private static string[] SplitPathSegments(string path)
     {
-        if (string.IsNullOrWhiteSpace(dropboxRootPath))
+        return path
+            .Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(segment => segment.Trim())
+            .Where(segment => !string.IsNullOrWhiteSpace(segment))
+            .ToArray();
+    }
+
+    private static int FindSegmentSequence(string[] haystack, string[] needle)
+    {
+        if (needle.Length == 0 || haystack.Length < needle.Length)
         {
-            return null;
+            return -1;
         }
 
-        var current = new DirectoryInfo(dropboxRootPath);
-        while (current is not null)
+        for (var i = 0; i <= haystack.Length - needle.Length; i++)
         {
-            var name = current.Name;
-            var isDropboxRoot =
-                string.Equals(name, "Dropbox", StringComparison.OrdinalIgnoreCase)
-                || name.StartsWith("Dropbox ", StringComparison.OrdinalIgnoreCase)
-                || name.StartsWith("Dropbox(", StringComparison.OrdinalIgnoreCase)
-                || name.StartsWith("Dropbox (", StringComparison.OrdinalIgnoreCase);
-
-            if (isDropboxRoot)
+            var match = true;
+            for (var j = 0; j < needle.Length; j++)
             {
-                return current.FullName;
+                if (!string.Equals(haystack[i + j], needle[j], StringComparison.OrdinalIgnoreCase))
+                {
+                    match = false;
+                    break;
+                }
             }
 
-            current = current.Parent;
+            if (match)
+            {
+                return i;
+            }
         }
 
-        return null;
-    }
-
-    private static void LogDropboxTokenSource(IConfiguration configuration, ILogger? logger)
-    {
-        if (logger is null)
-        {
-            return;
-        }
-
-        var integrationsToken = configuration["Integrations:Dropbox:AccessToken"];
-        if (!string.IsNullOrWhiteSpace(integrationsToken))
-        {
-            var fromEnv = !string.IsNullOrWhiteSpace(
-                Environment.GetEnvironmentVariable("Integrations__Dropbox__AccessToken"));
-            var source = fromEnv ? "env:Integrations__Dropbox__AccessToken" : "config/user-secrets";
-            logger.LogInformation("MGF.Worker: Dropbox share link token source={Source}", source);
-            return;
-        }
-
-        var dropboxToken = configuration["Dropbox:AccessToken"];
-        if (!string.IsNullOrWhiteSpace(dropboxToken))
-        {
-            var fromEnv = !string.IsNullOrWhiteSpace(
-                Environment.GetEnvironmentVariable("Dropbox__AccessToken"));
-            var source = fromEnv ? "env:Dropbox__AccessToken" : "config/user-secrets";
-            logger.LogInformation("MGF.Worker: Dropbox share link token source={Source}", source);
-        }
+        return -1;
     }
 
     internal static bool IsStableSharePath(string path)
@@ -1185,26 +1385,6 @@ public sealed class ProjectDeliverer
     }
 
     private sealed record DeliveryFingerprint(long SizeBytes, DateTimeOffset LastWriteTimeUtc);
-
-    internal sealed record DeliveryManifest
-    {
-        public int SchemaVersion { get; init; }
-        public string DeliveryRunId { get; init; } = string.Empty;
-        public DateTimeOffset CreatedAtUtc { get; init; }
-        public string ProjectId { get; init; } = string.Empty;
-        public string ProjectCode { get; init; } = string.Empty;
-        public string ProjectName { get; init; } = string.Empty;
-        public string ClientName { get; init; } = string.Empty;
-        public string SourcePath { get; init; } = string.Empty;
-        public string DestinationPath { get; init; } = string.Empty;
-        public string StablePath { get; init; } = string.Empty;
-        public string VersionPath { get; init; } = string.Empty;
-        public string VersionLabel { get; init; } = string.Empty;
-        public string CurrentVersion { get; init; } = string.Empty;
-        public string? StableShareUrl { get; init; }
-        public DateTimeOffset RetentionUntilUtc { get; init; }
-        public IReadOnlyList<DeliveryFileSummary> Files { get; init; } = Array.Empty<DeliveryFileSummary>();
-    }
 
     private static DeliveryFileSummary ToSummary(DeliveryFile file)
         => new(file.RelativePath, file.SizeBytes, file.LastWriteTimeUtc);
@@ -1326,7 +1506,52 @@ public sealed class ProjectDeliverer
         );
     }
 
-    private static void UpdateDeliveryCurrent(JsonObject delivery, ProjectDeliveryRunResult runResult)
+    internal static async Task AppendDeliveryEmailAsync(
+        AppDbContext db,
+        string projectId,
+        JsonElement metadata,
+        DeliveryEmailResult emailResult,
+        CancellationToken cancellationToken)
+    {
+        var root = JsonNode.Parse(metadata.GetRawText()) as JsonObject ?? new JsonObject();
+        var delivery = root["delivery"] as JsonObject ?? new JsonObject();
+        var current = delivery["current"] as JsonObject ?? new JsonObject();
+
+        ApplyLastEmail(current, emailResult);
+
+        delivery["current"] = current;
+        root["delivery"] = delivery;
+
+        var updatedJson = root.ToJsonString(new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE public.projects
+            SET metadata = {updatedJson}::jsonb,
+                updated_at = now()
+            WHERE project_id = {projectId};
+            """,
+            cancellationToken
+        );
+    }
+
+    internal static void ApplyLastEmail(JsonObject current, DeliveryEmailResult emailResult)
+    {
+        var emailNode = JsonSerializer.SerializeToNode(emailResult, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        if (emailNode is not null)
+        {
+            current["lastEmail"] = emailNode;
+        }
+    }
+
+    internal static void UpdateDeliveryCurrent(JsonObject delivery, ProjectDeliveryRunResult runResult)
     {
         var current = delivery["current"] as JsonObject ?? new JsonObject();
 
@@ -1336,6 +1561,16 @@ public sealed class ProjectDeliverer
         if (!string.IsNullOrWhiteSpace(runResult.DestinationPath))
         {
             current["stablePath"] = runResult.DestinationPath;
+        }
+
+        if (!string.IsNullOrWhiteSpace(runResult.VersionLabel))
+        {
+            current["currentVersion"] = runResult.VersionLabel;
+        }
+
+        if (runResult.RetentionUntilUtc.HasValue)
+        {
+            current["retentionUntilUtc"] = runResult.RetentionUntilUtc;
         }
 
         var resolvedShareUrl = !string.IsNullOrWhiteSpace(runResult.ShareUrl) ? runResult.ShareUrl : existingShareUrl;
@@ -1366,6 +1601,11 @@ public sealed class ProjectDeliverer
         {
             current.Remove("shareError");
             current["lastShareVerifiedAtUtc"] = DateTimeOffset.UtcNow;
+        }
+
+        if (runResult.Email is not null)
+        {
+            ApplyLastEmail(current, runResult.Email);
         }
 
         delivery["current"] = current;
@@ -1472,6 +1712,79 @@ public sealed class ProjectDeliverer
         }
 
         return Array.Empty<string>();
+    }
+
+    private static IReadOnlyList<string> ReadEmailAddresses(JsonElement root, string name)
+    {
+        if (!root.TryGetProperty(name, out var element))
+        {
+            return Array.Empty<string>();
+        }
+
+        if (element.ValueKind == JsonValueKind.Array)
+        {
+            var values = element
+                .EnumerateArray()
+                .Where(e => e.ValueKind == JsonValueKind.String)
+                .Select(e => e.GetString() ?? string.Empty);
+            return NormalizeEmailList(values);
+        }
+
+        if (element.ValueKind == JsonValueKind.String)
+        {
+            var raw = element.GetString() ?? string.Empty;
+            return NormalizeEmailList(new[] { raw });
+        }
+
+        return Array.Empty<string>();
+    }
+
+    private static IReadOnlyList<string> NormalizeEmailList(IEnumerable<string> values)
+    {
+        return values
+            .SelectMany(value => (value ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static DeliveryEmailResult FailedEmailResult(
+        IReadOnlyList<string> recipients,
+        string subject,
+        string error,
+        string? replyTo)
+    {
+        return new DeliveryEmailResult(
+            Status: "failed",
+            Provider: "email",
+            FromAddress: DeliveryFromAddress,
+            To: recipients,
+            Subject: subject,
+            SentAtUtc: null,
+            ProviderMessageId: null,
+            Error: error,
+            ReplyTo: replyTo
+        );
+    }
+
+    private static DeliveryEmailResult SkippedEmailResult(
+        IReadOnlyList<string> recipients,
+        string subject,
+        string reason,
+        string? replyTo)
+    {
+        return new DeliveryEmailResult(
+            Status: "skipped",
+            Provider: "email",
+            FromAddress: DeliveryFromAddress,
+            To: recipients,
+            Subject: subject,
+            SentAtUtc: null,
+            ProviderMessageId: null,
+            Error: reason,
+            ReplyTo: replyTo
+        );
     }
 
     private static DeliveryShareState ReadShareState(JsonElement metadata)

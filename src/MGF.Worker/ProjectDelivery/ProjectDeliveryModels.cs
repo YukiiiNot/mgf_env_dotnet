@@ -1,13 +1,24 @@
 namespace MGF.Worker.ProjectDelivery;
 
+using MGF.Worker.Integrations.Email;
+
 public sealed record ProjectDeliveryPayload(
     string ProjectId,
     IReadOnlyList<string> EditorInitials,
+    IReadOnlyList<string> ToEmails,
+    string? ReplyToEmail,
     bool TestMode,
     bool AllowTestCleanup,
     bool AllowNonReal,
     bool Force,
     bool RefreshShareLink
+);
+
+public sealed record ProjectDeliveryEmailPayload(
+    string ProjectId,
+    IReadOnlyList<string> EditorInitials,
+    IReadOnlyList<string> ToEmails,
+    string? ReplyToEmail
 );
 
 public sealed record ProjectDeliveryRunResult(
@@ -30,7 +41,8 @@ public sealed record ProjectDeliveryRunResult(
     string? ShareStatus,
     string? ShareUrl,
     string? ShareId,
-    string? ShareError
+    string? ShareError,
+    DeliveryEmailResult? Email
 );
 
 public sealed record ProjectDeliveryDomainResult(
