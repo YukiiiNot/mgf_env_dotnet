@@ -2,9 +2,12 @@ namespace MGF.Worker.Integrations.Email;
 
 public sealed record DeliveryEmailRequest(
     string FromAddress,
+    string? FromName,
     IReadOnlyList<string> To,
     string Subject,
     string BodyText,
+    string? HtmlBody,
+    string TemplateVersion,
     string? ReplyTo);
 
 public sealed record DeliveryEmailResult(
@@ -16,6 +19,7 @@ public sealed record DeliveryEmailResult(
     DateTimeOffset? SentAtUtc,
     string? ProviderMessageId,
     string? Error,
+    string TemplateVersion,
     string? ReplyTo);
 
 public interface IEmailSender

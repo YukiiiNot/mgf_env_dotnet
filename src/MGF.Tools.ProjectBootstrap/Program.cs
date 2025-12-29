@@ -20,6 +20,7 @@ root.AddCommand(CreateArchiveCommand());
 root.AddCommand(CreateToDeliverCommand());
 root.AddCommand(CreateDeliverCommand());
 root.AddCommand(CreateDeliveryEmailCommand());
+root.AddCommand(CreateSeedDeliverablesCommand());
 root.AddCommand(CreateRootAuditCommand());
 root.AddCommand(CreateRootRepairCommand());
 root.AddCommand(CreateRootShowCommand());
@@ -430,6 +431,62 @@ static Command CreateDeliveryEmailCommand()
         );
 
         var exitCode = await EnqueueDeliveryEmailAsync(payload);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateSeedDeliverablesCommand()
+{
+    var command = new Command("seed-deliverables", "copy a local file into LucidLink Final_Masters for test deliveries.");
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Project ID to seed (e.g., prj_...).",
+        IsRequired = true
+    };
+
+    var fileOption = new Option<string>("--file")
+    {
+        Description = "Local file path to seed into Final_Masters.",
+        IsRequired = true
+    };
+
+    var targetOption = new Option<string>("--target")
+    {
+        Description = "Target folder (final-masters only for now).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+    targetOption.SetDefaultValue("final-masters");
+
+    var testModeOption = new Option<bool?>("--testMode")
+    {
+        Description = "Use test_run storage root (default: true).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    var overwriteOption = new Option<bool?>("--overwrite")
+    {
+        Description = "Overwrite existing file in target (default: false).",
+        Arity = ArgumentArity.ZeroOrOne
+    };
+
+    command.AddOption(projectIdOption);
+    command.AddOption(fileOption);
+    command.AddOption(targetOption);
+    command.AddOption(testModeOption);
+    command.AddOption(overwriteOption);
+
+    command.SetHandler(async context =>
+    {
+        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+        var filePath = context.ParseResult.GetValueForOption(fileOption) ?? string.Empty;
+        var target = context.ParseResult.GetValueForOption(targetOption) ?? "final-masters";
+        var testMode = context.ParseResult.GetValueForOption(testModeOption) ?? true;
+        var overwrite = context.ParseResult.GetValueForOption(overwriteOption) ?? false;
+
+        var exitCode = await SeedDeliverablesAsync(projectId, filePath, target, testMode, overwrite);
         context.ExitCode = exitCode;
     });
 
@@ -1130,6 +1187,98 @@ static async Task<int> EnqueueRootIntegrityAsync(RootIntegrityJobPayload payload
         Console.Error.WriteLine($"root-integrity: enqueue failed: {ex.Message}");
         return 1;
     }
+}
+
+static async Task<int> SeedDeliverablesAsync(
+    string projectId,
+    string filePath,
+    string target,
+    bool testMode,
+    bool overwrite)
+{
+    if (string.IsNullOrWhiteSpace(projectId))
+    {
+        Console.Error.WriteLine("bootstrap: seed-deliverables missing projectId.");
+        return 1;
+    }
+
+    if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+    {
+        Console.Error.WriteLine($"bootstrap: seed-deliverables file not found: {filePath}");
+        return 1;
+    }
+
+    if (!string.Equals(target, "final-masters", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"bootstrap: seed-deliverables unsupported target: {target}");
+        return 1;
+    }
+
+    var config = BuildConfiguration();
+    var connectionString = DatabaseConnection.ResolveConnectionString(config);
+
+    await using var conn = new NpgsqlConnection(connectionString);
+    await conn.OpenAsync();
+
+    var rootPath = config["Storage:LucidLinkRoot"];
+    if (string.IsNullOrWhiteSpace(rootPath))
+    {
+        Console.Error.WriteLine("bootstrap: seed-deliverables failed: Storage:LucidLinkRoot not configured.");
+        return 1;
+    }
+
+    var rootKey = testMode ? "test_run" : "project_container";
+    string? folderRelpath = null;
+
+    await using (var cmd = new NpgsqlCommand(
+                     """
+                     SELECT folder_relpath
+                     FROM public.project_storage_roots
+                     WHERE project_id = @project_id
+                       AND storage_provider_key = 'lucidlink'
+                       AND root_key = @root_key
+                     ORDER BY created_at DESC
+                     LIMIT 1;
+                     """,
+                     conn
+                 ))
+    {
+        cmd.Parameters.AddWithValue("project_id", projectId);
+        cmd.Parameters.AddWithValue("root_key", rootKey);
+
+        var result = await cmd.ExecuteScalarAsync();
+        folderRelpath = result?.ToString();
+    }
+
+    if (string.IsNullOrWhiteSpace(folderRelpath))
+    {
+        Console.Error.WriteLine($"bootstrap: seed-deliverables no lucidlink storage root found (root_key={rootKey}).");
+        return 1;
+    }
+
+    var rootFull = Path.GetFullPath(rootPath);
+    var containerRoot = Path.GetFullPath(Path.Combine(rootFull, folderRelpath));
+    if (!containerRoot.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(containerRoot, rootFull, StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("bootstrap: seed-deliverables failed: resolved path outside LucidLink root.");
+        return 1;
+    }
+
+    var finalMasters = Path.Combine(containerRoot, "02_Renders", "Final_Masters");
+    Directory.CreateDirectory(finalMasters);
+
+    var fileName = Path.GetFileName(filePath);
+    var destPath = Path.Combine(finalMasters, fileName);
+    if (File.Exists(destPath) && !overwrite)
+    {
+        Console.Error.WriteLine($"bootstrap: seed-deliverables target exists: {destPath}");
+        return 1;
+    }
+
+    File.Copy(filePath, destPath, overwrite);
+    Console.WriteLine($"bootstrap: seeded deliverable to {destPath}");
+    return 0;
 }
 
 static async Task<int> MarkReadyAsync(string projectId)

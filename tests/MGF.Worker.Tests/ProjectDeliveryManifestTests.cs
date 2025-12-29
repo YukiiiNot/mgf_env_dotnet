@@ -21,12 +21,16 @@ public sealed class ProjectDeliveryManifestTests
             "v1",
             DateTimeOffset.UtcNow.AddMonths(3),
             Array.Empty<ProjectDeliverer.DeliveryFile>(),
-            "https://dropbox.test/share");
+            "https://dropbox.test/share",
+            apiStablePath: "/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final",
+            apiVersionPath: "/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1");
 
         Assert.Equal(2, manifest.SchemaVersion);
         Assert.Equal(stablePath, manifest.DestinationPath);
         Assert.Equal(stablePath, manifest.StablePath);
         Assert.Equal(versionPath, manifest.VersionPath);
+        Assert.Equal("/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final", manifest.ApiStablePath);
+        Assert.Equal("/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1", manifest.ApiVersionPath);
         Assert.Equal("v1", manifest.VersionLabel);
         Assert.Equal("v1", manifest.CurrentVersion);
         Assert.Equal("https://dropbox.test/share", manifest.StableShareUrl);

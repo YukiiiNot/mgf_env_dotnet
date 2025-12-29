@@ -1,7 +1,9 @@
 namespace MGF.Worker.Integrations.Email;
 
+using System.Text;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
 using Microsoft.Extensions.Configuration;
 
 internal sealed class SmtpEmailSender : IEmailSender
@@ -41,26 +43,7 @@ internal sealed class SmtpEmailSender : IEmailSender
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        using var message = new MailMessage
-        {
-            From = new MailAddress(request.FromAddress),
-            Subject = request.Subject,
-            Body = request.BodyText,
-            IsBodyHtml = false
-        };
-
-        foreach (var recipient in request.To)
-        {
-            if (!string.IsNullOrWhiteSpace(recipient))
-            {
-                message.To.Add(recipient);
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.ReplyTo))
-        {
-            message.ReplyToList.Add(new MailAddress(request.ReplyTo));
-        }
+        using var message = BuildMessage(request);
 
         using var client = new SmtpClient(host, port)
         {
@@ -85,6 +68,7 @@ internal sealed class SmtpEmailSender : IEmailSender
                 SentAtUtc: DateTimeOffset.UtcNow,
                 ProviderMessageId: null,
                 Error: null,
+                TemplateVersion: request.TemplateVersion,
                 ReplyTo: request.ReplyTo
             );
         }
@@ -105,6 +89,7 @@ internal sealed class SmtpEmailSender : IEmailSender
             SentAtUtc: null,
             ProviderMessageId: null,
             Error: error,
+            TemplateVersion: request.TemplateVersion,
             ReplyTo: request.ReplyTo
         );
     }
@@ -113,5 +98,50 @@ internal sealed class SmtpEmailSender : IEmailSender
     {
         return string.Equals(value, "deliveries@mgfilms.pro", StringComparison.OrdinalIgnoreCase)
             || string.Equals(value, "info@mgfilms.pro", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static MailMessage BuildMessage(DeliveryEmailRequest request)
+    {
+        var message = new MailMessage
+        {
+            From = string.IsNullOrWhiteSpace(request.FromName)
+                ? new MailAddress(request.FromAddress)
+                : new MailAddress(request.FromAddress, request.FromName),
+            Subject = request.Subject
+        };
+
+        foreach (var recipient in request.To)
+        {
+            if (!string.IsNullOrWhiteSpace(recipient))
+            {
+                message.To.Add(recipient);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ReplyTo))
+        {
+            message.ReplyToList.Add(new MailAddress(request.ReplyTo));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.HtmlBody))
+        {
+            message.Body = string.Empty;
+            message.IsBodyHtml = false;
+            message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(
+                request.BodyText,
+                Encoding.UTF8,
+                MediaTypeNames.Text.Plain));
+            message.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(
+                request.HtmlBody,
+                Encoding.UTF8,
+                MediaTypeNames.Text.Html));
+        }
+        else
+        {
+            message.Body = request.BodyText;
+            message.IsBodyHtml = false;
+        }
+
+        return message;
     }
 }

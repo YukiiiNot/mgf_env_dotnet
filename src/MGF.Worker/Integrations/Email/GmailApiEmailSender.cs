@@ -111,6 +111,7 @@ internal sealed class GmailApiEmailSender : IEmailSender
                 SentAtUtc: DateTimeOffset.UtcNow,
                 ProviderMessageId: messageId,
                 Error: null,
+                TemplateVersion: request.TemplateVersion,
                 ReplyTo: request.ReplyTo);
         }
         catch (Exception ex)
@@ -224,8 +225,9 @@ internal sealed class GmailApiEmailSender : IEmailSender
 
     private static string BuildRawMessage(DeliveryEmailRequest request)
     {
+        var boundary = "alt_" + Guid.NewGuid().ToString("N");
         var builder = new StringBuilder();
-        builder.AppendLine($"From: {request.FromAddress}");
+        builder.AppendLine($"From: {FormatFromHeader(request)}");
         builder.AppendLine($"To: {string.Join(", ", request.To)}");
         if (!string.IsNullOrWhiteSpace(request.ReplyTo))
         {
@@ -234,10 +236,40 @@ internal sealed class GmailApiEmailSender : IEmailSender
 
         builder.AppendLine($"Subject: {request.Subject}");
         builder.AppendLine("MIME-Version: 1.0");
-        builder.AppendLine("Content-Type: text/plain; charset=UTF-8");
-        builder.AppendLine();
-        builder.AppendLine(request.BodyText);
+        if (!string.IsNullOrWhiteSpace(request.HtmlBody))
+        {
+            builder.AppendLine($"Content-Type: multipart/alternative; boundary=\"{boundary}\"");
+            builder.AppendLine();
+            builder.AppendLine($"--{boundary}");
+            builder.AppendLine("Content-Type: text/plain; charset=UTF-8");
+            builder.AppendLine();
+            builder.AppendLine(request.BodyText);
+            builder.AppendLine();
+            builder.AppendLine($"--{boundary}");
+            builder.AppendLine("Content-Type: text/html; charset=UTF-8");
+            builder.AppendLine();
+            builder.AppendLine(request.HtmlBody);
+            builder.AppendLine();
+            builder.AppendLine($"--{boundary}--");
+        }
+        else
+        {
+            builder.AppendLine("Content-Type: text/plain; charset=UTF-8");
+            builder.AppendLine();
+            builder.AppendLine(request.BodyText);
+        }
         return builder.ToString();
+    }
+
+    private static string FormatFromHeader(DeliveryEmailRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.FromName))
+        {
+            return request.FromAddress;
+        }
+
+        var safeName = request.FromName.Replace("\"", string.Empty);
+        return $"\"{safeName}\" <{request.FromAddress}>";
     }
 
     private static string Base64UrlEncode(byte[] data)
@@ -259,6 +291,7 @@ internal sealed class GmailApiEmailSender : IEmailSender
             SentAtUtc: null,
             ProviderMessageId: null,
             Error: error,
+            TemplateVersion: request.TemplateVersion,
             ReplyTo: request.ReplyTo);
     }
 }

@@ -36,6 +36,18 @@ internal sealed class DropboxAccessTokenProvider : IDropboxAccessTokenProvider
 
     public async Task<DropboxAccessTokenResult> GetAccessTokenAsync(CancellationToken cancellationToken)
     {
+        var refresh = ResolveValue(
+            configuration,
+            primaryKey: "Integrations:Dropbox:RefreshToken",
+            fallbackKey: "Dropbox:RefreshToken",
+            envPrimary: "Integrations__Dropbox__RefreshToken",
+            envFallback: "Dropbox__RefreshToken");
+
+        if (!string.IsNullOrWhiteSpace(refresh.Value))
+        {
+            return await GetFromRefreshTokenAsync(refresh, cancellationToken);
+        }
+
         var access = ResolveValue(
             configuration,
             primaryKey: "Integrations:Dropbox:AccessToken",
@@ -47,18 +59,6 @@ internal sealed class DropboxAccessTokenProvider : IDropboxAccessTokenProvider
         {
             LogAuthMode("access_token", access.Source);
             return new DropboxAccessTokenResult(access.Value, "access_token", access.Source, null);
-        }
-
-        var refresh = ResolveValue(
-            configuration,
-            primaryKey: "Integrations:Dropbox:RefreshToken",
-            fallbackKey: "Dropbox:RefreshToken",
-            envPrimary: "Integrations__Dropbox__RefreshToken",
-            envFallback: "Dropbox__RefreshToken");
-
-        if (!string.IsNullOrWhiteSpace(refresh.Value))
-        {
-            return await GetFromRefreshTokenAsync(refresh, cancellationToken);
         }
 
         return new DropboxAccessTokenResult(null, "missing", "none", "Dropbox access token not configured.");

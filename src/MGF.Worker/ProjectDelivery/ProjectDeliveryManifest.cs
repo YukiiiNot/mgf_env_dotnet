@@ -13,6 +13,8 @@ internal sealed record DeliveryManifest
     public string DestinationPath { get; init; } = string.Empty;
     public string StablePath { get; init; } = string.Empty;
     public string VersionPath { get; init; } = string.Empty;
+    public string? ApiStablePath { get; init; }
+    public string? ApiVersionPath { get; init; }
     public string VersionLabel { get; init; } = string.Empty;
     public string CurrentVersion { get; init; } = string.Empty;
     public string? StableShareUrl { get; init; }

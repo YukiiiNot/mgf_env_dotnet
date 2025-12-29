@@ -1,5 +1,7 @@
-namespace MGF.Worker.ProjectDelivery;
+﻿namespace MGF.Worker.ProjectDelivery;
 
+using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +21,7 @@ public sealed class ProjectDeliverer
     private const int ShareLinkTtlDays = 7;
     private const string DeliveryFromAddress = "deliveries@mgfilms.pro";
     private const string DefaultReplyToAddress = "info@mgfilms.pro";
+    private const string DeliveryEmailTemplateVersion = "v1-html";
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -30,6 +33,7 @@ public sealed class ProjectDeliverer
     private readonly FolderProvisioner provisioner;
     private readonly IDropboxShareLinkClient shareLinkClient;
     private readonly IDropboxAccessTokenProvider accessTokenProvider;
+    private readonly IDropboxFilesClient dropboxFilesClient;
     private readonly IEmailSender emailSender;
     private readonly ILogger? logger;
 
@@ -37,6 +41,7 @@ public sealed class ProjectDeliverer
         IConfiguration configuration,
         IDropboxShareLinkClient? shareLinkClient = null,
         IDropboxAccessTokenProvider? accessTokenProvider = null,
+        IDropboxFilesClient? dropboxFilesClient = null,
         IEmailSender? emailSender = null,
         ILogger? logger = null)
     {
@@ -45,6 +50,7 @@ public sealed class ProjectDeliverer
         this.shareLinkClient = shareLinkClient ?? new DropboxShareLinkClient(new HttpClient(), configuration);
         this.accessTokenProvider = accessTokenProvider
             ?? new DropboxAccessTokenProvider(new HttpClient(), configuration, logger);
+        this.dropboxFilesClient = dropboxFilesClient ?? new DropboxFilesClient(new HttpClient(), configuration);
         this.emailSender = emailSender ?? EmailSenderFactory.Create(configuration, logger);
         this.logger = logger;
     }
@@ -83,6 +89,8 @@ public sealed class ProjectDeliverer
                 Force: payload.Force,
                 SourcePath: null,
                 DestinationPath: null,
+                ApiStablePath: null,
+                ApiVersionPath: null,
                 VersionLabel: null,
                 RetentionUntilUtc: null,
                 Files: Array.Empty<DeliveryFileSummary>(),
@@ -116,6 +124,8 @@ public sealed class ProjectDeliverer
                 Force: payload.Force,
                 SourcePath: null,
                 DestinationPath: null,
+                ApiStablePath: null,
+                ApiVersionPath: null,
                 VersionLabel: null,
                 RetentionUntilUtc: null,
                 Files: Array.Empty<DeliveryFileSummary>(),
@@ -165,6 +175,8 @@ public sealed class ProjectDeliverer
                 Force: payload.Force,
                 SourcePath: sourceResult.SourcePath,
                 DestinationPath: null,
+                ApiStablePath: null,
+                ApiVersionPath: null,
                 VersionLabel: null,
                 RetentionUntilUtc: null,
                 Files: sourceResult.Files.Select(ToSummary).ToArray(),
@@ -184,6 +196,7 @@ public sealed class ProjectDeliverer
         }
 
         var shareState = ReadShareState(project.Metadata);
+        var history = ReadDeliveryHistory(project.Metadata);
         var dropboxResult = await ProcessDropboxAsync(
             payload,
             projectFolderName,
@@ -191,6 +204,7 @@ public sealed class ProjectDeliverer
             sourceResult,
             dropboxDeliveryRelpath,
             shareState,
+            history,
             deliveryTemplatePath,
             cancellationToken
         );
@@ -222,6 +236,8 @@ public sealed class ProjectDeliverer
             Force: payload.Force,
             SourcePath: sourceResult.SourcePath,
             DestinationPath: dropboxResult.DestinationPath,
+            ApiStablePath: dropboxResult.ApiStablePath,
+            ApiVersionPath: dropboxResult.ApiVersionPath,
             VersionLabel: dropboxResult.VersionLabel,
             RetentionUntilUtc: dropboxResult.RetentionUntilUtc,
             Files: sourceResult.Files.Select(ToSummary).ToArray(),
@@ -279,6 +295,8 @@ public sealed class ProjectDeliverer
 
     private sealed record DeliveryTargetInfo(
         string? DestinationPath,
+        string? ApiStablePath,
+        string? ApiVersionPath,
         string? VersionLabel,
         DateTimeOffset? RetentionUntilUtc,
         ProjectDeliveryDomainResult DomainResult,
@@ -293,6 +311,18 @@ public sealed class ProjectDeliverer
         string? ShareId,
         string? ShareStatus,
         DateTimeOffset? LastVerifiedAtUtc
+    );
+
+    internal sealed record DeliveryHistory(
+        string? CurrentVersion,
+        IReadOnlyList<DeliveryFileSummary> LastFiles
+    );
+
+    private sealed record DeliveryContainerManifest(
+        string TemplateKey,
+        string TemplateHash,
+        IReadOnlyList<string> FolderPaths,
+        byte[] ManifestBytes
     );
 
     private sealed record DeliveryShareOutcome(
@@ -322,7 +352,7 @@ public sealed class ProjectDeliverer
     {
         var code = tokens.ProjectCode ?? "MGF";
         var name = tokens.ProjectName ?? "Delivery";
-        return $"Your deliverables are ready - {code} {name}";
+        return $"Your deliverables are ready \u2014 {code} {name}";
     }
 
     internal static DeliveryEmailRequest BuildDeliveryEmailRequest(
@@ -332,14 +362,21 @@ public sealed class ProjectDeliverer
         DateTimeOffset retentionUntilUtc,
         IReadOnlyList<DeliveryFileSummary> files,
         IReadOnlyList<string> recipients,
-        string? replyTo)
+        string? replyTo,
+        ProvisioningTokens tokens,
+        string? logoUrl,
+        string? fromName)
     {
         var body = BuildDeliveryEmailBody(shareUrl, versionLabel, retentionUntilUtc, files);
+        var htmlBody = BuildDeliveryEmailBodyHtml(shareUrl, versionLabel, retentionUntilUtc, files, tokens, logoUrl);
         return new DeliveryEmailRequest(
             FromAddress: DeliveryFromAddress,
+            FromName: fromName,
             To: recipients,
             Subject: subject,
             BodyText: body,
+            HtmlBody: htmlBody,
+            TemplateVersion: DeliveryEmailTemplateVersion,
             ReplyTo: replyTo);
     }
 
@@ -351,7 +388,7 @@ public sealed class ProjectDeliverer
     {
         var lines = new List<string>
         {
-            "Your MGF delivery is ready.",
+            "Your deliverables are ready.",
             string.Empty,
             $"Download link: {shareUrl}",
             $"Current delivery version: {versionLabel}",
@@ -372,6 +409,107 @@ public sealed class ProjectDeliverer
         lines.Add("MGF");
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    internal static string BuildDeliveryEmailBodyHtml(
+        string shareUrl,
+        string versionLabel,
+        DateTimeOffset retentionUntilUtc,
+        IReadOnlyList<DeliveryFileSummary> files,
+        ProvisioningTokens tokens,
+        string? logoUrl)
+    {
+        const int maxFiles = 50;
+        var totalFiles = files.Count;
+        var visibleFiles = files.Take(maxFiles).ToArray();
+        var showCountNote = totalFiles > maxFiles
+            ? $"Showing {maxFiles} of {totalFiles} files."
+            : string.Empty;
+
+        var safeShare = WebUtility.HtmlEncode(shareUrl);
+        var safeVersion = WebUtility.HtmlEncode(versionLabel);
+        var safeRetention = WebUtility.HtmlEncode(retentionUntilUtc.ToString("yyyy-MM-dd"));
+        var safeCode = WebUtility.HtmlEncode(tokens.ProjectCode ?? "MGF");
+        var safeName = WebUtility.HtmlEncode(tokens.ProjectName ?? "Delivery");
+        var safeProjectLine = $"{safeCode} \u2022 {safeName}";
+        var safeLogo = string.IsNullOrWhiteSpace(logoUrl) ? null : WebUtility.HtmlEncode(logoUrl);
+
+        var fileItems = new StringBuilder();
+        foreach (var file in visibleFiles)
+        {
+            fileItems.Append("<li style=\"margin:0 0 6px 0;\">");
+            fileItems.Append(WebUtility.HtmlEncode(file.RelativePath));
+            fileItems.Append("</li>");
+        }
+
+        var logoHtml = safeLogo is null
+            ? string.Empty
+            : $"<tr><td style=\"padding:0 0 24px 0;\"><img src=\"{safeLogo}\" alt=\"MGF\" width=\"180\" style=\"display:block;border:0;outline:none;text-decoration:none;\" /></td></tr>";
+
+        return $"""
+<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background-color:#2b2b2b;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#2b2b2b;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="background-color:#111111;border-radius:8px;">
+            <tr>
+              <td style="padding:36px 40px;font-family:'Glacial Indifference','Garet','Segoe UI',Arial,sans-serif;color:#f5f5f5;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                  {logoHtml}
+                  <tr>
+                    <td style="font-size:26px;font-weight:700;padding:0 0 8px 0;color:#ffffff;">Your deliverables are ready</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:#b3b3b3;padding:0 0 24px 0;">{safeProjectLine}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 0 24px 0;">
+                      <a href="{safeShare}" style="background-color:#3d7bff;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:4px;display:inline-block;font-size:14px;font-weight:600;">Download deliverables</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#b3b3b3;padding:0 0 6px 0;">Copy/paste link:</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;word-break:break-word;padding:0 0 20px 0;"><a href="{safeShare}" style="color:#3d7bff;text-decoration:none;">{safeShare}</a></td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:14px;color:#f5f5f5;padding:0 0 6px 0;">Current delivery version: {safeVersion}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#b3b3b3;padding:0 0 24px 0;">Link remains active for 3 months (until {safeRetention}).</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:14px;font-weight:600;padding:0 0 8px 0;color:#ffffff;">Files</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:13px;color:#b3b3b3;padding:0 0 12px 0;">{WebUtility.HtmlEncode(showCountNote)}</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <ul style="margin:0;padding:0 0 0 18px;font-size:13px;color:#f5f5f5;line-height:1.4;">
+                        {fileItems}
+                      </ul>
+                    </td>
+                  </tr>
+                  <tr> 
+                    <td style="font-size:13px;color:#b3b3b3;padding:24px 0 0 0;">If you have any questions, contact <a href="mailto:info@mgfilms.pro" style="color:#3d7bff;text-decoration:none;">info@mgfilms.pro</a>.</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:12px;color:#7a7a7a;padding:16px 0 0 0;">Automated message from MG Films Deliveries.</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+""";
     }
 
     private async Task<DeliverySourceInfo> ResolveLucidlinkSourceAsync(
@@ -526,15 +664,34 @@ public sealed class ProjectDeliverer
         DeliverySourceInfo source,
         string dropboxDeliveryRelpath,
         DeliveryShareState shareState,
+        DeliveryHistory history,
         string deliveryTemplatePath,
         CancellationToken cancellationToken)
     {
         var notes = new List<string>();
+        var useApiRoot = configuration.GetValue("Integrations:Dropbox:UseApiRootFolder", false)
+            || configuration.GetValue("Dropbox:UseApiRootFolder", false);
+
+        if (useApiRoot)
+        {
+            return await ProcessDropboxApiAsync(
+                payload,
+                projectFolderName,
+                tokens,
+                source,
+                dropboxDeliveryRelpath,
+                shareState,
+                history,
+                deliveryTemplatePath,
+                cancellationToken);
+        }
         var rootPath = ResolveDomainRootPath("dropbox");
         if (string.IsNullOrWhiteSpace(rootPath))
         {
             return new DeliveryTargetInfo(
                 DestinationPath: null,
+                ApiStablePath: null,
+                ApiVersionPath: null,
                 VersionLabel: null,
                 RetentionUntilUtc: null,
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -558,6 +715,8 @@ public sealed class ProjectDeliverer
         {
             return new DeliveryTargetInfo(
                 DestinationPath: null,
+                ApiStablePath: null,
+                ApiVersionPath: null,
                 VersionLabel: null,
                 RetentionUntilUtc: null,
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -594,6 +753,8 @@ public sealed class ProjectDeliverer
                 notes.Add(cleanupError ?? "Test cleanup blocked.");
                 return new DeliveryTargetInfo(
                     DestinationPath: targetPath,
+                    ApiStablePath: null,
+                    ApiVersionPath: null,
                     VersionLabel: null,
                     RetentionUntilUtc: null,
                     DomainResult: new ProjectDeliveryDomainResult(
@@ -619,6 +780,8 @@ public sealed class ProjectDeliverer
                 notes.Add(cleanup.Error ?? "Test cleanup failed (locked; cleanup skipped).");
                 return new DeliveryTargetInfo(
                     DestinationPath: targetPath,
+                    ApiStablePath: null,
+                    ApiVersionPath: null,
                     VersionLabel: null,
                     RetentionUntilUtc: null,
                     DomainResult: new ProjectDeliveryDomainResult(
@@ -647,6 +810,8 @@ public sealed class ProjectDeliverer
             notes.Add("Delivery container verify failed.");
             return new DeliveryTargetInfo(
                 DestinationPath: targetPath,
+                ApiStablePath: null,
+                ApiVersionPath: null,
                 VersionLabel: null,
                 RetentionUntilUtc: null,
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -704,7 +869,8 @@ public sealed class ProjectDeliverer
             shareState,
             payload.RefreshShareLink,
             payload.TestMode,
-            cancellationToken
+            cancellationToken,
+            apiStablePathOverride: null
         );
         if (!string.IsNullOrWhiteSpace(shareOutcome.ShareError))
         {
@@ -720,13 +886,17 @@ public sealed class ProjectDeliverer
             versionPlan.VersionLabel,
             retentionUntil,
             source.Files,
-            shareOutcome.ShareStatus is "created" or "reused" ? shareOutcome.ShareUrl : null
+            shareOutcome.ShareStatus is "created" or "reused" ? shareOutcome.ShareUrl : null,
+            apiStablePath: null,
+            apiVersionPath: null
         );
 
         await WriteDeliveryManifestAsync(manifestPath, manifest, cancellationToken);
 
         return new DeliveryTargetInfo(
             DestinationPath: versionPlan.StableRoot,
+            ApiStablePath: null,
+            ApiVersionPath: null,
             VersionLabel: versionPlan.VersionLabel,
             RetentionUntilUtc: retentionUntil,
             DomainResult: new ProjectDeliveryDomainResult(
@@ -744,6 +914,206 @@ public sealed class ProjectDeliverer
             ShareId: shareOutcome.ShareId,
             ShareError: shareOutcome.ShareError
         );
+    }
+
+    private async Task<DeliveryTargetInfo> ProcessDropboxApiAsync(
+        ProjectDeliveryPayload payload,
+        string projectFolderName,
+        ProvisioningTokens tokens,
+        DeliverySourceInfo source,
+        string dropboxDeliveryRelpath,
+        DeliveryShareState shareState,
+        DeliveryHistory history,
+        string deliveryTemplatePath,
+        CancellationToken cancellationToken)
+    {
+        var notes = new List<string>();
+        try
+        {
+            var apiRoot = ResolveDropboxApiRootFolder();
+            if (string.IsNullOrWhiteSpace(apiRoot))
+            {
+                return new DeliveryTargetInfo(
+                    DestinationPath: null,
+                    ApiStablePath: null,
+                    ApiVersionPath: null,
+                    VersionLabel: null,
+                    RetentionUntilUtc: null,
+                    DomainResult: new ProjectDeliveryDomainResult(
+                        DomainKey: "dropbox",
+                        RootPath: string.Empty,
+                        RootState: "blocked_api_root_missing",
+                        DeliveryContainerProvisioning: null,
+                        Deliverables: source.Files.Select(ToSummary).ToArray(),
+                        VersionLabel: null,
+                        DestinationPath: null,
+                        Notes: new[] { "Dropbox ApiRootFolder not configured." }
+                    ),
+                    ShareStatus: null,
+                    ShareUrl: null,
+                    ShareId: null,
+                    ShareError: null
+                );
+            }
+
+            var tokenResult = await accessTokenProvider.GetAccessTokenAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(tokenResult.AccessToken))
+            {
+                return new DeliveryTargetInfo(
+                    DestinationPath: null,
+                    ApiStablePath: null,
+                    ApiVersionPath: null,
+                    VersionLabel: null,
+                    RetentionUntilUtc: null,
+                    DomainResult: new ProjectDeliveryDomainResult(
+                        DomainKey: "dropbox",
+                        RootPath: "/" + apiRoot.Trim().Trim('/'),
+                        RootState: "blocked_dropbox_auth",
+                        DeliveryContainerProvisioning: null,
+                        Deliverables: source.Files.Select(ToSummary).ToArray(),
+                        VersionLabel: null,
+                        DestinationPath: null,
+                        Notes: new[] { tokenResult.Error ?? "Dropbox access token not configured." }
+                    ),
+                    ShareStatus: null,
+                    ShareUrl: null,
+                    ShareId: null,
+                    ShareError: tokenResult.Error ?? "Dropbox access token not configured."
+                );
+            }
+
+            var clientFolder = tokens.ClientName ?? "Client";
+            PathSafety.EnsureSafeSegment(clientFolder, "client folder name");
+
+            var rootPath = ResolveDomainRootPath("dropbox");
+            var destinationPath = TryBuildLocalStablePath(rootPath, dropboxDeliveryRelpath, clientFolder, projectFolderName, payload.TestMode);
+
+            var apiContainerRoot = BuildDropboxApiContainerRoot(apiRoot, dropboxDeliveryRelpath, clientFolder, projectFolderName);
+            var apiStablePath = CombineDropboxPath(apiContainerRoot, "01_Deliverables", "Final");
+            var versionPlan = DetermineVersionFromHistory(apiStablePath, history, source.Files);
+            var apiVersionPath = CombineDropboxPath(apiStablePath, versionPlan.VersionLabel);
+
+            notes.Add(versionPlan.IsNewVersion
+                ? $"Created new delivery version {versionPlan.VersionLabel}."
+                : $"Reusing existing delivery version {versionPlan.VersionLabel}.");
+
+            var manifestInfo = await BuildDeliveryContainerManifestAsync(deliveryTemplatePath, tokens, apiContainerRoot, cancellationToken);
+            var folderPaths = BuildDeliveryFolderList(apiContainerRoot, manifestInfo.FolderPaths, apiVersionPath);
+
+            foreach (var folderPath in folderPaths.OrderBy(path => path.Length))
+            {
+                await dropboxFilesClient.EnsureFolderAsync(tokenResult.AccessToken, folderPath, cancellationToken);
+            }
+
+            await EnsureDropboxParentFoldersAsync(tokenResult.AccessToken, apiVersionPath, source.Files, cancellationToken);
+
+            if (versionPlan.IsNewVersion)
+            {
+                var uploadPaths = BuildDropboxUploadPaths(apiVersionPath, source.Files);
+                for (var index = 0; index < source.Files.Count; index++)
+                {
+                    var file = source.Files[index];
+                    var dropboxPath = uploadPaths[index];
+                    await dropboxFilesClient.UploadFileAsync(tokenResult.AccessToken, dropboxPath, file.SourcePath, cancellationToken);
+                }
+            }
+
+            var folderManifestPath = CombineDropboxPath(apiContainerRoot, "00_Admin", ".mgf", "manifest", "folder_manifest.json");
+            await dropboxFilesClient.UploadBytesAsync(tokenResult.AccessToken, folderManifestPath, manifestInfo.ManifestBytes, cancellationToken);
+
+            var retentionUntil = DateTimeOffset.UtcNow.AddMonths(DefaultRetentionMonths);
+            var shareOutcome = await EnsureDropboxShareLinkAsync(
+                rootPath,
+                destinationPath ?? apiStablePath,
+                dropboxDeliveryRelpath,
+                shareState,
+                payload.RefreshShareLink,
+                payload.TestMode,
+                cancellationToken,
+                apiStablePathOverride: apiStablePath
+            );
+
+            if (!string.IsNullOrWhiteSpace(shareOutcome.ShareError))
+            {
+                notes.Add(shareOutcome.ShareError);
+            }
+
+            var deliveryManifest = BuildDeliveryManifest(
+                payload.ProjectId,
+                tokens,
+                source.SourcePath ?? string.Empty,
+                destinationPath ?? apiStablePath,
+                apiVersionPath,
+                versionPlan.VersionLabel,
+                retentionUntil,
+                source.Files,
+                shareOutcome.ShareStatus is "created" or "reused" ? shareOutcome.ShareUrl : null,
+                apiStablePath: apiStablePath,
+                apiVersionPath: apiVersionPath
+            );
+
+            var deliveryManifestBytes = SerializeDeliveryManifest(deliveryManifest);
+            var deliveryManifestPath = CombineDropboxPath(apiContainerRoot, "00_Admin", ".mgf", "manifest", "delivery_manifest.json");
+            await dropboxFilesClient.UploadBytesAsync(tokenResult.AccessToken, deliveryManifestPath, deliveryManifestBytes, cancellationToken);
+
+            var provisioningSummary = new ProvisioningSummary(
+                Mode: "api",
+                TemplateKey: manifestInfo.TemplateKey,
+                TargetRoot: apiContainerRoot,
+                ManifestPath: folderManifestPath,
+                Success: true,
+                MissingRequired: Array.Empty<string>(),
+                Errors: Array.Empty<string>(),
+                Warnings: Array.Empty<string>()
+            );
+
+            return new DeliveryTargetInfo(
+                DestinationPath: destinationPath ?? apiStablePath,
+                ApiStablePath: apiStablePath,
+                ApiVersionPath: apiVersionPath,
+                VersionLabel: versionPlan.VersionLabel,
+                RetentionUntilUtc: retentionUntil,
+                DomainResult: new ProjectDeliveryDomainResult(
+                    DomainKey: "dropbox",
+                    RootPath: string.IsNullOrWhiteSpace(rootPath) ? "/" + apiRoot.Trim().Trim('/') : rootPath,
+                    RootState: versionPlan.IsNewVersion ? "delivered" : "delivered_noop",
+                    DeliveryContainerProvisioning: provisioningSummary,
+                    Deliverables: source.Files.Select(ToSummary).ToArray(),
+                    VersionLabel: versionPlan.VersionLabel,
+                    DestinationPath: destinationPath ?? apiStablePath,
+                    Notes: notes
+                ),
+                ShareStatus: shareOutcome.ShareStatus,
+                ShareUrl: shareOutcome.ShareUrl,
+                ShareId: shareOutcome.ShareId,
+                ShareError: shareOutcome.ShareError
+            );
+        }
+        catch (Exception ex)
+        {
+            notes.Insert(0, ex.Message);
+            return new DeliveryTargetInfo(
+                DestinationPath: null,
+                ApiStablePath: null,
+                ApiVersionPath: null,
+                VersionLabel: null,
+                RetentionUntilUtc: null,
+                DomainResult: new ProjectDeliveryDomainResult(
+                    DomainKey: "dropbox",
+                    RootPath: string.Empty,
+                    RootState: "delivery_failed",
+                    DeliveryContainerProvisioning: null,
+                    Deliverables: source.Files.Select(ToSummary).ToArray(),
+                    VersionLabel: null,
+                    DestinationPath: null,
+                    Notes: notes
+                ),
+                ShareStatus: "failed",
+                ShareUrl: null,
+                ShareId: null,
+                ShareError: ex.Message
+            );
+        }
     }
 
     private async Task<DeliveryEmailResult> TrySendDeliveryEmailAsync(
@@ -789,6 +1159,8 @@ public sealed class ProjectDeliverer
                 replyTo);
         }
 
+        var logoUrl = ResolveLogoUrl(configuration);
+        var fromName = ResolveFromName(configuration);
         var request = BuildDeliveryEmailRequest(
             subject,
             shareUrl,
@@ -796,7 +1168,10 @@ public sealed class ProjectDeliverer
             retentionUntil,
             source.Files.Select(ToSummary).ToArray(),
             recipients,
-            replyTo);
+            replyTo,
+            tokens,
+            logoUrl,
+            fromName);
 
         try
         {
@@ -855,6 +1230,144 @@ public sealed class ProjectDeliverer
         var expanded = TokenExpander.ExpandRootName(loaded.Template.Root.Name, tokens);
         PathSafety.EnsureSafeSegment(expanded, "project folder name");
         return expanded;
+    }
+
+    private static async Task<DeliveryContainerManifest> BuildDeliveryContainerManifestAsync(
+        string templatePath,
+        ProvisioningTokens tokens,
+        string targetRoot,
+        CancellationToken cancellationToken)
+    {
+        var loader = new FolderTemplateLoader();
+        var loaded = await loader.LoadAsync(templatePath, schemaPathOverride: null, cancellationToken);
+        var templateHash = Hashing.Sha256Hex(loaded.TemplateBytes);
+        var planner = new FolderTemplatePlanner();
+        var repoRoot = FindRepoRoot();
+        var planBase = Path.Combine(repoRoot, "runtime", "delivery_plan");
+        var plan = planner.Plan(loaded.Template, tokens, planBase);
+
+        var folderPaths = plan.Items
+            .Where(item => item.Kind == PlanItemKind.Folder)
+            .Select(item => item.RelativePath)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var manifest = new ProvisioningManifest
+        {
+            TemplateKey = loaded.Template.TemplateKey,
+            TemplateHash = templateHash,
+            RunMode = "api",
+            TimestampUtc = DateTimeOffset.UtcNow,
+            Tokens = tokens.ToDictionary(),
+            TargetRoot = targetRoot,
+            ExpectedItems = plan.Items.Select(ToManifestItem).ToList(),
+            CreatedItems = new List<ManifestItem>(),
+            MissingRequired = new List<string>(),
+            Warnings = new List<string>(),
+            Errors = new List<string>()
+        };
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
+
+        var manifestBytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(manifest, options));
+
+        return new DeliveryContainerManifest(
+            TemplateKey: loaded.Template.TemplateKey,
+            TemplateHash: templateHash,
+            FolderPaths: folderPaths,
+            ManifestBytes: manifestBytes
+        );
+    }
+
+    private static ManifestItem ToManifestItem(PlanItem item)
+    {
+        return new ManifestItem
+        {
+            Path = item.RelativePath,
+            Kind = item.Kind.ToString().ToLowerInvariant(),
+            Optional = item.Optional
+        };
+    }
+
+    private static IReadOnlyList<string> BuildDeliveryFolderList(
+        string containerRoot,
+        IReadOnlyList<string> folderRelpaths,
+        string versionPath)
+    {
+        var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            containerRoot,
+            versionPath
+        };
+
+        foreach (var relpath in folderRelpaths)
+        {
+            if (string.IsNullOrWhiteSpace(relpath))
+            {
+                continue;
+            }
+
+            folders.Add(CombineDropboxPath(containerRoot, relpath));
+        }
+
+        return folders.ToArray();
+    }
+
+    private static byte[] SerializeDeliveryManifest(DeliveryManifest manifest)
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
+
+        return Encoding.UTF8.GetBytes(JsonSerializer.Serialize(manifest, options));
+    }
+
+    private async Task EnsureDropboxParentFoldersAsync(
+        string accessToken,
+        string versionPath,
+        IReadOnlyList<DeliveryFile> files,
+        CancellationToken cancellationToken)
+    {
+        var folders = BuildDropboxUploadFolders(versionPath, files);
+        foreach (var folder in folders)
+        {
+            await dropboxFilesClient.EnsureFolderAsync(accessToken, folder, cancellationToken);
+        }
+    }
+
+    internal static IReadOnlyList<string> BuildDropboxUploadFolders(
+        string versionPath,
+        IReadOnlyList<DeliveryFile> files)
+    {
+        var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in files)
+        {
+            var relativeDir = Path.GetDirectoryName(file.RelativePath);
+            if (string.IsNullOrWhiteSpace(relativeDir))
+            {
+                continue;
+            }
+
+            folders.Add(CombineDropboxPath(versionPath, relativeDir));
+        }
+
+        return folders.ToArray();
+    }
+
+    internal static IReadOnlyList<string> BuildDropboxUploadPaths(
+        string versionPath,
+        IReadOnlyList<DeliveryFile> files)
+    {
+        return files
+            .Select(file => CombineDropboxPath(versionPath, file.RelativePath))
+            .ToArray();
     }
 
     private static IReadOnlyList<DeliveryFile> FindDeliverableFiles(string sourcePath)
@@ -957,6 +1470,43 @@ public sealed class ProjectDeliverer
         }
 
         return map;
+    }
+
+    private static Dictionary<string, DeliveryFingerprint> BuildFileSet(
+        IReadOnlyList<DeliveryFileSummary> files)
+    {
+        var map = new Dictionary<string, DeliveryFingerprint>(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in files)
+        {
+            map[file.RelativePath] = new DeliveryFingerprint(file.SizeBytes, file.LastWriteTimeUtc);
+        }
+
+        return map;
+    }
+
+    internal static DeliveryVersionPlan DetermineVersionFromHistory(
+        string stablePath,
+        DeliveryHistory history,
+        IReadOnlyList<DeliveryFile> sourceFiles)
+    {
+        var sourceSet = BuildFileSet(sourceFiles);
+        var historySet = BuildFileSet(history.LastFiles);
+        var currentVersion = NormalizeVersionLabel(history.CurrentVersion);
+        if (historySet.Count > 0 && sourceSet.Count > 0 && SetsMatch(sourceSet, historySet))
+        {
+            var label = currentVersion ?? "v1";
+            return new DeliveryVersionPlan(label, stablePath, CombineDropboxPath(stablePath, label), false, false);
+        }
+
+        if (string.IsNullOrWhiteSpace(currentVersion))
+        {
+            return new DeliveryVersionPlan("v1", stablePath, CombineDropboxPath(stablePath, "v1"), true, false);
+        }
+
+        var currentNumber = ParseVersionNumber(currentVersion);
+        var nextNumber = currentNumber > 0 ? currentNumber + 1 : 2;
+        var nextLabel = $"v{nextNumber}";
+        return new DeliveryVersionPlan(nextLabel, stablePath, CombineDropboxPath(stablePath, nextLabel), true, false);
     }
 
     private static Dictionary<string, DeliveryFingerprint> BuildFileSet(
@@ -1068,6 +1618,46 @@ public sealed class ProjectDeliverer
         return int.TryParse(name[1..], out var number) ? number : 0;
     }
 
+    private static string? NormalizeVersionLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        if (IsVersionFolderName(trimmed))
+        {
+            return trimmed.StartsWith("v", StringComparison.Ordinal) ? trimmed : $"v{trimmed[1..]}";
+        }
+
+        return null;
+    }
+
+    internal static string CombineDropboxPath(params string[] segments)
+    {
+        var parts = new List<string>();
+        foreach (var segment in segments)
+        {
+            if (string.IsNullOrWhiteSpace(segment))
+            {
+                continue;
+            }
+
+            var split = segment.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var part in split)
+            {
+                var trimmed = part.Trim();
+                if (!string.IsNullOrWhiteSpace(trimmed))
+                {
+                    parts.Add(trimmed);
+                }
+            }
+        }
+
+        return "/" + string.Join("/", parts);
+    }
+
     private static string NormalizePath(string path)
     {
         return Path.GetFullPath(path)
@@ -1087,9 +1677,11 @@ public sealed class ProjectDeliverer
         DeliveryShareState existing,
         bool refreshRequested,
         bool testMode,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? apiStablePathOverride = null)
     {
-        if (!IsStableSharePath(stablePath))
+        var stablePathForCheck = apiStablePathOverride ?? stablePath;
+        if (!IsStableSharePath(stablePathForCheck))
         {
             return new DeliveryShareOutcome(
                 ShareStatus: "failed",
@@ -1140,11 +1732,14 @@ public sealed class ProjectDeliverer
                 );
             }
 
-            WarnIfLocalSyncRootMismatch(stablePath);
+            if (apiStablePathOverride is null && !stablePath.StartsWith("/", StringComparison.Ordinal))
+            {
+                WarnIfLocalSyncRootMismatch(stablePath);
+            }
 
-            var dropboxPath = useApiRoot
+            var dropboxPath = apiStablePathOverride ?? (useApiRoot
                 ? BuildDropboxApiPath(apiRoot, stablePath, dropboxDeliveryRelpath)
-                : BuildDropboxApiPathFromLocalRoot(dropboxRootPath, stablePath);
+                : BuildDropboxApiPathFromLocalRoot(dropboxRootPath, stablePath));
             logger?.LogInformation("MGF.Worker: Dropbox share link path={DropboxPath}", dropboxPath);
 
             await shareLinkClient.ValidateAccessTokenAsync(tokenResult.AccessToken, cancellationToken);
@@ -1239,6 +1834,25 @@ public sealed class ProjectDeliverer
         var relativeSegments = stableSegments[startIndex..];
         var relativePath = string.Join("/", relativeSegments);
         return "/" + apiRoot + "/" + relativePath;
+    }
+
+    internal static string BuildDropboxApiContainerRoot(
+        string apiRootFolder,
+        string dropboxDeliveryRelpath,
+        string clientFolder,
+        string projectFolderName)
+    {
+        if (string.IsNullOrWhiteSpace(apiRootFolder))
+        {
+            throw new InvalidOperationException("Dropbox ApiRootFolder is required for delivery.");
+        }
+
+        if (string.IsNullOrWhiteSpace(dropboxDeliveryRelpath))
+        {
+            throw new InvalidOperationException("Dropbox delivery root relpath is required.");
+        }
+
+        return CombineDropboxPath(apiRootFolder, dropboxDeliveryRelpath, clientFolder, projectFolderName);
     }
 
     private string ResolveDropboxApiRootFolder()
@@ -1361,7 +1975,9 @@ public sealed class ProjectDeliverer
         string versionLabel,
         DateTimeOffset retentionUntilUtc,
         IReadOnlyList<DeliveryFile> files,
-        string? stableShareUrl)
+        string? stableShareUrl,
+        string? apiStablePath,
+        string? apiVersionPath)
     {
         return new DeliveryManifest
         {
@@ -1376,6 +1992,8 @@ public sealed class ProjectDeliverer
             DestinationPath = stablePath,
             StablePath = stablePath,
             VersionPath = versionPath,
+            ApiStablePath = apiStablePath,
+            ApiVersionPath = apiVersionPath,
             VersionLabel = versionLabel,
             CurrentVersion = versionLabel,
             StableShareUrl = stableShareUrl,
@@ -1563,6 +2181,16 @@ public sealed class ProjectDeliverer
             current["stablePath"] = runResult.DestinationPath;
         }
 
+        if (!string.IsNullOrWhiteSpace(runResult.ApiStablePath))
+        {
+            current["apiStablePath"] = runResult.ApiStablePath;
+        }
+
+        if (!string.IsNullOrWhiteSpace(runResult.ApiVersionPath))
+        {
+            current["apiVersionPath"] = runResult.ApiVersionPath;
+        }
+
         if (!string.IsNullOrWhiteSpace(runResult.VersionLabel))
         {
             current["currentVersion"] = runResult.VersionLabel;
@@ -1644,6 +2272,37 @@ public sealed class ProjectDeliverer
         }
 
         return Path.GetFullPath(raw.Trim());
+    }
+
+    private static string? TryBuildLocalStablePath(
+        string? rootPath,
+        string dropboxDeliveryRelpath,
+        string clientFolder,
+        string projectFolderName,
+        bool testMode)
+    {
+        if (string.IsNullOrWhiteSpace(rootPath))
+        {
+            return null;
+        }
+
+        var baseRoot = testMode
+            ? Path.Combine(rootPath, "99_TestRuns")
+            : rootPath;
+
+        var basePath = Path.Combine(baseRoot, dropboxDeliveryRelpath, clientFolder);
+        var targetPath = Path.Combine(basePath, projectFolderName);
+        return Path.Combine(targetPath, "01_Deliverables", "Final");
+    }
+
+    private static string? ResolveLogoUrl(IConfiguration configuration)
+    {
+        return configuration["Integrations:Email:Branding:LogoUrl"];
+    }
+
+    private static string ResolveFromName(IConfiguration configuration)
+    {
+        return configuration["Integrations:Email:FromName"] ?? "MG Films";
     }
 
     private static bool ReadBoolean(JsonElement root, string name, bool defaultValue)
@@ -1764,6 +2423,7 @@ public sealed class ProjectDeliverer
             SentAtUtc: null,
             ProviderMessageId: null,
             Error: error,
+            TemplateVersion: DeliveryEmailTemplateVersion,
             ReplyTo: replyTo
         );
     }
@@ -1783,6 +2443,7 @@ public sealed class ProjectDeliverer
             SentAtUtc: null,
             ProviderMessageId: null,
             Error: reason,
+            TemplateVersion: DeliveryEmailTemplateVersion,
             ReplyTo: replyTo
         );
     }
@@ -1813,6 +2474,84 @@ public sealed class ProjectDeliverer
         {
             return new DeliveryShareState(null, null, null, null);
         }
+    }
+
+    private static DeliveryHistory ReadDeliveryHistory(JsonElement metadata)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(metadata.GetRawText());
+            if (!doc.RootElement.TryGetProperty("delivery", out var delivery))
+            {
+                return new DeliveryHistory(null, Array.Empty<DeliveryFileSummary>());
+            }
+
+            string? currentVersion = null;
+            if (delivery.TryGetProperty("current", out var current))
+            {
+                currentVersion = TryGetString(current, "currentVersion");
+            }
+
+            var lastFiles = Array.Empty<DeliveryFileSummary>();
+            if (delivery.TryGetProperty("runs", out var runs) && runs.ValueKind == JsonValueKind.Array)
+            {
+                for (var index = runs.GetArrayLength() - 1; index >= 0; index--)
+                {
+                    var run = runs[index];
+                    var versionLabel = TryGetString(run, "versionLabel");
+                    if (string.IsNullOrWhiteSpace(currentVersion) && !string.IsNullOrWhiteSpace(versionLabel))
+                    {
+                        currentVersion = versionLabel;
+                    }
+
+                    if (run.TryGetProperty("files", out var filesElement)
+                        && filesElement.ValueKind == JsonValueKind.Array)
+                    {
+                        var parsed = ReadDeliveryFiles(filesElement);
+                        if (parsed.Count > 0)
+                        {
+                            lastFiles = parsed.ToArray();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return new DeliveryHistory(currentVersion, lastFiles);
+        }
+        catch
+        {
+            return new DeliveryHistory(null, Array.Empty<DeliveryFileSummary>());
+        }
+    }
+
+    private static List<DeliveryFileSummary> ReadDeliveryFiles(JsonElement filesElement)
+    {
+        var list = new List<DeliveryFileSummary>();
+        foreach (var element in filesElement.EnumerateArray())
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var relative = TryGetString(element, "relativePath");
+            if (string.IsNullOrWhiteSpace(relative))
+            {
+                continue;
+            }
+
+            var sizeRaw = TryGetString(element, "sizeBytes");
+            if (!long.TryParse(sizeRaw, out var sizeBytes))
+            {
+                sizeBytes = 0;
+            }
+
+            var lastWrite = TryGetDateTimeOffset(element, "lastWriteTimeUtc") ?? DateTimeOffset.MinValue;
+            list.Add(new DeliveryFileSummary(relative, sizeBytes, lastWrite));
+        }
+
+        return list;
     }
 
     private static string FindRepoRoot()

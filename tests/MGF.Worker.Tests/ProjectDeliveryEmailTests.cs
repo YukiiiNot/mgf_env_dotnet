@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using MGF.Tools.Provisioner;
 using MGF.Worker.Integrations.Email;
 using MGF.Worker.ProjectDelivery;
 
@@ -28,6 +29,30 @@ public sealed class ProjectDeliveryEmailTests
     }
 
     [Fact]
+    public void BuildDeliveryEmailBodyHtml_IncludesHeadlineProjectAndLink()
+    {
+        var tokens = ProvisioningTokens.Create("MGF25-TEST", "Sample Project", "Client", new[] { "TE" });
+        var files = Enumerable.Range(1, 55)
+            .Select(index => new DeliveryFileSummary($"file_{index}.mp4", 10, DateTimeOffset.UtcNow))
+            .ToArray();
+
+        var html = ProjectDeliverer.BuildDeliveryEmailBodyHtml(
+            "https://dropbox.test/final",
+            "v1",
+            new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),
+            files,
+            tokens,
+            logoUrl: null);
+
+        Assert.Contains("Your deliverables are ready", html, StringComparison.Ordinal);
+        Assert.Contains("MGF25-TEST", html, StringComparison.Ordinal);
+        Assert.Contains("Sample Project", html, StringComparison.Ordinal);
+        Assert.Contains("https://dropbox.test/final", html, StringComparison.Ordinal);
+        Assert.Contains("Current delivery version: v1", html, StringComparison.Ordinal);
+        Assert.Contains("Showing 50 of 55 files", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void UpdateDeliveryCurrent_WritesLastEmail()
     {
         var delivery = new JsonObject();
@@ -36,10 +61,11 @@ public sealed class ProjectDeliveryEmailTests
             Provider: "smtp",
             FromAddress: "deliveries@mgfilms.pro",
             To: new[] { "client@example.com" },
-            Subject: "Your deliverables are ready - MGF25-TEST Sample",
+            Subject: "Your deliverables are ready \u2014 MGF25-TEST Sample",
             SentAtUtc: DateTimeOffset.UtcNow,
             ProviderMessageId: "msg-1",
             Error: null,
+            TemplateVersion: "v1-html",
             ReplyTo: "info@mgfilms.pro");
 
         var run = new ProjectDeliveryRunResult(
@@ -53,6 +79,8 @@ public sealed class ProjectDeliveryEmailTests
             Force: false,
             SourcePath: null,
             DestinationPath: @"C:\dropbox\Final",
+            ApiStablePath: null,
+            ApiVersionPath: null,
             VersionLabel: "v1",
             RetentionUntilUtc: DateTimeOffset.UtcNow.AddMonths(3),
             Files: Array.Empty<DeliveryFileSummary>(),
@@ -89,10 +117,11 @@ public sealed class ProjectDeliveryEmailTests
             Provider: "smtp",
             FromAddress: "deliveries@mgfilms.pro",
             To: new[] { "client@example.com" },
-            Subject: "Your deliverables are ready - MGF25-TEST Sample",
+            Subject: "Your deliverables are ready \u2014 MGF25-TEST Sample",
             SentAtUtc: null,
             ProviderMessageId: null,
             Error: "SMTP disabled",
+            TemplateVersion: "v1-html",
             ReplyTo: null);
 
         ProjectDeliverer.ApplyLastEmail(current, email);

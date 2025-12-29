@@ -61,7 +61,7 @@ public sealed class DropboxAccessTokenProviderTests
     }
 
     [Fact]
-    public async Task GetAccessTokenAsync_PrefersAccessTokenWhenPresent()
+    public async Task GetAccessTokenAsync_PrefersRefreshTokenWhenPresent()
     {
         DropboxAccessTokenProvider.ResetCacheForTests();
 
@@ -85,9 +85,9 @@ public sealed class DropboxAccessTokenProviderTests
         var provider = new DropboxAccessTokenProvider(httpClient, config);
         var result = await provider.GetAccessTokenAsync(CancellationToken.None);
 
-        Assert.Equal("access-123", result.AccessToken);
-        Assert.Equal("access_token", result.AuthMode);
-        Assert.Equal(0, handler.CallCount);
+        Assert.Equal("token-456", result.AccessToken);
+        Assert.Equal("refresh_token", result.AuthMode);
+        Assert.Equal(1, handler.CallCount);
     }
 
     [Fact]

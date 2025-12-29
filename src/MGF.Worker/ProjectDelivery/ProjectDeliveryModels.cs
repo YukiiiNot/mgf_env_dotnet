@@ -32,6 +32,8 @@ public sealed record ProjectDeliveryRunResult(
     bool Force,
     string? SourcePath,
     string? DestinationPath,
+    string? ApiStablePath,
+    string? ApiVersionPath,
     string? VersionLabel,
     DateTimeOffset? RetentionUntilUtc,
     IReadOnlyList<DeliveryFileSummary> Files,

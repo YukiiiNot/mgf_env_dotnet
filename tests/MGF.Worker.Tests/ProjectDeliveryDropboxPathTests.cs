@@ -17,6 +17,21 @@ public sealed class ProjectDeliveryDropboxPathTests
     }
 
     [Fact]
+    public void BuildDropboxApiContainerRoot_UsesClientAndProject()
+    {
+        var apiRoot = "MGFILMS.DELIVERIES";
+        var relpath = "04_Client_Deliveries";
+
+        var result = ProjectDeliverer.BuildDropboxApiContainerRoot(
+            apiRoot,
+            relpath,
+            "Client",
+            "MGF25-TEST_Client_SAMPLE");
+
+        Assert.Equal("/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Client_SAMPLE", result);
+    }
+
+    [Fact]
     public void BuildDropboxApiPath_ThrowsWhenRelpathMissing()
     {
         var apiRoot = "MGFILMS.DELIVERIES";

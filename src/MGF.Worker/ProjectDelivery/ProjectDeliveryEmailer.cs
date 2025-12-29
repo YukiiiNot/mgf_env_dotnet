@@ -11,6 +11,7 @@ using MGF.Worker.Integrations.Email;
 public sealed class ProjectDeliveryEmailer
 {
     private const string DefaultReplyToAddress = "info@mgfilms.pro";
+    private const string DeliveryEmailTemplateVersion = "v1-html";
 
     private readonly IConfiguration configuration;
     private readonly IEmailSender emailSender;
@@ -41,7 +42,7 @@ public sealed class ProjectDeliveryEmailer
         }
 
         var current = ReadDeliveryCurrent(project.Metadata);
-        if (string.IsNullOrWhiteSpace(current.StablePath))
+        if (string.IsNullOrWhiteSpace(current.StablePath) && string.IsNullOrWhiteSpace(current.ApiStablePath))
         {
             var failed = BuildFailure(payload.ToEmails, "Delivery stable path missing; run delivery first.");
             await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
@@ -55,43 +56,33 @@ public sealed class ProjectDeliveryEmailer
             return failed;
         }
 
-        if (!TryResolveContainerRoot(current.StablePath, out var containerRoot, out var resolveError))
+        DeliveryEmailContext? context = null;
+        if (!string.IsNullOrWhiteSpace(current.ApiStablePath))
         {
-            var failed = BuildFailure(payload.ToEmails, resolveError);
-            await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
-            return failed;
+            context = TryBuildContextFromMetadata(project.Metadata);
         }
-
-        var manifestPath = ProjectDeliverer.ResolveDeliveryManifestPath(containerRoot);
-        if (!File.Exists(manifestPath))
+        else if (!string.IsNullOrWhiteSpace(current.StablePath))
         {
-            var failed = BuildFailure(payload.ToEmails, $"Delivery manifest not found: {manifestPath}");
-            await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
-            return failed;
-        }
-
-        DeliveryManifest? manifest;
-        try
-        {
-            var json = await File.ReadAllTextAsync(manifestPath, cancellationToken);
-            manifest = JsonSerializer.Deserialize<DeliveryManifest>(json, new JsonSerializerOptions
+            if (!TryResolveContainerRoot(current.StablePath, out var containerRoot, out var resolveError))
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                PropertyNameCaseInsensitive = true
-            });
-        }
-        catch (Exception ex)
-        {
-            var failed = BuildFailure(payload.ToEmails, $"Failed to read delivery manifest: {ex.Message}");
-            await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
-            return failed;
+                logger?.LogWarning("MGF.Worker: delivery email manifest resolve failed: {Error}", resolveError);
+            }
+            else
+            {
+                var manifestPath = ProjectDeliverer.ResolveDeliveryManifestPath(containerRoot);
+                context = await TryReadManifestContextAsync(manifestPath, cancellationToken);
+            }
         }
 
-        if (manifest is null)
+        if (context is null)
         {
-            var failed = BuildFailure(payload.ToEmails, "Delivery manifest is empty or invalid.");
-            await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
-            return failed;
+            context = TryBuildContextFromMetadata(project.Metadata);
+            if (context is null)
+            {
+                var failed = BuildFailure(payload.ToEmails, "Delivery manifest is missing and metadata lacks delivery files.");
+                await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
+                return failed;
+            }
         }
 
         var clientName = await db.Clients.AsNoTracking()
@@ -113,11 +104,11 @@ public sealed class ProjectDeliveryEmailer
             return failed;
         }
 
-        var files = manifest.Files ?? Array.Empty<DeliveryFileSummary>();
-        var versionLabel = string.IsNullOrWhiteSpace(manifest.CurrentVersion) ? "v1" : manifest.CurrentVersion;
-        var retentionUntil = manifest.RetentionUntilUtc == default
-            ? DateTimeOffset.UtcNow.AddMonths(3)
-            : manifest.RetentionUntilUtc;
+        var files = context.Files;
+        var versionLabel = context.VersionLabel;
+        var retentionUntil = context.RetentionUntilUtc;
+        var logoUrl = configuration["Integrations:Email:Branding:LogoUrl"];
+        var fromName = configuration["Integrations:Email:FromName"] ?? "MG Films";
         var request = ProjectDeliverer.BuildDeliveryEmailRequest(
             subject,
             current.ShareUrl,
@@ -125,7 +116,10 @@ public sealed class ProjectDeliveryEmailer
             retentionUntil,
             files,
             recipients,
-            replyTo);
+            replyTo,
+            tokens,
+            logoUrl,
+            fromName);
 
         DeliveryEmailResult result;
         try
@@ -172,16 +166,17 @@ public sealed class ProjectDeliveryEmailer
             using var doc = JsonDocument.Parse(metadata.GetRawText());
             if (!doc.RootElement.TryGetProperty("delivery", out var delivery))
             {
-                return new DeliveryCurrentState(null, null, null, null);
+                return new DeliveryCurrentState(null, null, null, null, null);
             }
 
             if (!delivery.TryGetProperty("current", out var current))
             {
-                return new DeliveryCurrentState(null, null, null, null);
+                return new DeliveryCurrentState(null, null, null, null, null);
             }
 
             return new DeliveryCurrentState(
                 StablePath: TryGetString(current, "stablePath"),
+                ApiStablePath: TryGetString(current, "apiStablePath"),
                 ShareUrl: TryGetString(current, "stableShareUrl") ?? TryGetString(current, "shareUrl"),
                 CurrentVersion: TryGetString(current, "currentVersion"),
                 RetentionUntilUtc: TryGetDateTimeOffset(current, "retentionUntilUtc")
@@ -189,7 +184,7 @@ public sealed class ProjectDeliveryEmailer
         }
         catch
         {
-            return new DeliveryCurrentState(null, null, null, null);
+            return new DeliveryCurrentState(null, null, null, null, null);
         }
     }
 
@@ -261,6 +256,7 @@ public sealed class ProjectDeliveryEmailer
             SentAtUtc: null,
             ProviderMessageId: null,
             Error: error,
+            TemplateVersion: DeliveryEmailTemplateVersion,
             ReplyTo: null
         );
     }
@@ -348,9 +344,138 @@ public sealed class ProjectDeliveryEmailer
         return Array.Empty<string>();
     }
 
+    private sealed record DeliveryEmailContext(
+        IReadOnlyList<DeliveryFileSummary> Files,
+        string VersionLabel,
+        DateTimeOffset RetentionUntilUtc);
+
     private sealed record DeliveryCurrentState(
         string? StablePath,
+        string? ApiStablePath,
         string? ShareUrl,
         string? CurrentVersion,
         DateTimeOffset? RetentionUntilUtc);
+
+    private static async Task<DeliveryEmailContext?> TryReadManifestContextAsync(
+        string manifestPath,
+        CancellationToken cancellationToken)
+    {
+        if (!File.Exists(manifestPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(manifestPath, cancellationToken);
+            var manifest = JsonSerializer.Deserialize<DeliveryManifest>(json, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (manifest is null)
+            {
+                return null;
+            }
+
+            var files = manifest.Files ?? Array.Empty<DeliveryFileSummary>();
+            var versionLabel = string.IsNullOrWhiteSpace(manifest.CurrentVersion) ? "v1" : manifest.CurrentVersion;
+            var retentionUntil = manifest.RetentionUntilUtc == default
+                ? DateTimeOffset.UtcNow.AddMonths(3)
+                : manifest.RetentionUntilUtc;
+
+            return new DeliveryEmailContext(files, versionLabel, retentionUntil);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static DeliveryEmailContext? TryBuildContextFromMetadata(JsonElement metadata)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(metadata.GetRawText());
+            if (!doc.RootElement.TryGetProperty("delivery", out var delivery))
+            {
+                return null;
+            }
+
+            var currentVersion = string.Empty;
+            var retentionUntil = DateTimeOffset.UtcNow.AddMonths(3);
+            if (delivery.TryGetProperty("current", out var current))
+            {
+                currentVersion = TryGetString(current, "currentVersion") ?? string.Empty;
+                retentionUntil = TryGetDateTimeOffset(current, "retentionUntilUtc") ?? retentionUntil;
+            }
+
+            if (!delivery.TryGetProperty("runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            for (var index = runs.GetArrayLength() - 1; index >= 0; index--)
+            {
+                var run = runs[index];
+                if (run.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var versionLabel = TryGetString(run, "versionLabel") ?? currentVersion;
+                if (string.IsNullOrWhiteSpace(versionLabel))
+                {
+                    versionLabel = "v1";
+                }
+
+                var runRetention = TryGetDateTimeOffset(run, "retentionUntilUtc") ?? retentionUntil;
+
+                if (run.TryGetProperty("files", out var filesElement) && filesElement.ValueKind == JsonValueKind.Array)
+                {
+                    var files = ReadDeliveryFiles(filesElement);
+                    if (files.Count > 0)
+                    {
+                        return new DeliveryEmailContext(files, versionLabel, runRetention);
+                    }
+                }
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static List<DeliveryFileSummary> ReadDeliveryFiles(JsonElement filesElement)
+    {
+        var list = new List<DeliveryFileSummary>();
+        foreach (var element in filesElement.EnumerateArray())
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var relative = TryGetString(element, "relativePath");
+            if (string.IsNullOrWhiteSpace(relative))
+            {
+                continue;
+            }
+
+            var sizeRaw = TryGetString(element, "sizeBytes");
+            if (!long.TryParse(sizeRaw, out var sizeBytes))
+            {
+                sizeBytes = 0;
+            }
+
+            var lastWrite = TryGetDateTimeOffset(element, "lastWriteTimeUtc") ?? DateTimeOffset.MinValue;
+            list.Add(new DeliveryFileSummary(relative, sizeBytes, lastWrite));
+        }
+
+        return list;
+    }
 }
