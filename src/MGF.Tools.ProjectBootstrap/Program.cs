@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
@@ -414,9 +415,10 @@ static Command CreateDeliveryEmailCommand()
         var editorInitials = context.ParseResult.GetValueForOption(editorInitialsOption) ?? "TE";
         var fromValue = context.ParseResult.GetValueForOption(fromOption);
         if (!string.IsNullOrWhiteSpace(fromValue)
-            && !string.Equals(fromValue, "deliveries@mgfilms.pro", StringComparison.OrdinalIgnoreCase))
+            && !string.Equals(fromValue, "deliveries@mgfilms.pro", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(fromValue, "info@mgfilms.pro", StringComparison.OrdinalIgnoreCase))
         {
-            Console.Error.WriteLine("bootstrap: delivery-email --from must be deliveries@mgfilms.pro");
+            Console.Error.WriteLine("bootstrap: delivery-email --from must be deliveries@mgfilms.pro or info@mgfilms.pro");
             context.ExitCode = 1;
             return;
         }
@@ -676,13 +678,21 @@ static Command CreateShowCommand()
         Description = "Project ID to inspect.",
         IsRequired = true
     };
+    var jobsOnlyOption = new Option<bool>("--jobsOnly")
+    {
+        Description = "Print only job tables and last delivery email summary.",
+        IsRequired = false
+    };
+    jobsOnlyOption.SetDefaultValue(false);
 
     command.AddOption(projectIdOption);
+    command.AddOption(jobsOnlyOption);
 
     command.SetHandler(async context =>
     {
         var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
-        var exitCode = await ShowProjectAsync(projectId);
+        var jobsOnly = context.ParseResult.GetValueForOption(jobsOnlyOption);
+        var exitCode = await ShowProjectAsync(projectId, jobsOnly);
         context.ExitCode = exitCode;
     });
 
@@ -1344,7 +1354,7 @@ static async Task<ExistingJob?> FindExistingArchiveJobAsync(NpgsqlConnection con
     return new ExistingJob(reader.GetString(0), reader.GetString(1));
 }
 
-static async Task<int> ShowProjectAsync(string projectId)
+static async Task<int> ShowProjectAsync(string projectId, bool jobsOnly)
 {
     try
     {
@@ -1385,54 +1395,64 @@ static async Task<int> ShowProjectAsync(string projectId)
             metadataJson = reader.GetString(5);
         }
 
-        Console.WriteLine($"project_id={projectId}");
-        Console.WriteLine($"project_code={projectCode}");
-        Console.WriteLine($"name={name}");
-        Console.WriteLine($"status_key={statusKey}");
-        Console.WriteLine($"data_profile={dataProfile}");
-
-        var pretty = JsonSerializer.Serialize(
-            JsonDocument.Parse(metadataJson).RootElement,
-            new JsonSerializerOptions { WriteIndented = true }
-        );
-        Console.WriteLine("metadata:");
-        Console.WriteLine(pretty);
-
-        await using (var rootsCmd = new NpgsqlCommand(
-                         """
-                         SELECT project_storage_root_id,
-                                storage_provider_key,
-                                root_key,
-                                folder_relpath,
-                                is_primary,
-                                created_at
-                         FROM public.project_storage_roots
-                         WHERE project_id = @project_id
-                         ORDER BY created_at DESC;
-                         """,
-                         conn
-                     ))
+        if (!jobsOnly)
         {
-            rootsCmd.Parameters.AddWithValue("project_id", projectId);
+            Console.WriteLine($"project_id={projectId}");
+            Console.WriteLine($"project_code={projectCode}");
+            Console.WriteLine($"name={name}");
+            Console.WriteLine($"status_key={statusKey}");
+            Console.WriteLine($"data_profile={dataProfile}");
 
-            await using var rootsReader = await rootsCmd.ExecuteReaderAsync();
-            Console.WriteLine("storage_roots:");
-            var hadRows = false;
-            while (await rootsReader.ReadAsync())
-            {
-                hadRows = true;
-                var rootId = rootsReader.GetString(0);
-                var provider = rootsReader.GetString(1);
-                var rootKey = rootsReader.GetString(2);
-                var relpath = rootsReader.GetString(3);
-                var isPrimary = rootsReader.GetBoolean(4);
-                var createdAt = rootsReader.GetFieldValue<DateTimeOffset>(5);
-                Console.WriteLine($"- {rootId}\t{provider}\t{rootKey}\t{relpath}\tis_primary={isPrimary}\tcreated_at={createdAt:O}");
-            }
+            var pretty = JsonSerializer.Serialize(
+                JsonDocument.Parse(metadataJson).RootElement,
+                new JsonSerializerOptions { WriteIndented = true }
+            );
+            Console.WriteLine("metadata:");
+            Console.WriteLine(pretty);
+        }
+        else
+        {
+            PrintLastEmailSummary(metadataJson);
+        }
 
-            if (!hadRows)
+        if (!jobsOnly)
+        {
+            await using (var rootsCmd = new NpgsqlCommand(
+                             """
+                             SELECT project_storage_root_id,
+                                    storage_provider_key,
+                                    root_key,
+                                    folder_relpath,
+                                    is_primary,
+                                    created_at
+                             FROM public.project_storage_roots
+                             WHERE project_id = @project_id
+                             ORDER BY created_at DESC;
+                             """,
+                             conn
+                         ))
             {
-                Console.WriteLine("- (none)");
+                rootsCmd.Parameters.AddWithValue("project_id", projectId);
+
+                await using var rootsReader = await rootsCmd.ExecuteReaderAsync();
+                Console.WriteLine("storage_roots:");
+                var hadRows = false;
+                while (await rootsReader.ReadAsync())
+                {
+                    hadRows = true;
+                    var rootId = rootsReader.GetString(0);
+                    var provider = rootsReader.GetString(1);
+                    var rootKey = rootsReader.GetString(2);
+                    var relpath = rootsReader.GetString(3);
+                    var isPrimary = rootsReader.GetBoolean(4);
+                    var createdAt = rootsReader.GetFieldValue<DateTimeOffset>(5);
+                    Console.WriteLine($"- {rootId}\t{provider}\t{rootKey}\t{relpath}\tis_primary={isPrimary}\tcreated_at={createdAt:O}");
+                }
+
+                if (!hadRows)
+                {
+                    Console.WriteLine("- (none)");
+                }
             }
         }
 
@@ -1451,23 +1471,17 @@ static async Task<int> ShowProjectAsync(string projectId)
             jobsCmd.Parameters.AddWithValue("project_id", projectId);
 
             await using var jobsReader = await jobsCmd.ExecuteReaderAsync();
-            Console.WriteLine("bootstrap_jobs:");
-            var hadJobs = false;
+            var jobs = new List<(string JobId, string Status, int AttemptCount, DateTimeOffset RunAfter, DateTimeOffset? LockedUntil)>();
             while (await jobsReader.ReadAsync())
             {
-                hadJobs = true;
                 var jobId = jobsReader.GetString(0);
                 var status = jobsReader.GetString(1);
                 var attempt = jobsReader.GetInt32(2);
                 var runAfter = jobsReader.GetFieldValue<DateTimeOffset>(3);
                 var lockedUntil = jobsReader.IsDBNull(4) ? (DateTimeOffset?)null : jobsReader.GetFieldValue<DateTimeOffset>(4);
-                Console.WriteLine($"- {jobId}\t{status}\tattempts={attempt}\trun_after={runAfter:O}\tlocked_until={(lockedUntil.HasValue ? lockedUntil.Value.ToString("O") : "(null)")}");
+                jobs.Add((jobId, status, attempt, runAfter, lockedUntil));
             }
-
-            if (!hadJobs)
-            {
-                Console.WriteLine("- (none)");
-            }
+            PrintJobTable("bootstrap_jobs", jobs);
         }
 
         await using (var archiveJobsCmd = new NpgsqlCommand(
@@ -1485,23 +1499,17 @@ static async Task<int> ShowProjectAsync(string projectId)
             archiveJobsCmd.Parameters.AddWithValue("project_id", projectId);
 
             await using var archiveReader = await archiveJobsCmd.ExecuteReaderAsync();
-            Console.WriteLine("archive_jobs:");
-            var hadArchiveJobs = false;
+            var jobs = new List<(string JobId, string Status, int AttemptCount, DateTimeOffset RunAfter, DateTimeOffset? LockedUntil)>();
             while (await archiveReader.ReadAsync())
             {
-                hadArchiveJobs = true;
                 var jobId = archiveReader.GetString(0);
                 var status = archiveReader.GetString(1);
                 var attempt = archiveReader.GetInt32(2);
                 var runAfter = archiveReader.GetFieldValue<DateTimeOffset>(3);
                 var lockedUntil = archiveReader.IsDBNull(4) ? (DateTimeOffset?)null : archiveReader.GetFieldValue<DateTimeOffset>(4);
-                Console.WriteLine($"- {jobId}\t{status}\tattempts={attempt}\trun_after={runAfter:O}\tlocked_until={(lockedUntil.HasValue ? lockedUntil.Value.ToString("O") : "(null)")}");
+                jobs.Add((jobId, status, attempt, runAfter, lockedUntil));
             }
-
-            if (!hadArchiveJobs)
-            {
-                Console.WriteLine("- (none)");
-            }
+            PrintJobTable("archive_jobs", jobs);
         }
 
         await using (var deliveryJobsCmd = new NpgsqlCommand(
@@ -1519,24 +1527,17 @@ static async Task<int> ShowProjectAsync(string projectId)
             deliveryJobsCmd.Parameters.AddWithValue("project_id", projectId);
 
             await using var deliveryReader = await deliveryJobsCmd.ExecuteReaderAsync();
-            Console.WriteLine("delivery_jobs:");
-            var hadDeliveryJobs = false;
+            var jobs = new List<(string JobId, string Status, int AttemptCount, DateTimeOffset RunAfter, DateTimeOffset? LockedUntil)>();
             while (await deliveryReader.ReadAsync())
             {
-                hadDeliveryJobs = true;
                 var jobId = deliveryReader.GetString(0);
                 var status = deliveryReader.GetString(1);
                 var attempt = deliveryReader.GetInt32(2);
                 var runAfter = deliveryReader.GetFieldValue<DateTimeOffset>(3);
                 var lockedUntil = deliveryReader.IsDBNull(4) ? (DateTimeOffset?)null : deliveryReader.GetFieldValue<DateTimeOffset>(4);
-                var lockedUntilText = lockedUntil.HasValue ? lockedUntil.Value.ToString("O") : "(null)";
-                Console.WriteLine($"- {jobId}\t{status}\tattempts={attempt}\trun_after={runAfter:O}\tlocked_until={lockedUntilText}");
+                jobs.Add((jobId, status, attempt, runAfter, lockedUntil));
             }
-
-            if (!hadDeliveryJobs)
-            {
-                Console.WriteLine("- (none)");
-            }
+            PrintJobTable("delivery_jobs", jobs);
         }
         return 0;
     }
@@ -1545,6 +1546,139 @@ static async Task<int> ShowProjectAsync(string projectId)
         Console.Error.WriteLine($"bootstrap: show failed: {ex.Message}");
         return 1;
     }
+}
+
+static void PrintLastEmailSummary(string metadataJson)
+{
+    try
+    {
+        using var doc = JsonDocument.Parse(metadataJson);
+        if (!doc.RootElement.TryGetProperty("delivery", out var delivery)
+            || !delivery.TryGetProperty("current", out var current)
+            || !current.TryGetProperty("lastEmail", out var lastEmail)
+            || lastEmail.ValueKind != JsonValueKind.Object)
+        {
+            Console.WriteLine("last_email: (none)");
+            return;
+        }
+
+        var status = TryGetString(lastEmail, "status") ?? "(unknown)";
+        var provider = TryGetString(lastEmail, "provider") ?? "(unknown)";
+        var from = TryGetString(lastEmail, "fromAddress") ?? "(unknown)";
+        var sentAt = TryGetString(lastEmail, "sentAtUtc") ?? "-";
+        var error = TryGetString(lastEmail, "error");
+        var toList = TryGetStringArray(lastEmail, "to");
+        var to = toList.Count == 0 ? "-" : string.Join(",", toList);
+
+        Console.WriteLine($"last_email: status={status} provider={provider} from={from} to={to} sentAtUtc={sentAt} error={(string.IsNullOrWhiteSpace(error) ? "-" : error)}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"last_email: (unreadable) {ex.Message}");
+    }
+}
+
+static string? TryGetString(JsonElement element, string name)
+{
+    if (!element.TryGetProperty(name, out var prop))
+    {
+        return null;
+    }
+
+    return prop.ValueKind switch
+    {
+        JsonValueKind.String => prop.GetString(),
+        JsonValueKind.Number => prop.GetRawText(),
+        _ => null
+    };
+}
+
+static IReadOnlyList<string> TryGetStringArray(JsonElement element, string name)
+{
+    if (!element.TryGetProperty(name, out var prop) || prop.ValueKind != JsonValueKind.Array)
+    {
+        return Array.Empty<string>();
+    }
+
+    return prop
+        .EnumerateArray()
+        .Where(value => value.ValueKind == JsonValueKind.String)
+        .Select(value => value.GetString() ?? string.Empty)
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .ToArray();
+}
+
+static void PrintJobTable(string title, IReadOnlyList<(string JobId, string Status, int AttemptCount, DateTimeOffset RunAfter, DateTimeOffset? LockedUntil)> jobs)
+{
+    var queuedCount = 0;
+    var runningCount = 0;
+    for (var i = 0; i < jobs.Count; i++)
+    {
+        var status = jobs[i].Status;
+        if (string.Equals(status, "queued", StringComparison.OrdinalIgnoreCase))
+        {
+            queuedCount++;
+            continue;
+        }
+
+        if (string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+        {
+            runningCount++;
+        }
+    }
+
+    Console.WriteLine($"{title} (total={jobs.Count}, queued={queuedCount}, running={runningCount})");
+    if (jobs.Count == 0)
+    {
+        Console.WriteLine("- (none)");
+        return;
+    }
+
+    const int idWidth = 16;
+    const int statusWidth = 12;
+    const int attemptsWidth = 4;
+    Console.WriteLine($"{Pad("JOB_ID", idWidth)} {Pad("STATUS", statusWidth)} {Pad("ATT", attemptsWidth)} {Pad("RUN_AFTER_LOCAL", 19)} {Pad("LOCKED_UNTIL_LOCAL", 19)} DUE");
+
+    var now = DateTimeOffset.UtcNow;
+    for (var i = 0; i < jobs.Count; i++)
+    {
+        var job = jobs[i];
+        var jobId = Pad(ShortJobId(job.JobId), idWidth);
+        var status = Pad(job.Status, statusWidth);
+        var attempts = Pad(job.AttemptCount.ToString(), attemptsWidth);
+        var runAfter = Pad(FormatLocalTime(job.RunAfter), 19);
+        var lockedUntil = Pad(job.LockedUntil.HasValue ? FormatLocalTime(job.LockedUntil.Value) : "-", 19);
+        var due = string.Equals(job.Status, "queued", StringComparison.OrdinalIgnoreCase)
+            ? (job.RunAfter <= now ? "due" : "future")
+            : "";
+
+        Console.WriteLine($"{jobId} {status} {attempts} {runAfter} {lockedUntil} {due}");
+    }
+}
+
+static string Pad(string value, int width)
+{
+    if (value.Length >= width)
+    {
+        return value;
+    }
+
+    return value.PadRight(width);
+}
+
+static string ShortJobId(string jobId)
+{
+    if (jobId.Length <= 12)
+    {
+        return jobId;
+    }
+
+    return $"{jobId.Substring(0, 8)}...{jobId.Substring(jobId.Length - 4, 4)}";
+}
+
+static string FormatLocalTime(DateTimeOffset value)
+{
+    return value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
 }
 
 static async Task<ExistingJob?> FindExistingDeliveryJobAsync(NpgsqlConnection conn, string projectId)

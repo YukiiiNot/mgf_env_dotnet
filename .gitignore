@@ -39,3 +39,7 @@ TestResults/
 ## OS
 Thumbs.db
 .DS_Store
+
+## Local Dropbox debug payloads
+dbx_body.json
+dbx_share.json

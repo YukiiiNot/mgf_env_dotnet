@@ -23,6 +23,11 @@ internal sealed class SmtpEmailSender : IEmailSender
             return Failed(request, "Email sending disabled (Integrations:Email:Enabled=false).");
         }
 
+        if (!IsAllowedFromAddress(request.FromAddress))
+        {
+            return Failed(request, "SMTP fromAddress must be deliveries@mgfilms.pro or info@mgfilms.pro.");
+        }
+
         var host = configuration["Integrations:Email:Smtp:Host"] ?? string.Empty;
         if (string.IsNullOrWhiteSpace(host))
         {
@@ -59,12 +64,13 @@ internal sealed class SmtpEmailSender : IEmailSender
 
         using var client = new SmtpClient(host, port)
         {
-            EnableSsl = useSsl
+            EnableSsl = useSsl,
+            UseDefaultCredentials = false
         };
 
-        if (!string.IsNullOrWhiteSpace(user))
+        if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(password))
         {
-            client.Credentials = new NetworkCredential(user, password ?? string.Empty);
+            client.Credentials = new NetworkCredential(user, password);
         }
 
         try
@@ -101,5 +107,11 @@ internal sealed class SmtpEmailSender : IEmailSender
             Error: error,
             ReplyTo: request.ReplyTo
         );
+    }
+
+    private static bool IsAllowedFromAddress(string value)
+    {
+        return string.Equals(value, "deliveries@mgfilms.pro", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "info@mgfilms.pro", StringComparison.OrdinalIgnoreCase);
     }
 }
