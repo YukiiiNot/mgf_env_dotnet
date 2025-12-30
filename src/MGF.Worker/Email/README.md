@@ -29,8 +29,23 @@ projects.metadata.delivery.runs[].email:
 FromAddress allowlist policy (must remain)
 ------------------------------------------
 Only these From addresses are allowed:
-- deliveries@mgfilms.pro
+- admin@mgfilms.pro
 - info@mgfilms.pro
+- contact@mgfilms.pro
+- billing@mgfilms.pro
+- support@mgfilms.pro
+- bookings@mgfilms.pro
+- deliveries@mgfilms.pro
+- ermano.cayard@mgfilms.pro
+- creative@mgfilms.pro
+- ops@mgfilms.pro
+- cayard.ermano@mgfilms.pro
+- ermano@mgfilms.pro
+- martin.price@mgfilms.pro
+- ceo@mgfilms.pro
+- price.martin@mgfilms.pro
+- dex@mgfilms.pro
+- martin@mgfilms.pro
 
 Any other From address must fail fast with a clear error.
 

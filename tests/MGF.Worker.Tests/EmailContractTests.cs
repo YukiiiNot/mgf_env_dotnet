@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using MGF.Worker.Email.Models;
+using MGF.Worker.Email.Registry;
 using MGF.Worker.Email.Sending;
 using System.Net.Mime;
 
@@ -52,5 +53,14 @@ public sealed class EmailContractTests
 
         Assert.Equal("failed", result.Status);
         Assert.Contains("deliveries@mgfilms.pro", result.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Allowlist_IncludesBillingAddress()
+    {
+        var config = new ConfigurationBuilder().Build();
+        var profile = EmailProfileResolver.Resolve(config, EmailProfiles.Deliveries);
+
+        Assert.True(EmailProfileResolver.IsAllowedFrom(profile, "billing@mgfilms.pro"));
     }
 }

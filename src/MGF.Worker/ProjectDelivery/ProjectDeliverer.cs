@@ -329,7 +329,7 @@ public sealed class ProjectDeliverer
         byte[] ManifestBytes
     );
 
-    private sealed record DeliveryShareOutcome(
+    internal sealed record DeliveryShareOutcome(
         string? ShareStatus,
         string? ShareUrl,
         string? ShareId,
@@ -1596,7 +1596,7 @@ public sealed class ProjectDeliverer
         return Path.Combine(manifestDir, "delivery_manifest.json");
     }
 
-    private async Task<DeliveryShareOutcome> EnsureDropboxShareLinkAsync(
+    internal async Task<DeliveryShareOutcome> EnsureDropboxShareLinkAsync(
         string dropboxRootPath,
         string stablePath,
         string dropboxDeliveryRelpath,

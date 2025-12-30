@@ -23,7 +23,26 @@ public static class EmailProfileResolver
         if (allowed.Count == 0)
         {
             allowed = key.Equals(EmailProfiles.Deliveries, StringComparison.OrdinalIgnoreCase)
-                ? new List<string> { "deliveries@mgfilms.pro", "info@mgfilms.pro" }
+                ? new List<string>
+                {
+                    "admin@mgfilms.pro",
+                    "info@mgfilms.pro",
+                    "contact@mgfilms.pro",
+                    "billing@mgfilms.pro",
+                    "support@mgfilms.pro",
+                    "bookings@mgfilms.pro",
+                    "deliveries@mgfilms.pro",
+                    "ermano.cayard@mgfilms.pro",
+                    "creative@mgfilms.pro",
+                    "ops@mgfilms.pro",
+                    "cayard.ermano@mgfilms.pro",
+                    "ermano@mgfilms.pro",
+                    "martin.price@mgfilms.pro",
+                    "ceo@mgfilms.pro",
+                    "price.martin@mgfilms.pro",
+                    "dex@mgfilms.pro",
+                    "martin@mgfilms.pro"
+                }
                 : new List<string> { "info@mgfilms.pro" };
         }
 
