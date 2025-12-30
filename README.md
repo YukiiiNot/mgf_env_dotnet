@@ -1,21 +1,20 @@
-# MGF (.NET)
+﻿# MGF (.NET)
 
 ## Docs index (start here)
 
-- `ROADMAP.md` — workflow coverage map + 30/60/90 day plan
-- `ONBOARDING.md` — how to run locally and work safely
-- `DEV_GUIDE.md` — coding conventions + integration patterns
-- `docs/RUNBOOK_DELIVERY.md` — delivery end-to-end proof (Dev/Test)
-- `docs/WORKFLOW.md` — repo workflow + CI/CD rules
-- `docs/DB_WORKFLOW.md` — DB/migrations runbook
-- `docs/infra/contracts.md` — infrastructure contract guarantees
+- `docs/00-index.md` - documentation map and primary entrypoint
+- `docs/01-onboarding/getting-started.md` - how to run locally and work safely
+- `docs/01-onboarding/dev-guide.md` - coding conventions + integration patterns
+- `docs/05-runbooks/delivery.md` - delivery end-to-end proof (Dev/Test)
+- `docs/05-runbooks/repo-workflow.md` - repo workflow + CI/CD rules
+- `docs/03-contracts/storage/infra-contracts.md` - infrastructure contract guarantees
 
 ## Database migrations (EF Core + Supabase)
 
 MGF uses **EF Core migrations** as the executable source of truth for the Postgres schema.
 
-- Workflow + commands: `docs/DB_WORKFLOW.md`
-- Schema design CSV docs (design-time only): `docs/db_design/schema_csv/README.md`
+- Workflow + commands: `docs/04-guides/how-to/db-migrations.md`
+- Schema design CSV docs (design-time only): `docs/03-contracts/database/schema-csv/README.md`
 
 ## Internal API + worker
 
@@ -170,7 +169,7 @@ dotnet ef database update --project src/MGF.Infrastructure --startup-project src
 
 #### Rollback workflow (dev/staging only)
 
-Rollback means “update the database to an earlier migration” (it does not delete migration files).
+Rollback means â€œupdate the database to an earlier migrationâ€ (it does not delete migration files).
 
 ```powershell
 # 1) list migrations so you know the exact previous migration name
@@ -188,7 +187,7 @@ dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project s
 
 Notes:
 - `MGF.Tools.Migrator` only applies migrations forward (`MigrateAsync()`); use the EF CLI for rollbacks.
-- Avoid rollback on production databases; prefer a new “fix-forward” migration instead through standard CI workflows.
+- Avoid rollback on production databases; prefer a new â€œfix-forwardâ€ migration instead through standard CI workflows.
 
 ### Configuration helpers (no secrets in git)
 
@@ -216,3 +215,4 @@ git status -sb
 dotnet restore .\MGF.sln
 dotnet clean .\MGF.sln
 ```
+

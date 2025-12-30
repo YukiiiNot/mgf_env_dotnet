@@ -2,7 +2,11 @@
 
 These CSV files are database design/specification artifacts for the MGF relational schema (Supabase/Postgres). They are intended for design review, schema cleanup, and documentation.
 
-EF Core migrations (when/if adopted) are the executable source of truth; these CSVs are design-time documentation and a review surface.
+EF Core migrations are the executable source of truth; these CSVs are design-time documentation and a review surface.
+
+References:
+- [docs/04-guides/how-to/db-migrations.md](../../04-guides/how-to/db-migrations.md)
+- [docs/03-contracts/database/schema.md](../../03-contracts/database/schema.md)
 
 ## Folder meanings
 

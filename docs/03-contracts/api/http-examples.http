@@ -1,0 +1,10 @@
+﻿# Source of truth: src/MGF.Api/Controllers, src/MGF.Api/Program.cs
+# Change control: Update when API endpoints, auth headers, or examples change.
+# Last verified: 2025-12-30
+
+@MGF.Api_HostAddress = http://localhost:5048
+
+GET {{MGF.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

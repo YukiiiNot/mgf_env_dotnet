@@ -5,7 +5,7 @@
 - Domain Root templates define top-level storage taxonomy contracts (verify for drift).
 - Project Container templates define per-project scaffolding.
 
-Templates are versioned infrastructure. Schema validation + tests are mandatory. See `docs/infra/contracts.md`.
+Templates are versioned infrastructure. Schema validation + tests are mandatory. See `../03-contracts/storage/infra-contracts.md`.
 
 ## Rules
 
