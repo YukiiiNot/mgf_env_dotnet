@@ -50,7 +50,6 @@ Short, daily-readable map of what exists, what is partial, and what we do next.
 
 - Automated .prproj merging or editing workflows
 - Automated renders/exports (editor remains source of truth)
-- Destructive cleanup or auto-deletion
 - Complex client portal features
 
 ## Working agreements (multi-dev)

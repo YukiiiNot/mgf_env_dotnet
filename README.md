@@ -188,7 +188,7 @@ dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project s
 
 Notes:
 - `MGF.Tools.Migrator` only applies migrations forward (`MigrateAsync()`); use the EF CLI for rollbacks.
-- Avoid rollback on production databases; prefer a new “fix-forward” migration instead.
+- Avoid rollback on production databases; prefer a new “fix-forward” migration instead through standard CI workflows.
 
 ### Configuration helpers (no secrets in git)
 

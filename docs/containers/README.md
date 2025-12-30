@@ -47,31 +47,39 @@ Folder tree:
   00_Admin/
     .mgf/
       manifest/
-        folder_manifest.json
-  00_{PROJECT_CODE}_{PROJECT_NAME}_PRODUCTION/
-  01_Edit/
-    MASTER/
-    WORKING/{EDITOR_INITIALS}/
-    EXTERNALS/
-      AE/
-        MASTER/
-        {EDITOR_INITIALS}/
-      PS/
-        MASTER/
-        {EDITOR_INITIALS}/
-      AI/
-        MASTER/
-        {EDITOR_INITIALS}/
-      AUD/
-        MASTER/
-        {EDITOR_INITIALS}/
-  02_Media/
-    PROXIES/
-    AUDIO/
-    GRAPHICS/
-  03_Renders_Internal/
-    From_Premiere/
-    From_AE/
+  00_Production_{PROJECT_CODE}/
+    Premiere/
+      MASTER/
+      WORKING/{EDITOR_INITIALS}/
+    AfterEffects/
+      MASTER/
+      {EDITOR_INITIALS}/
+    Photoshop/
+    Illustrator/
+    Audition/
+  01_Media/
+    Proxies/
+      Video/
+      Audio/
+    Audio/
+      Music/
+      VO/
+      SFX/
+    Graphics/
+      Logos/
+      LowerThirds/
+      Brand/
+    Fonts/
+    Stills/
+    Reference/
+  02_Renders/
+    Internal_Reviews/
+    Client_Reviews/
+    Final_Masters/
+  03_Notes/
+    Editorial_Notes/
+    Client_Notes/
+    Delivery_Checklists/
   99_Dump/
 ```
 
@@ -92,13 +100,13 @@ Folder tree:
       source_manifest.json
       notes.txt
       manifest/
-        folder_manifest.json
   01_Originals/
     CameraCards/
     Audio/
     Photos_Graphics_Source/
   02_Deliverables/
     Final_Masters/
+  03_ProjectFiles_Snapshots/ (optional)
   99_Dump/
   99_Legacy/ (optional)
 ```
