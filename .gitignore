@@ -37,6 +37,10 @@ runtime/
 runtime/email_preview/
 TestResults/
 
+## Dev secrets export files (never commit)
+dev-secrets.export.json
+*.export.json
+
 ## OS
 Thumbs.db
 .DS_Store
