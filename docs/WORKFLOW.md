@@ -54,35 +54,26 @@ dotnet run --project src/MGF.Api
 dotnet run --project src/MGF.Worker
 ```
 
-### 5) Project provisioning v1 (draft → provision)
+### 5) Project provisioning + delivery (jobs)
 
-Project creation is **draft-first** and provisioning is **explicit**:
+Project creation is **draft-first** and provisioning/delivery are **explicit** jobs:
 
-- `POST /api/projects` creates a `projects` row with `status_key='draft'` and returns `{ projectId, projectCode }`.
-- `POST /api/projects/{projectId}/provision` sets `status_key='provisioning'` and enqueues `dropbox.create_project_structure` in `public.jobs`.
+- `project.bootstrap` provisions domain roots + project containers.
+- `project.delivery` copies deliverables from LucidLink `02_Renders/Final_Masters` into Dropbox delivery containers and writes delivery manifests.
 
 ```powershell
-$headers = @{ "X-MGF-API-KEY" = "<api key>" }
+# Bootstrap (project + roots)
+dotnet run --project src/MGF.Tools.ProjectBootstrap -- ready --projectId <PROJECT_ID>
+dotnet run --project src/MGF.Tools.ProjectBootstrap -- enqueue `
+  --projectId <PROJECT_ID> `
+  --editors TE `
+  --verifyDomainRoots true `
+  --createDomainRoots true `
+  --provisionProjectContainers true
 
-# Create draft project (no Dropbox job enqueued yet)
-$create = Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:5000/api/projects" `
-  -Headers $headers `
-  -ContentType "application/json" `
-  -Body (@{
-    clientId = "cli_..."
-    projectName = "Example Project"
-    editorPersonId = "per_..."
-  } | ConvertTo-Json)
-
-# Provision (enqueues dropbox.create_project_structure)
-$provision = Invoke-RestMethod `
-  -Method Post `
-  -Uri ("http://localhost:5000/api/projects/{0}/provision" -f $create.projectId) `
-  -Headers $headers `
-  -ContentType "application/json" `
-  -Body (@{ templateKey = "default" } | ConvertTo-Json)
+# Delivery (see docs/RUNBOOK_DELIVERY.md for full flow)
+dotnet run --project src/MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
+dotnet run --project src/MGF.Tools.ProjectBootstrap -- deliver --projectId <PROJECT_ID> --editorInitials TE
 ```
 
 ## Editorial file naming + templates
@@ -97,22 +88,16 @@ We follow Adobe Premiere Productions norms. The system **does not** version or m
 
 Templates and schemas:
 - Folder templates live in `docs/templates/`
-  - `nas_production_template.json` (authoritative editing workspace)
-  - `dropbox_project_template.json` (intake/delivery/reference/meta only)
+  - Domain roots: `domain_dropbox_root.json`, `domain_lucidlink_root.json`, `domain_nas_root.json`
+  - Project containers: `dropbox_project_container.json`, `lucidlink_production_container.json`, `nas_archive_container.json`
+  - Delivery container: `dropbox_delivery_container.json`
 - JSON Schemas live in `docs/schemas/`
   - `mgf.folderTemplate.schema.json`
   - `mgf.namingRules.schema.json`
 
-NAS template `04_Edit` structure (legacy conventions):
-- `Production/` (Premiere Production workspace)
-- `MASTER/`
-- `WORKING/{EDITOR_INITIALS}/`
-- `Externals/{AE,AI,AUD,PP,PS}/{MASTER|{EDITOR_INITIALS}}/`
-- `Autosaves/{MASTER|{EDITOR_INITIALS}}/`
-
-Dropbox template includes `00_Admin\.mgf\manifest\` with:
-- `project_metadata.json` (stored under `.mgf/`)
-- `manifest/folder_manifest.json`
+All templates include:
+- `99_Dump/` at top level
+- `00_Admin\.mgf\manifest\folder_manifest.json`
 
 ## Creating migrations (local)
 

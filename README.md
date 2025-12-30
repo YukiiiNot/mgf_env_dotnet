@@ -1,5 +1,15 @@
 # MGF (.NET)
 
+## Docs index (start here)
+
+- `ROADMAP.md` — workflow coverage map + 30/60/90 day plan
+- `ONBOARDING.md` — how to run locally and work safely
+- `DEV_GUIDE.md` — coding conventions + integration patterns
+- `docs/RUNBOOK_DELIVERY.md` — delivery end-to-end proof (Dev/Test)
+- `docs/WORKFLOW.md` — repo workflow + CI/CD rules
+- `docs/DB_WORKFLOW.md` — DB/migrations runbook
+- `docs/infra/contracts.md` — infrastructure contract guarantees
+
 ## Database migrations (EF Core + Supabase)
 
 MGF uses **EF Core migrations** as the executable source of truth for the Postgres schema.
@@ -16,15 +26,21 @@ MGF uses **EF Core migrations** as the executable source of truth for the Postgr
 
 ```powershell
 # required secrets (stored in user-secrets for MGF.Infrastructure)
+# use DirectConnectionString when MGF_DB_MODE=direct
+dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
 dotnet user-secrets set "Database:Dev:ConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
 dotnet user-secrets set "Security:ApiKey" "<long random string>" --project src/MGF.Infrastructure
 
 # apply migrations + seed lookups (recommended)
 $env:MGF_ENV = "Dev"
+$env:MGF_DB_MODE = "direct"
+$env:MGF_CONFIG_DIR = "C:\\dev\\mgf_env_dotnet\\config"
 dotnet run --project src/MGF.Tools.Migrator
 
 # seed lookups only (skips migrations; use when schema is already up to date)
 $env:MGF_ENV = "Dev"
+$env:MGF_DB_MODE = "direct"
+$env:MGF_CONFIG_DIR = "C:\\dev\\mgf_env_dotnet\\config"
 dotnet run --project src/MGF.Tools.Migrator -- --seed-lookups
 
 # run API (expects X-MGF-API-KEY header on /api/*)
