@@ -73,11 +73,16 @@ dotnet run --project src/MGF.Tools.Migrator
 
 ## Dev reset workflow (DEV ONLY)
 
-Reset Dev → run migrator → run integration tests:
+Destructive Dev reset helpers have been removed from the repo to reduce accidental data loss.
+If a full Dev reset is ever required, handle it manually outside the repo and then re-apply migrations:
 
-- Reset Dev schema (manual SQL): `docs/DB_RESET_DEV.md`
-- Apply migrations + seed: `dotnet run --project src/MGF.Tools.Migrator`
-- Run integration tests (requires opt-in destructive flag):
+```powershell
+$env:MGF_ENV = "Dev"
+$env:MGF_DB_MODE = "direct"
+dotnet run --project src/MGF.Tools.Migrator
+```
+
+Integration tests may truncate data between test classes and require explicit opt-in flags:
 
 ```powershell
 $env:MGF_ENV = "Dev"
