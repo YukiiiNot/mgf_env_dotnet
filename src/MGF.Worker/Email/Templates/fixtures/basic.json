@@ -1,0 +1,24 @@
+{
+  "projectCode": "MGF25-0146",
+  "projectName": "MGF Delivery Test",
+  "clientName": "MGF Delivery Client",
+  "shareUrl": "https://www.dropbox.com/scl/fo/example?dl=0",
+  "versionLabel": "v1",
+  "retentionUntilUtc": "2026-03-29T00:00:00Z",
+  "files": [
+    {
+      "relativePath": "deliverable_v1.mp4",
+      "sizeBytes": 1048576,
+      "lastWriteTimeUtc": "2026-01-15T00:00:00Z"
+    },
+    {
+      "relativePath": "notes.pdf",
+      "sizeBytes": 2048,
+      "lastWriteTimeUtc": "2026-01-15T00:00:00Z"
+    }
+  ],
+  "recipients": [
+    "client@example.com"
+  ],
+  "logoUrl": "https://yukiiinot.github.io/mgf_env_dotnet/assets/email/mg_sig_logo_white.png"
+}

@@ -14,6 +14,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         services.Configure<DatabaseOptions>(config.GetSection("Database"));
+        services.Configure<StorageRootsOptions>(config.GetSection("Storage"));
 
         var connectionString = DatabaseConnection.ResolveConnectionString(config);
 

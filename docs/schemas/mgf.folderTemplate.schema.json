@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mgf.local/schemas/mgf.folderTemplate.schema.json",
+  "title": "MGF Folder Template",
+  "type": "object",
+  "required": ["templateKey", "root"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "templateKey": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+$"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "namingRules": {
+      "$ref": "mgf.namingRules.schema.json"
+    },
+    "root": {
+      "$ref": "#/$defs/rootNode"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "namePattern": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?:[A-Za-z0-9 ._()-]|\\{(PROJECT_CODE|PROJECT_NAME|CLIENT_NAME|EDITOR_INITIALS)\\})+$"
+    },
+    "node": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/namePattern"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["folder", "file"]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "contentTemplateKey": {
+          "type": "string"
+        },
+        "sourceRelpath": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "file"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": ["children"]
+            }
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                { "required": ["contentTemplateKey"] },
+                { "required": ["sourceRelpath"] }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nodeNoDot": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/node"
+        },
+        {
+          "not": {
+            "properties": {
+              "name": {
+                "const": ".mgf"
+              }
+            },
+            "required": ["name"]
+          }
+        },
+        {
+          "properties": {
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/nodeNoDot"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "topLevelNode": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/node"
+        },
+        {
+          "properties": {
+            "name": {
+              "pattern": "^\\d{2}_.+"
+            }
+          },
+          "required": ["name"]
+        },
+        {
+          "not": {
+            "properties": {
+              "kind": {
+                "const": "file"
+              }
+            },
+            "required": ["kind"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "00_Admin"
+              }
+            },
+            "required": ["name"]
+          },
+          "then": {
+            "properties": {
+              "children": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/node"
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "children": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/nodeNoDot"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "rootNode": {
+      "type": "object",
+      "required": ["name", "children"],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/namePattern"
+        },
+        "children": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/topLevelNode"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

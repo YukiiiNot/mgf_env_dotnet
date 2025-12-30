@@ -1,0 +1,24 @@
+{
+  "projectCode": "MGF25-0201",
+  "projectName": "Longform Documentary Edit With A Very Long Title",
+  "clientName": "MGF Delivery Client",
+  "shareUrl": "https://www.dropbox.com/scl/fo/no-logo-example?dl=0",
+  "versionLabel": "v2",
+  "retentionUntilUtc": "2026-06-30T00:00:00Z",
+  "files": [
+    {
+      "relativePath": "deliverable_v2_master.mp4",
+      "sizeBytes": 2097152,
+      "lastWriteTimeUtc": "2026-03-10T00:00:00Z"
+    },
+    {
+      "relativePath": "deliverable_v2_captions.srt",
+      "sizeBytes": 4096,
+      "lastWriteTimeUtc": "2026-03-10T00:00:00Z"
+    }
+  ],
+  "recipients": [
+    "client@example.com"
+  ],
+  "logoUrl": ""
+}

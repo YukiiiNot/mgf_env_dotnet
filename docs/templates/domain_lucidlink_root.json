@@ -1,0 +1,28 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "domain_lucidlink_root",
+  "displayName": "Domain LucidLink Root",
+  "description": "Top-level LucidLink taxonomy for active editorial work (no caches).",
+  "root": {
+    "name": "LUCIDLINK_ROOT",
+    "children": [
+      {
+        "name": "00_Admin",
+        "kind": "folder",
+        "children": [
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              { "name": "manifest", "kind": "folder" }
+            ]
+          }
+        ]
+      },
+      { "name": "01_Productions_Active" },
+      { "name": "02_Docs", "optional": true },
+      { "name": "99_Dump" },
+      { "name": "99_Legacy", "optional": true }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "domain_nas_root",
+  "displayName": "Domain NAS Root",
+  "description": "Top-level NAS taxonomy for archive/offload and global assets.",
+  "root": {
+    "name": "NAS_ROOT",
+    "children": [
+      {
+        "name": "00_Admin",
+        "kind": "folder",
+        "children": [
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              { "name": "manifest", "kind": "folder" }
+            ]
+          }
+        ]
+      },
+      { "name": "01_Projects_Archive" },
+      { "name": "99_Dump" },
+      { "name": "99_Legacy", "optional": true }
+    ]
+  }
+}

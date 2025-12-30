@@ -1,0 +1,30 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "domain_dropbox_root",
+  "displayName": "Domain Dropbox Root",
+  "description": "Top-level Dropbox taxonomy for business and exchange storage.",
+  "root": {
+    "name": "DROPBOX_ROOT",
+    "children": [
+      {
+        "name": "00_Admin",
+        "kind": "folder",
+        "children": [
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              { "name": "manifest", "kind": "folder" }
+            ]
+          }
+        ]
+      },
+      { "name": "01_Docs" },
+      { "name": "02_Projects_Active" },
+      { "name": "03_Projects_ToArchive" },
+      { "name": "98_Archive" },
+      { "name": "99_Dump" },
+      { "name": "99_Legacy", "optional": true }
+    ]
+  }
+}

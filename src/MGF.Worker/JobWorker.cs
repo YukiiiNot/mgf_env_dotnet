@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
 using MGF.Infrastructure.Data;
 using MGF.Worker.Square;
+using MGF.Worker.ProjectArchive;
+using MGF.Worker.ProjectBootstrap;
+using MGF.Worker.ProjectDelivery;
+using MGF.Worker.RootIntegrity;
 
 public sealed class JobWorker : BackgroundService
 {
@@ -24,20 +28,28 @@ public sealed class JobWorker : BackgroundService
     private readonly IConfiguration configuration;
     private readonly SquareApiClient squareApiClient;
     private readonly ILogger<JobWorker> logger;
+    private readonly IHostApplicationLifetime appLifetime;
     private readonly string workerId;
+    private readonly int? maxJobs;
+    private readonly bool exitWhenIdle;
+    private int processedJobs;
 
     public JobWorker(
         IServiceScopeFactory scopeFactory,
         IConfiguration configuration,
         SquareApiClient squareApiClient,
-        ILogger<JobWorker> logger
+        ILogger<JobWorker> logger,
+        IHostApplicationLifetime appLifetime
     )
     {
         this.scopeFactory = scopeFactory;
         this.configuration = configuration;
         this.squareApiClient = squareApiClient;
         this.logger = logger;
+        this.appLifetime = appLifetime;
         workerId = $"mgf_worker_{Environment.MachineName}_{Guid.NewGuid():N}";
+        maxJobs = ParseMaxJobs(configuration["Worker:MaxJobs"]);
+        exitWhenIdle = string.Equals(configuration["Worker:ExitWhenIdle"], "true", StringComparison.OrdinalIgnoreCase);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -51,14 +63,35 @@ public sealed class JobWorker : BackgroundService
                 await using var scope = scopeFactory.CreateAsyncScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+                var reaped = await ReapStaleRunningJobsAsync(db, stoppingToken);
+                if (reaped > 0)
+                {
+                    logger.LogInformation("MGF.Worker: reaped {ReapedCount} stale running jobs", reaped);
+                }
+
                 var job = await TryClaimJobAsync(db, stoppingToken);
                 if (job is null)
                 {
+                    if (exitWhenIdle)
+                    {
+                        logger.LogInformation("MGF.Worker: exiting (idle with exitWhenIdle=true)");
+                        appLifetime.StopApplication();
+                        break;
+                    }
+
                     await Task.Delay(DefaultPollInterval, stoppingToken);
                     continue;
                 }
 
                 await RunJobAsync(db, job, stoppingToken);
+
+                processedJobs++;
+                if (maxJobs.HasValue && processedJobs >= maxJobs.Value)
+                {
+                    logger.LogInformation("MGF.Worker: exiting after processing {ProcessedJobs} jobs", processedJobs);
+                    appLifetime.StopApplication();
+                    break;
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -144,6 +177,43 @@ public sealed class JobWorker : BackgroundService
         }
     }
 
+    private static int? ParseMaxJobs(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) && parsed > 0)
+        {
+            return parsed;
+        }
+
+        return null;
+    }
+
+    private async Task<int> ReapStaleRunningJobsAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        try
+        {
+            await using var cmd = db.Database.GetDbConnection().CreateCommand();
+            cmd.CommandText = JobReaperSql.ReapStaleRunningJobs;
+
+            var result = await cmd.ExecuteScalarAsync(cancellationToken);
+            if (result is null || result is DBNull)
+            {
+                return 0;
+            }
+
+            return Convert.ToInt32(result, CultureInfo.InvariantCulture);
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
+    }
+
     private async Task RunJobAsync(AppDbContext db, ClaimedJob job, CancellationToken cancellationToken)
     {
         try
@@ -179,6 +249,56 @@ public sealed class JobWorker : BackgroundService
                 return;
             }
 
+            if (string.Equals(job.JobTypeKey, "project.bootstrap", StringComparison.Ordinal))
+            {
+                var succeeded = await HandleProjectBootstrapAsync(db, job, cancellationToken);
+                if (succeeded)
+                {
+                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                }
+                return;
+            }
+
+            if (string.Equals(job.JobTypeKey, "project.archive", StringComparison.Ordinal))
+            {
+                var succeeded = await HandleProjectArchiveAsync(db, job, cancellationToken);
+                if (succeeded)
+                {
+                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                }
+                return;
+            }
+
+            if (string.Equals(job.JobTypeKey, "project.delivery", StringComparison.Ordinal))
+            {
+                var succeeded = await HandleProjectDeliveryAsync(db, job, cancellationToken);
+                if (succeeded)
+                {
+                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                }
+                return;
+            }
+
+            if (string.Equals(job.JobTypeKey, "project.delivery_email", StringComparison.Ordinal))
+            {
+                var succeeded = await HandleProjectDeliveryEmailAsync(db, job, cancellationToken);
+                if (succeeded)
+                {
+                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                }
+                return;
+            }
+
+            if (string.Equals(job.JobTypeKey, "domain.root_integrity", StringComparison.Ordinal))
+            {
+                var succeeded = await HandleRootIntegrityAsync(db, job, cancellationToken);
+                if (succeeded)
+                {
+                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                }
+                return;
+            }
+
             throw new InvalidOperationException($"Unknown job_type_key: {job.JobTypeKey}");
         }
         catch (Exception ex)
@@ -206,6 +326,309 @@ public sealed class JobWorker : BackgroundService
         );
 
         return Task.CompletedTask;
+    }
+
+    private async Task<bool> HandleProjectBootstrapAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
+    {
+        ProjectBootstrapPayload payload;
+        try
+        {
+            payload = ProjectBootstrapper.ParsePayload(job.PayloadJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "MGF.Worker: project.bootstrap payload invalid (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+
+        logger.LogInformation(
+            "MGF.Worker: project.bootstrap start (job_id={JobId}, project_id={ProjectId})",
+            job.JobId,
+            payload.ProjectId
+        );
+
+        try
+        {
+            var bootstrapper = new ProjectBootstrapper(configuration);
+            var result = await bootstrapper.RunAsync(db, payload, job.JobId, cancellationToken);
+
+            logger.LogInformation(
+                "MGF.Worker: project.bootstrap completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
+                result.JobId,
+                result.ProjectId,
+                result.Domains.Count,
+                result.HasErrors
+            );
+
+            if (result.HasErrors)
+            {
+                await MarkFailedAsync(
+                    db,
+                    job,
+                    new InvalidOperationException(result.LastError ?? "project.bootstrap completed with provisioning errors."),
+                    cancellationToken
+                );
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "MGF.Worker: project.bootstrap failed (job_id={JobId}, project_id={ProjectId})",
+                job.JobId,
+                payload.ProjectId
+            );
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleProjectArchiveAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
+    {
+        ProjectArchivePayload payload;
+        try
+        {
+            payload = ProjectArchiver.ParsePayload(job.PayloadJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "MGF.Worker: project.archive payload invalid (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+
+        logger.LogInformation(
+            "MGF.Worker: project.archive start (job_id={JobId}, project_id={ProjectId})",
+            job.JobId,
+            payload.ProjectId
+        );
+
+        try
+        {
+            var archiver = new ProjectArchiver(configuration);
+            var result = await archiver.RunAsync(db, payload, job.JobId, cancellationToken);
+
+            logger.LogInformation(
+                "MGF.Worker: project.archive completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
+                result.JobId,
+                result.ProjectId,
+                result.Domains.Count,
+                result.HasErrors
+            );
+
+            if (result.HasErrors)
+            {
+                await MarkFailedAsync(
+                    db,
+                    job,
+                    new InvalidOperationException(result.LastError ?? "project.archive completed with errors."),
+                    cancellationToken
+                );
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "MGF.Worker: project.archive failed (job_id={JobId}, project_id={ProjectId})",
+                job.JobId,
+                payload.ProjectId
+            );
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleProjectDeliveryAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
+    {
+        ProjectDeliveryPayload payload;
+        try
+        {
+            payload = ProjectDeliverer.ParsePayload(job.PayloadJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "MGF.Worker: project.delivery payload invalid (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+
+        logger.LogInformation(
+            "MGF.Worker: project.delivery start (job_id={JobId}, project_id={ProjectId})",
+            job.JobId,
+            payload.ProjectId
+        );
+
+        try
+        {
+        var deliverer = new ProjectDeliverer(configuration, logger: logger);
+            var result = await deliverer.RunAsync(db, payload, job.JobId, cancellationToken);
+
+            logger.LogInformation(
+                "MGF.Worker: project.delivery completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
+                result.JobId,
+                result.ProjectId,
+                result.Domains.Count,
+                result.HasErrors
+            );
+
+            if (result.HasErrors)
+            {
+                await MarkFailedAsync(
+                    db,
+                    job,
+                    new InvalidOperationException(result.LastError ?? "project.delivery completed with errors."),
+                    cancellationToken
+                );
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "MGF.Worker: project.delivery failed (job_id={JobId}, project_id={ProjectId})",
+                job.JobId,
+                payload.ProjectId
+            );
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleProjectDeliveryEmailAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
+    {
+        ProjectDeliveryEmailPayload payload;
+        try
+        {
+            payload = ProjectDeliveryEmailer.ParsePayload(job.PayloadJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "MGF.Worker: project.delivery_email payload invalid (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+
+        logger.LogInformation(
+            "MGF.Worker: project.delivery_email start (job_id={JobId}, project_id={ProjectId})",
+            job.JobId,
+            payload.ProjectId
+        );
+
+        try
+        {
+            var emailer = new ProjectDeliveryEmailer(configuration, logger: logger);
+            var result = await emailer.RunAsync(db, payload, job.JobId, cancellationToken);
+
+            if (!string.Equals(result.Status, "sent", StringComparison.OrdinalIgnoreCase))
+            {
+                await MarkFailedAsync(
+                    db,
+                    job,
+                    new InvalidOperationException(result.Error ?? "project.delivery_email failed."),
+                    cancellationToken
+                );
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "MGF.Worker: project.delivery_email failed (job_id={JobId}, project_id={ProjectId})",
+                job.JobId,
+                payload.ProjectId
+            );
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+    }
+
+    private async Task<bool> HandleRootIntegrityAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
+    {
+        RootIntegrityPayload payload;
+        try
+        {
+            payload = RootIntegrityPayload.Parse(job.PayloadJson);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "MGF.Worker: domain.root_integrity payload invalid (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
+
+        logger.LogInformation(
+            "MGF.Worker: domain.root_integrity start (job_id={JobId}, provider={ProviderKey}, root_key={RootKey}, mode={Mode}, dryRun={DryRun})",
+            job.JobId,
+            payload.ProviderKey,
+            payload.RootKey,
+            payload.Mode,
+            payload.DryRun
+        );
+
+        try
+        {
+            var checker = new RootIntegrityChecker(configuration);
+            var result = await checker.RunAsync(db, payload, job.JobId, cancellationToken);
+
+            var updatedPayload = RootIntegrityChecker.BuildJobPayloadJson(payload, result);
+            await UpdateJobPayloadAsync(db, job.JobId, updatedPayload, cancellationToken);
+
+            logger.LogInformation(
+                "MGF.Worker: domain.root_integrity completed (job_id={JobId}, provider={ProviderKey}, root_key={RootKey}, errors={HasErrors})",
+                job.JobId,
+                result.ProviderKey,
+                result.RootKey,
+                result.HasErrors
+            );
+
+            if (result.HasErrors)
+            {
+                await MarkFailedAsync(
+                    db,
+                    job,
+                    new InvalidOperationException(result.Errors.FirstOrDefault() ?? "domain.root_integrity completed with errors."),
+                    cancellationToken
+                );
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "MGF.Worker: domain.root_integrity failed (job_id={JobId})", job.JobId);
+            await MarkFailedAsync(db, job, ex, cancellationToken);
+            return false;
+        }
     }
 
     private async Task<bool> HandleSquareWebhookEventProcessAsync(
@@ -339,6 +762,22 @@ public sealed class JobWorker : BackgroundService
         {
             await db.Database.CloseConnectionAsync();
         }
+    }
+
+    private static async Task UpdateJobPayloadAsync(
+        AppDbContext db,
+        string jobId,
+        string payloadJson,
+        CancellationToken cancellationToken)
+    {
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE public.jobs
+            SET payload = {payloadJson}::jsonb
+            WHERE job_id = {jobId};
+            """,
+            cancellationToken
+        );
     }
 
     private async Task HandleSquareReconcilePaymentsAsync(AppDbContext db, ClaimedJob job, CancellationToken cancellationToken)

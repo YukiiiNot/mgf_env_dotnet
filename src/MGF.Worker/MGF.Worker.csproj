@@ -10,9 +10,15 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.1" />
+    <PackageReference Include="Scriban" Version="5.10.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MGF.Infrastructure\MGF.Infrastructure.csproj" />
+    <ProjectReference Include="..\MGF.Tools.Provisioner\MGF.Tools.Provisioner.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Email\Templates\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

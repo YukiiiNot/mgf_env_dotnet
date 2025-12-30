@@ -1,0 +1,111 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "lucidlink_production_container",
+  "displayName": "LucidLink Production Container",
+  "description": "Active editorial workspace (no caches).",
+  "root": {
+    "name": "{PROJECT_CODE}_{CLIENT_NAME}_{PROJECT_NAME}",
+    "children": [
+      {
+        "name": "00_Admin",
+        "kind": "folder",
+        "children": [
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              { "name": "manifest", "kind": "folder" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "00_Production_{PROJECT_CODE}",
+        "kind": "folder",
+        "children": [
+          {
+            "name": "Premiere",
+            "kind": "folder",
+            "children": [
+              { "name": "MASTER" },
+              {
+                "name": "WORKING",
+                "kind": "folder",
+                "children": [
+                  { "name": "{EDITOR_INITIALS}" }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "AfterEffects",
+            "kind": "folder",
+            "children": [
+              { "name": "MASTER" },
+              { "name": "{EDITOR_INITIALS}" }
+            ]
+          },
+          { "name": "Photoshop" },
+          { "name": "Illustrator" },
+          { "name": "Audition" }
+        ]
+      },
+      {
+        "name": "01_Media",
+        "kind": "folder",
+        "children": [
+          {
+            "name": "Proxies",
+            "kind": "folder",
+            "children": [
+              { "name": "Video" },
+              { "name": "Audio" }
+            ]
+          },
+          {
+            "name": "Audio",
+            "kind": "folder",
+            "children": [
+              { "name": "Music" },
+              { "name": "VO" },
+              { "name": "SFX" }
+            ]
+          },
+          {
+            "name": "Graphics",
+            "kind": "folder",
+            "children": [
+              { "name": "Logos" },
+              { "name": "LowerThirds" },
+              { "name": "Brand" }
+            ]
+          },
+          { "name": "Fonts" },
+          { "name": "Stills" },
+          { "name": "Reference" }
+        ]
+      },
+      {
+        "name": "02_Renders",
+        "kind": "folder",
+        "children": [
+          { "name": "Internal_Reviews" },
+          { "name": "Client_Reviews" },
+          { "name": "Final_Masters" }
+        ]
+      },
+      {
+        "name": "03_Notes",
+        "kind": "folder",
+        "children": [
+          { "name": "Editorial_Notes" },
+          { "name": "Client_Notes" },
+          { "name": "Delivery_Checklists" }
+        ]
+      },
+      {
+        "name": "99_Dump"
+      }
+    ]
+  }
+}

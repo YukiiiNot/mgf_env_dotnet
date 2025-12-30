@@ -3582,6 +3582,95 @@ internal static class AppDbContextModelBuilder
                                     t.HasCheckConstraint("CK_project_storage_roots_1", "folder_relpath !~ '(^/|\\\\\\\\|\\.\\.)'");
                                 });
                         });
+
+                    modelBuilder.Entity("storage_root_contracts", b =>
+                        {
+                            b.Property<string>("provider_key")
+                                .HasColumnType("text")
+                                .HasColumnName("provider_key");
+
+                            b.Property<string>("root_key")
+                                .HasColumnType("text")
+                                .HasColumnName("root_key");
+
+                            b.Property<string>("contract_key")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("contract_key");
+
+                            b.Property<JsonElement>("required_folders")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("jsonb")
+                                .HasColumnName("required_folders")
+                                .HasDefaultValueSql("'[]'::jsonb");
+
+                            b.Property<JsonElement>("optional_folders")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("jsonb")
+                                .HasColumnName("optional_folders")
+                                .HasDefaultValueSql("'[]'::jsonb");
+
+                            b.Property<JsonElement>("allowed_extras")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("jsonb")
+                                .HasColumnName("allowed_extras")
+                                .HasDefaultValueSql("'[]'::jsonb");
+
+                            b.Property<JsonElement>("allowed_root_files")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("jsonb")
+                                .HasColumnName("allowed_root_files")
+                                .HasDefaultValueSql("'[]'::jsonb");
+
+                            b.Property<string>("quarantine_relpath")
+                                .HasColumnType("text")
+                                .HasColumnName("quarantine_relpath");
+
+                            b.Property<int?>("max_items")
+                                .HasColumnType("integer")
+                                .HasColumnName("max_items");
+
+                            b.Property<long?>("max_bytes")
+                                .HasColumnType("bigint")
+                                .HasColumnName("max_bytes");
+
+                            b.Property<string>("notes")
+                                .HasColumnType("text")
+                                .HasColumnName("notes");
+
+                            b.Property<bool>("is_active")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("boolean")
+                                .HasDefaultValue(true)
+                                .HasColumnName("is_active");
+
+                            b.Property<DateTimeOffset>("created_at")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("timestamptz")
+                                .HasColumnName("created_at")
+                                .HasDefaultValueSql("now()");
+
+                            b.Property<DateTimeOffset?>("updated_at")
+                                .HasColumnType("timestamptz")
+                                .HasColumnName("updated_at");
+
+                            b.HasKey("provider_key", "root_key");
+
+                            b.HasIndex("contract_key");
+
+                            b.HasIndex("provider_key");
+
+                            b.HasIndex("root_key");
+
+                            b.ToTable("storage_root_contracts", null, t =>
+                                {
+                                    t.HasCheckConstraint("CK_storage_root_contracts_0", "root_key ~ '^[a-z0-9_]+$'");
+
+                                    t.HasCheckConstraint("CK_storage_root_contracts_1", "contract_key ~ '^[a-z0-9_]+$'");
+
+                                    t.HasCheckConstraint("CK_storage_root_contracts_2", "quarantine_relpath IS NULL OR (quarantine_relpath !~ '^(\\/|[A-Za-z]:\\\\)' AND quarantine_relpath !~ '\\\\' AND quarantine_relpath !~ '(?:^|/)\\.\\.(?:/|$)')");
+                                });
+                        });
         
                     modelBuilder.Entity("role_scope_roles", b =>
                         {
@@ -4754,6 +4843,15 @@ internal static class AppDbContextModelBuilder
                             b.HasOne("storage_providers", null)
                                 .WithMany()
                                 .HasForeignKey("storage_provider_key")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired();
+                        });
+
+                    modelBuilder.Entity("storage_root_contracts", b =>
+                        {
+                            b.HasOne("storage_providers", null)
+                                .WithMany()
+                                .HasForeignKey("provider_key")
                                 .OnDelete(DeleteBehavior.Restrict)
                                 .IsRequired();
                         });

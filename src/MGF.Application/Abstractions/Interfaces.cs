@@ -6,6 +6,8 @@ public interface IFileStore
 {
     Task<bool> ExistsAsync(string path, CancellationToken cancellationToken = default);
     Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default);
+    Task<byte[]> ReadAllBytesAsync(string path, CancellationToken cancellationToken = default);
+    Task WriteAllBytesAsync(string path, byte[] content, CancellationToken cancellationToken = default);
     Task MoveAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken = default);
     Task CopyAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken = default);
 }
