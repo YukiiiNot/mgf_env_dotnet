@@ -20,5 +20,11 @@ public sealed class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         AppDbContextModelBuilder.Apply(modelBuilder);
+
+        modelBuilder.Entity("project_storage_roots", b =>
+        {
+            b.HasIndex("project_id", "storage_provider_key", "root_key")
+                .IsUnique();
+        });
     }
 }

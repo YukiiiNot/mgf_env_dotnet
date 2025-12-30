@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -65,6 +67,16 @@ public static class LookupSeeder
             rows:
             [
                 ("active", "Active", 10),
+                ("ready_to_provision", "Ready to Provision", 20),
+                ("provisioning", "Provisioning", 30),
+                ("ready_to_deliver", "Ready to Deliver", 35),
+                ("delivering", "Delivering", 36),
+                ("delivered", "Delivered", 37),
+                ("to_archive", "To Archive", 40),
+                ("archiving", "Archiving", 50),
+                ("delivery_failed", "Delivery Failed", 70),
+                ("archive_failed", "Archive Failed", 80),
+                ("provision_failed", "Provision Failed", 85),
                 ("archived", "Archived", 90),
             ]
         ),
@@ -298,6 +310,10 @@ public static class LookupSeeder
             [
                 ("dropbox.create_project_structure", "Dropbox: Create Project Structure"),
                 ("project.bootstrap", "Project: Bootstrap"),
+                ("project.archive", "Project: Archive"),
+                ("project.delivery", "Project: Delivery"),
+                ("project.delivery_email", "Project: Delivery Email"),
+                ("domain.root_integrity", "Domain: Root Integrity Check"),
                 ("notion.sync_booking", "Notion: Sync Booking"),
                 ("square.reconcile.payments", "Square: Reconcile Payments"),
                 ("square.payment.upsert", "Square: Upsert Payment"),
@@ -354,7 +370,9 @@ public static class LookupSeeder
             rows:
             [
                 ("dropbox_root", "Dropbox Root", 10),
-                ("project_root", "Project Root", 20),
+                ("lucidlink_root", "LucidLink Root", 15),
+                ("nas_root", "NAS Root", 20),
+                ("project_root", "Project Root", 30),
             ]
         ),
         UpsertKeyDisplaySort(
@@ -369,6 +387,152 @@ public static class LookupSeeder
                 ("exports", "Exports", 50),
                 ("deliveries", "Deliveries", 60),
                 ("invoices", "Invoices", 70),
+            ]
+        ),
+        UpsertPathTemplates(
+            rows:
+            [
+                (
+                    "dropbox_active_container_root",
+                    "dropbox_root",
+                    "project_root",
+                    "02_Projects_Active",
+                    "Dropbox active projects root",
+                    true,
+                    true,
+                    true
+                ),
+                (
+                    "dropbox_to_archive_container_root",
+                    "dropbox_root",
+                    "project_root",
+                    "03_Projects_ToArchive",
+                    "Dropbox staging area for archive moves",
+                    true,
+                    true,
+                    true
+                ),
+                (
+                    "dropbox_archive_container_root",
+                    "dropbox_root",
+                    "project_root",
+                    "98_Archive",
+                    "Dropbox archived projects root",
+                    true,
+                    true,
+                    true
+                ),
+                (
+                    "dropbox_delivery_root",
+                    "dropbox_root",
+                    "project_root",
+                    "04_Client_Deliveries",
+                    "Dropbox client deliveries root",
+                    true,
+                    true,
+                    true
+                ),
+                (
+                    "nas_archive_root",
+                    "nas_root",
+                    "project_root",
+                    "01_Projects_Archive",
+                    "NAS archive projects root",
+                    true,
+                    true,
+                    true
+                )
+            ]
+        ),
+        UpsertStorageRootContracts(
+            rows:
+            [
+                (
+                    "dropbox",
+                    "root",
+                    "dropbox_root",
+                    RequiredFolders: new[]
+                    {
+                        "00_Admin",
+                        "01_Docs",
+                        "02_Projects_Active",
+                        "03_Projects_ToArchive",
+                        "04_Client_Deliveries",
+                        "05_GlobalAssets",
+                        "06_DevTest",
+                        "98_Archive",
+                        "99_Dump",
+                    },
+                    OptionalFolders: new[]
+                    {
+                        "04_Staging",
+                        "99_Legacy",
+                        "99_TestRuns",
+                    },
+                    AllowedExtras: new[]
+                    {
+                        "97_Legacy",
+                    },
+                    AllowedRootFiles: new[]
+                    {
+                        "desktop.ini",
+                    },
+                    QuarantineRelpath: "99_Dump/_quarantine",
+                    MaxItems: 1000,
+                    MaxBytes: 50L * 1024 * 1024 * 1024,
+                    Notes: "Dropbox business root contract."
+                ),
+                (
+                    "lucidlink",
+                    "root",
+                    "lucidlink_root",
+                    RequiredFolders: new[]
+                    {
+                        "00_Admin",
+                        "01_Productions_Active",
+                        "99_Dump",
+                    },
+                    OptionalFolders: new[]
+                    {
+                        "02_Docs",
+                        "99_Legacy",
+                        "99_TestRuns",
+                    },
+                    AllowedExtras: Array.Empty<string>(),
+                    AllowedRootFiles: new[]
+                    {
+                        "desktop.ini",
+                    },
+                    QuarantineRelpath: "99_Dump/_quarantine",
+                    MaxItems: 500,
+                    MaxBytes: 20L * 1024 * 1024 * 1024,
+                    Notes: "LucidLink root contract (no caches)."
+                ),
+                (
+                    "nas",
+                    "root",
+                    "nas_root",
+                    RequiredFolders: new[]
+                    {
+                        "00_Admin",
+                        "01_Projects_Archive",
+                        "99_Dump",
+                    },
+                    OptionalFolders: new[]
+                    {
+                        "99_Legacy",
+                        "99_TestRuns",
+                    },
+                    AllowedExtras: Array.Empty<string>(),
+                    AllowedRootFiles: new[]
+                    {
+                        "desktop.ini",
+                    },
+                    QuarantineRelpath: "99_Dump/_quarantine",
+                    MaxItems: 500,
+                    MaxBytes: 50L * 1024 * 1024 * 1024,
+                    Notes: "NAS root contract (archive)."
+                ),
             ]
         ),
         UpsertKeyDisplay(
@@ -395,6 +559,8 @@ public static class LookupSeeder
             rows:
             [
                 ("dropbox", "Dropbox", 10),
+                ("nextcloud", "Nextcloud", 12),
+                ("lucidlink", "LucidLink", 15),
                 ("nas", "NAS", 20),
                 ("supabase_storage", "Supabase Storage", 30),
             ]
@@ -623,6 +789,115 @@ public static class LookupSeeder
         return new SeedStatement(tableName, sql);
     }
 
+    private static SeedStatement UpsertPathTemplates(
+        IReadOnlyList<(
+            string PathKey,
+            string AnchorKey,
+            string PathTypeKey,
+            string RelPath,
+            string? Description,
+            bool ExistsRequired,
+            bool IsActive,
+            bool Writable
+        )> rows
+    )
+    {
+        const string tableName = "path_templates";
+
+        if (rows.Count == 0)
+        {
+            return new SeedStatement(tableName, string.Empty);
+        }
+
+        var values = string.Join(
+            ",\n  ",
+            rows.Select(r =>
+                $"('{Esc(r.PathKey)}', '{Esc(r.AnchorKey)}', '{Esc(r.PathTypeKey)}', '{Esc(r.RelPath)}', {SqlNullableText(r.Description)}, {ToSqlBool(r.ExistsRequired)}, {ToSqlBool(r.IsActive)}, {ToSqlBool(r.Writable)})"
+            )
+        );
+
+        var sql =
+            $"""
+            INSERT INTO public.{tableName} (path_key, anchor_key, path_type_key, relpath, description, exists_required, is_active, writable)
+            VALUES
+              {values}
+            ON CONFLICT (path_key) DO UPDATE
+            SET anchor_key = EXCLUDED.anchor_key,
+                path_type_key = EXCLUDED.path_type_key,
+                relpath = EXCLUDED.relpath,
+                description = EXCLUDED.description,
+                exists_required = EXCLUDED.exists_required,
+                is_active = EXCLUDED.is_active,
+                writable = EXCLUDED.writable;
+            """;
+
+        return new SeedStatement(tableName, sql);
+    }
+
+    private static SeedStatement UpsertStorageRootContracts(
+        IReadOnlyList<(
+            string ProviderKey,
+            string RootKey,
+            string ContractKey,
+            IReadOnlyList<string> RequiredFolders,
+            IReadOnlyList<string> OptionalFolders,
+            IReadOnlyList<string> AllowedExtras,
+            IReadOnlyList<string> AllowedRootFiles,
+            string? QuarantineRelpath,
+            int? MaxItems,
+            long? MaxBytes,
+            string? Notes
+        )> rows
+    )
+    {
+        const string tableName = "storage_root_contracts";
+
+        if (rows.Count == 0)
+        {
+            return new SeedStatement(tableName, string.Empty);
+        }
+
+        var values = string.Join(
+            ",\n  ",
+            rows.Select(r =>
+                $"('{Esc(r.ProviderKey)}', '{Esc(r.RootKey)}', '{Esc(r.ContractKey)}', {SqlJsonArray(r.RequiredFolders)}, {SqlJsonArray(r.OptionalFolders)}, {SqlJsonArray(r.AllowedExtras)}, {SqlJsonArray(r.AllowedRootFiles)}, {SqlNullableText(r.QuarantineRelpath)}, {SqlNullableInt(r.MaxItems)}, {SqlNullableLong(r.MaxBytes)}, {SqlNullableText(r.Notes)}, true)"
+            )
+        );
+
+        var sql =
+            $"""
+            INSERT INTO public.{tableName} (
+                provider_key,
+                root_key,
+                contract_key,
+                required_folders,
+                optional_folders,
+                allowed_extras,
+                allowed_root_files,
+                quarantine_relpath,
+                max_items,
+                max_bytes,
+                notes,
+                is_active
+            )
+            VALUES
+              {values}
+            ON CONFLICT (provider_key, root_key) DO UPDATE
+            SET contract_key = EXCLUDED.contract_key,
+                required_folders = EXCLUDED.required_folders,
+                optional_folders = EXCLUDED.optional_folders,
+                allowed_extras = EXCLUDED.allowed_extras,
+                allowed_root_files = EXCLUDED.allowed_root_files,
+                quarantine_relpath = EXCLUDED.quarantine_relpath,
+                max_items = EXCLUDED.max_items,
+                max_bytes = EXCLUDED.max_bytes,
+                notes = EXCLUDED.notes,
+                is_active = EXCLUDED.is_active;
+            """;
+
+        return new SeedStatement(tableName, sql);
+    }
+
     private static SeedStatement UpsertRoleScopeRoles(IReadOnlyList<(string ScopeKey, string RoleKey)> rows)
     {
         const string tableName = "role_scope_roles";
@@ -700,6 +975,24 @@ public static class LookupSeeder
     {
         return string.IsNullOrWhiteSpace(value) ? "NULL" : $"'{Esc(value)}'";
     }
+
+    private static string SqlNullableInt(int? value)
+    {
+        return value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "NULL";
+    }
+
+    private static string SqlNullableLong(long? value)
+    {
+        return value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "NULL";
+    }
+
+    private static string SqlJsonArray(IReadOnlyList<string> values)
+    {
+        var json = JsonSerializer.Serialize(values);
+        return $"'{Esc(json)}'::jsonb";
+    }
+
+    private static string ToSqlBool(bool value) => value ? "true" : "false";
 
     private static async Task<HashSet<string>> GetExistingPublicTablesAsync(AppDbContext db, CancellationToken cancellationToken)
     {

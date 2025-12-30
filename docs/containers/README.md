@@ -13,7 +13,8 @@ Folder tree:
   00_Admin/
     .mgf/
       project_metadata.json
-      folder_manifest.json
+      manifest/
+        folder_manifest.json
     01_Briefs_Contracts/
     02_Schedules_CallSheets/
     03_References_ClientDecks/
@@ -32,6 +33,7 @@ Folder tree:
     Final_Masters/
     Social_Cutdowns/
   99_Archive/
+  99_Dump/
 ```
 
 ## LucidLink (active editorial)
@@ -42,6 +44,10 @@ Folder tree:
 
 ```
 {PROJECT_CODE}_{CLIENT_NAME}_{PROJECT_NAME}/
+  00_Admin/
+    .mgf/
+      manifest/
+        folder_manifest.json
   00_{PROJECT_CODE}_{PROJECT_NAME}_PRODUCTION/
   01_Edit/
     MASTER/
@@ -66,6 +72,7 @@ Folder tree:
   03_Renders_Internal/
     From_Premiere/
     From_AE/
+  99_Dump/
 ```
 
 Policy notes:
@@ -80,15 +87,19 @@ Folder tree:
 
 ```
 {PROJECT_CODE}_{CLIENT_NAME}_{PROJECT_NAME}/
-  00_ProjectInfo/
-    source_manifest.json
-    notes.txt
+  00_Admin/
+    .mgf/
+      source_manifest.json
+      notes.txt
+      manifest/
+        folder_manifest.json
   01_Originals/
     CameraCards/
     Audio/
     Photos_Graphics_Source/
   02_Deliverables/
     Final_Masters/
+  99_Dump/
   99_Legacy/ (optional)
 ```
 

@@ -3579,6 +3579,9 @@ namespace MGF.Infrastructure.Migrations
 
                     b.HasIndex("storage_provider_key");
 
+                    b.HasIndex("project_id", "storage_provider_key", "root_key")
+                        .IsUnique();
+
                     b.ToTable("project_storage_roots", null, t =>
                         {
                             t.HasCheckConstraint("CK_project_storage_roots_0", "project_storage_root_id ~ '^psr_[A-Za-z0-9]+$'");
@@ -3923,6 +3926,95 @@ namespace MGF.Infrastructure.Migrations
                     b.ToTable("storage_providers", null, t =>
                         {
                             t.HasCheckConstraint("CK_storage_providers_0", "provider_key ~ '^[a-z0-9_]+$'");
+                        });
+                });
+
+            modelBuilder.Entity("storage_root_contracts", b =>
+                {
+                    b.Property<string>("provider_key")
+                        .HasColumnType("text")
+                        .HasColumnName("provider_key");
+
+                    b.Property<string>("root_key")
+                        .HasColumnType("text")
+                        .HasColumnName("root_key");
+
+                    b.Property<JsonElement>("allowed_extras")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("allowed_extras")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<JsonElement>("allowed_root_files")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("allowed_root_files")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("contract_key")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("contract_key");
+
+                    b.Property<DateTimeOffset>("created_at")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("is_active")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<long?>("max_bytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("max_bytes");
+
+                    b.Property<int?>("max_items")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_items");
+
+                    b.Property<string>("notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<JsonElement>("optional_folders")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("optional_folders")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("quarantine_relpath")
+                        .HasColumnType("text")
+                        .HasColumnName("quarantine_relpath");
+
+                    b.Property<JsonElement>("required_folders")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("required_folders")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<DateTimeOffset?>("updated_at")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("provider_key", "root_key");
+
+                    b.HasIndex("contract_key");
+
+                    b.HasIndex("provider_key");
+
+                    b.HasIndex("root_key");
+
+                    b.ToTable("storage_root_contracts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_storage_root_contracts_0", "root_key ~ '^[a-z0-9_]+$'");
+
+                            t.HasCheckConstraint("CK_storage_root_contracts_1", "contract_key ~ '^[a-z0-9_]+$'");
+
+                            t.HasCheckConstraint("CK_storage_root_contracts_2", "quarantine_relpath IS NULL OR (quarantine_relpath !~ '^(\\/|[A-Za-z]:\\\\)' AND quarantine_relpath !~ '\\\\' AND quarantine_relpath !~ '(?:^|/)\\.\\.(?:/|$)')");
                         });
                 });
 
@@ -4794,6 +4886,15 @@ namespace MGF.Infrastructure.Migrations
                     b.HasOne("slug_scopes", null)
                         .WithMany()
                         .HasForeignKey("scope_key")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("storage_root_contracts", b =>
+                {
+                    b.HasOne("storage_providers", null)
+                        .WithMany()
+                        .HasForeignKey("provider_key")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

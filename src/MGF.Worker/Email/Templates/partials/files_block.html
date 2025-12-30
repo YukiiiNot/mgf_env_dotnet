@@ -1,0 +1,26 @@
+<tr>
+  <td style="font-size:{{ section_label_size }};letter-spacing:{{ section_label_tracking }};text-transform:uppercase;color:{{ muted_text_color }};padding:{{ section_gap_md }} 0 10px 0;">
+    Files
+  </td>
+</tr>
+{{ if file_count_note != "" }}
+<tr>
+  <td style="font-size:{{ section_label_size }};color:{{ muted_text_color }};padding:0 0 {{ section_gap_sm }} 0;">
+    {{ file_count_note }}
+  </td>
+</tr>
+{{ end }}
+<tr>
+  <td>
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+      {{ for file in files }}
+      <tr>
+        <td width="12" valign="top" style="color:{{ text_color }};font-size:{{ body_size }};line-height:{{ body_line_height }};">&bull;</td>
+        <td style="color:{{ text_color }};font-size:{{ body_size }};line-height:{{ body_line_height }};padding:0 0 6px 0;">
+          {{ file.relative_path }}
+        </td>
+      </tr>
+      {{ end }}
+    </table>
+  </td>
+</tr>

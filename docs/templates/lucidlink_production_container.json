@@ -7,6 +7,19 @@
     "name": "{PROJECT_CODE}_{CLIENT_NAME}_{PROJECT_NAME}",
     "children": [
       {
+        "name": "00_Admin",
+        "kind": "folder",
+        "children": [
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              { "name": "manifest", "kind": "folder" }
+            ]
+          }
+        ]
+      },
+      {
         "name": "00_Production_{PROJECT_CODE}",
         "kind": "folder",
         "children": [
@@ -89,6 +102,9 @@
           { "name": "Client_Notes" },
           { "name": "Delivery_Checklists" }
         ]
+      },
+      {
+        "name": "99_Dump"
       }
     ]
   }

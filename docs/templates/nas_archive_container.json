@@ -7,11 +7,18 @@
     "name": "{PROJECT_CODE}_{CLIENT_NAME}_{PROJECT_NAME}",
     "children": [
       {
-        "name": "00_ProjectInfo",
+        "name": "00_Admin",
         "kind": "folder",
         "children": [
-          { "kind": "file", "name": "source_manifest.json" },
-          { "kind": "file", "name": "notes.txt" }
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              { "kind": "file", "name": "source_manifest.json" },
+              { "kind": "file", "name": "notes.txt" },
+              { "name": "manifest", "kind": "folder" }
+            ]
+          }
         ]
       },
       {
@@ -29,6 +36,13 @@
         "children": [
           { "name": "Final_Masters" }
         ]
+      },
+      {
+        "name": "03_ProjectFiles_Snapshots",
+        "optional": true
+      },
+      {
+        "name": "99_Dump"
       },
       {
         "name": "99_Legacy",

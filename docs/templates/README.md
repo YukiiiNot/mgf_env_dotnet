@@ -10,11 +10,12 @@ Templates are versioned infrastructure. Schema validation + tests are mandatory.
 ## Rules
 
 - Top-level folders must use numeric prefixes only (e.g., `00_Admin`, `01_PreProduction`).
-- `.mgf` metadata folder exists only under `00_Admin` in the Dropbox template.
+- `.mgf` metadata folder exists only under `00_Admin` (all templates) and must contain `manifest/`.
 - `.prproj` filenames are stable:
   - MASTER: `{PROJECT_CODE}_{PROJECT_NAME}_MASTER.prproj`
   - Editor: `{PROJECT_CODE}_{PROJECT_NAME}_{EDITOR_INITIALS}.prproj`
 - Exports/renders use versioned filenames (e.g., `..._EXPORT_v###.mp4`).
+- Delivery containers use a stable `01_Deliverables\Final` folder; versions live under `Final\vN` and `delivery_manifest.json` lists file paths relative to the version folder.
 
 ## Files
 
@@ -25,6 +26,7 @@ Domain Root templates:
 
 Project Container templates:
 - `dropbox_project_container.json`
+- `dropbox_delivery_container.json`
 - `lucidlink_production_container.json`
 - `nas_archive_container.json`
 

@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MGF.Infrastructure\MGF.Infrastructure.csproj" />
+    <ProjectReference Include="..\MGF.Worker\MGF.Worker.csproj" />
   </ItemGroup>
 
 </Project>

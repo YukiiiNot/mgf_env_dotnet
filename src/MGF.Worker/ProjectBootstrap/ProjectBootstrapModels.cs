@@ -7,7 +7,11 @@ public sealed record ProjectBootstrapPayload(
     bool CreateDomainRoots,
     bool ProvisionProjectContainers,
     bool AllowRepair,
-    bool ForceSandbox
+    bool ForceSandbox,
+    bool AllowNonReal,
+    bool Force,
+    bool TestMode,
+    bool AllowTestCleanup
 );
 
 public sealed record ProjectBootstrapRunResult(
@@ -20,8 +24,13 @@ public sealed record ProjectBootstrapRunResult(
     bool ProvisionProjectContainers,
     bool AllowRepair,
     bool ForceSandbox,
+    bool AllowNonReal,
+    bool Force,
+    bool TestMode,
+    bool AllowTestCleanup,
     IReadOnlyList<ProjectBootstrapDomainResult> Domains,
-    bool HasErrors
+    bool HasErrors,
+    string? LastError
 );
 
 public sealed record ProjectBootstrapDomainResult(

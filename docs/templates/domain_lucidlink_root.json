@@ -6,9 +6,22 @@
   "root": {
     "name": "LUCIDLINK_ROOT",
     "children": [
-      { "name": "00_Admin" },
+      {
+        "name": "00_Admin",
+        "kind": "folder",
+        "children": [
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              { "name": "manifest", "kind": "folder" }
+            ]
+          }
+        ]
+      },
       { "name": "01_Productions_Active" },
       { "name": "02_Docs", "optional": true },
+      { "name": "99_Dump" },
       { "name": "99_Legacy", "optional": true }
     ]
   }

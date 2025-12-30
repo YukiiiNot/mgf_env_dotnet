@@ -14,7 +14,7 @@ The Provisioner:
 - validates templates against schemas before use
 - plans and applies in a deterministic, idempotent way
 - never deletes files
-- writes a manifest (`folder_manifest.json`) describing what it did
+- writes a manifest (`folder_manifest.json`) under `00_Admin\.mgf\manifest\` describing what it did
 
 ## What Bootstrap guarantees
 
@@ -24,6 +24,11 @@ Project Bootstrap:
 - tolerates missing roots (skips unless explicitly allowed to create)
 - validates templates before any plan/apply/verify
 - records results into project metadata for auditing
+
+## Storage provider placeholders
+
+- `nextcloud` is seeded as a placeholder `storage_providers` entry only.
+- It is not used by bootstrap/provisioning yet; integration will require a provider adapter decision and workflow changes.
 
 ## What must not change silently
 
