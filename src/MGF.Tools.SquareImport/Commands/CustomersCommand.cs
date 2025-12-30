@@ -2,7 +2,11 @@ namespace MGF.Tools.SquareImport.Commands;
 
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using Microsoft.Extensions.Configuration;
+using MGF.Infrastructure.Configuration;
+using MGF.Infrastructure.Data;
 using MGF.Tools.SquareImport.Importers;
+using MGF.Tools.SquareImport.Guards;
 using MGF.Tools.SquareImport.Reporting;
 
 internal static class CustomersCommand
@@ -17,6 +21,16 @@ internal static class CustomersCommand
         var resetOption = new Option<bool>("--reset")
         {
             Description = "DEV-only: delete Square customer import data so it can be re-imported clean.",
+        };
+
+        var destructiveOption = new Option<bool>("--i-understand-this-will-destroy-data")
+        {
+            Description = "Required for --reset. Confirms you understand this will delete data.",
+        };
+
+        var nonInteractiveOption = new Option<bool>("--non-interactive")
+        {
+            Description = "Skip interactive confirmation prompt (DEV only).",
         };
 
         var writeReportsOption = new Option<bool>("--write-reports", getDefaultValue: () => true)
@@ -58,6 +72,8 @@ internal static class CustomersCommand
         var command = new Command("customers", "Import customers from a Square CSV export.");
         command.AddOption(fileOption);
         command.AddOption(resetOption);
+        command.AddOption(destructiveOption);
+        command.AddOption(nonInteractiveOption);
         command.AddOption(writeReportsOption);
         command.AddOption(reportDirOption);
         command.AddOption(strictOption);
@@ -71,6 +87,8 @@ internal static class CustomersCommand
             {
                 var file = context.ParseResult.GetValueForOption(fileOption);
                 var reset = context.ParseResult.GetValueForOption(resetOption);
+                var destructive = context.ParseResult.GetValueForOption(destructiveOption);
+                var nonInteractive = context.ParseResult.GetValueForOption(nonInteractiveOption);
                 var writeReports = context.ParseResult.GetValueForOption(writeReportsOption);
                 var reportDir = context.ParseResult.GetValueForOption(reportDirOption);
                 var strict = context.ParseResult.GetValueForOption(strictOption);
@@ -95,6 +113,60 @@ internal static class CustomersCommand
                         new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole("customers");
                         context.ExitCode = 1;
                         return;
+                    }
+
+                    var env = DatabaseConnection.GetEnvironment();
+                    var guard = CustomersResetGuard.Evaluate(
+                        env: env,
+                        destructiveFlag: destructive,
+                        nonInteractive: nonInteractive,
+                        inputRedirected: Console.IsInputRedirected
+                    );
+
+                    if (!guard.Allowed)
+                    {
+                        Console.Error.WriteLine(guard.ErrorMessage);
+                        new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole("customers");
+                        context.ExitCode = 1;
+                        return;
+                    }
+
+                    string connectionString;
+                    try
+                    {
+                        connectionString = ResolveConnectionString(env);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine(
+                            $"square-import customers: --reset blocked (unable to resolve connection string): {ex.Message}"
+                        );
+                        new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole("customers");
+                        context.ExitCode = 1;
+                        return;
+                    }
+
+                    if (LooksLikeNonDevConnectionString(connectionString))
+                    {
+                        Console.Error.WriteLine(
+                            "square-import customers: --reset blocked (connection string looks non-dev; refusing destructive reset)."
+                        );
+                        new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole("customers");
+                        context.ExitCode = 1;
+                        return;
+                    }
+
+                    if (guard.RequiresConfirmation)
+                    {
+                        Console.Write("Type RESET to confirm destructive customer reset: ");
+                        var confirmation = Console.ReadLine();
+                        if (!string.Equals(confirmation, "RESET", StringComparison.Ordinal))
+                        {
+                            Console.Error.WriteLine("square-import customers: reset cancelled.");
+                            new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1).WriteToConsole("customers");
+                            context.ExitCode = 1;
+                            return;
+                        }
                     }
 
                     context.ExitCode = await SquareImportCommandRunner.RunAsync(
@@ -171,5 +243,31 @@ internal static class CustomersCommand
         );
 
         return command;
+    }
+
+    private static string ResolveConnectionString(MgfEnvironment env)
+    {
+        var config = new ConfigurationBuilder()
+            .AddMgfConfiguration(env.ToString(), typeof(AppDbContext).Assembly)
+            .Build();
+
+        return DatabaseConnection.ResolveConnectionString(config);
+    }
+
+    private static bool LooksLikeNonDevConnectionString(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return false;
+        }
+
+        var value = connectionString.ToLowerInvariant();
+        return value.Contains("prod", StringComparison.Ordinal)
+            || value.Contains("production", StringComparison.Ordinal)
+            || value.Contains("staging", StringComparison.Ordinal)
+            || value.Contains("stage", StringComparison.Ordinal)
+            || value.Contains("uat", StringComparison.Ordinal)
+            || value.Contains("preprod", StringComparison.Ordinal)
+            || value.Contains("live", StringComparison.Ordinal);
     }
 }

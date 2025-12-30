@@ -7,10 +7,15 @@ namespace MGF.Infrastructure.IntegrationTests;
 
 internal static class TestDb
 {
-    public static AppDbContext CreateContext()
+    public static string ResolveConnectionString()
     {
         var config = BuildConfiguration();
-        var connectionString = DatabaseConnection.ResolveConnectionString(config);
+        return DatabaseConnection.ResolveConnectionString(config);
+    }
+
+    public static AppDbContext CreateContext()
+    {
+        var connectionString = ResolveConnectionString();
 
         var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString).Options;
 

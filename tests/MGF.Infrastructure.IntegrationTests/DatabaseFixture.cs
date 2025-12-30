@@ -9,7 +9,11 @@ public sealed class DatabaseFixture : IAsyncLifetime
 {
     public async Task InitializeAsync()
     {
-        DatabaseConnection.EnsureDestructiveAllowedOrThrow("Integration tests (will TRUNCATE core tables)");
+        var connectionString = TestDb.ResolveConnectionString();
+        DatabaseConnection.EnsureDestructiveAllowedOrThrow(
+            "Integration tests (will TRUNCATE core tables)",
+            connectionString
+        );
 
         await using var db = TestDb.CreateContext();
         await db.Database.MigrateAsync();
@@ -32,7 +36,11 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     private static async Task ResetCoreDataAsync(AppDbContext db)
     {
-        DatabaseConnection.EnsureDestructiveAllowedOrThrow("Integration tests reset (TRUNCATE core tables)");
+        var connectionString = db.Database.GetDbConnection().ConnectionString;
+        DatabaseConnection.EnsureDestructiveAllowedOrThrow(
+            "Integration tests reset (TRUNCATE core tables)",
+            connectionString
+        );
 
         await db.Database.OpenConnectionAsync();
         try
@@ -73,4 +81,3 @@ public sealed class DatabaseFixture : IAsyncLifetime
         }
     }
 }
-

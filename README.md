@@ -69,7 +69,8 @@ dotnet run --project src/MGF.Tools.SquareImport -- customers --mode applied --fi
 dotnet run --project src/MGF.Tools.SquareImport -- customers --verify
 
 # customers: DEV-only reset (deletes Square-imported customer data only)
-dotnet run --project src/MGF.Tools.SquareImport -- customers --reset
+# requires explicit confirmation flag + interactive prompt
+dotnet run --project src/MGF.Tools.SquareImport -- customers --reset --i-understand-this-will-destroy-data
 
 # transactions (multiple files) + unmatched report
 dotnet run --project src/MGF.Tools.SquareImport -- transactions --files `

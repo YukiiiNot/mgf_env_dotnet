@@ -258,6 +258,15 @@ internal sealed partial class CustomersImporter
             return new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1);
         }
 
+        var connectionString = db.Database.GetDbConnection().ConnectionString;
+        if (LooksLikeNonDevConnectionString(connectionString))
+        {
+            Console.Error.WriteLine(
+                "square-import customers: --reset blocked (connection string looks non-dev; refusing destructive reset)."
+            );
+            return new ImportSummary(Inserted: 0, Updated: 0, Skipped: 0, Errors: 1);
+        }
+
         Console.WriteLine($"square-import customers: reset starting (dry-run={dryRun})");
 
         var clientIntegrationsSquare = db.Set<Dictionary<string, object>>("client_integrations_square");
@@ -1175,6 +1184,23 @@ internal sealed partial class CustomersImporter
                 _ => null,
             },
         };
+    }
+
+    private static bool LooksLikeNonDevConnectionString(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return false;
+        }
+
+        var value = connectionString.ToLowerInvariant();
+        return value.Contains("prod", StringComparison.Ordinal)
+            || value.Contains("production", StringComparison.Ordinal)
+            || value.Contains("staging", StringComparison.Ordinal)
+            || value.Contains("stage", StringComparison.Ordinal)
+            || value.Contains("uat", StringComparison.Ordinal)
+            || value.Contains("preprod", StringComparison.Ordinal)
+            || value.Contains("live", StringComparison.Ordinal);
     }
 
     private static int? ToDbIntCents(long? cents, CustomersImportStats stats)

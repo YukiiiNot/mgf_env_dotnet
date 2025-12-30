@@ -107,13 +107,13 @@ public static class DatabaseConnection
         return connectionString;
     }
 
-    public static void EnsureDestructiveAllowedOrThrow(string operation)
+    public static void EnsureDestructiveAllowedOrThrow(string operation, string? connectionString = null)
     {
         var env = GetEnvironment();
-        if (env == MgfEnvironment.Prod)
+        if (env != MgfEnvironment.Dev)
         {
             throw new InvalidOperationException(
-                $"Destructive operation blocked in Prod (MGF_ENV=Prod): {operation}. Use a non-Prod database."
+                $"Destructive operation blocked unless MGF_ENV=Dev (MGF_ENV={env}): {operation}."
             );
         }
 
@@ -129,6 +129,25 @@ public static class DatabaseConnection
                 $"Destructive operation requires MGF_ALLOW_DESTRUCTIVE=true and MGF_DESTRUCTIVE_ACK=I_UNDERSTAND (MGF_ENV={env}): {operation}."
             );
         }
+
+        if (!string.IsNullOrWhiteSpace(connectionString) && LooksLikeNonDevConnectionString(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"Destructive operation blocked (connection string looks non-dev): {operation}."
+            );
+        }
+    }
+
+    private static bool LooksLikeNonDevConnectionString(string connectionString)
+    {
+        var value = connectionString.ToLowerInvariant();
+        return value.Contains("prod", StringComparison.Ordinal)
+            || value.Contains("production", StringComparison.Ordinal)
+            || value.Contains("staging", StringComparison.Ordinal)
+            || value.Contains("stage", StringComparison.Ordinal)
+            || value.Contains("uat", StringComparison.Ordinal)
+            || value.Contains("preprod", StringComparison.Ordinal)
+            || value.Contains("live", StringComparison.Ordinal);
     }
 
     private static string GetMissingConnectionStringMessage(string envName)
