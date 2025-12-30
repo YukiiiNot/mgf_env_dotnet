@@ -20,7 +20,7 @@ internal sealed class EmailTemplateRenderer
     public static EmailTemplateRenderer CreateDefault()
     {
         var templatesRoot = EmailTemplatePaths.ResolveTemplatesRoot();
-        var theme = EmailTemplatePaths.TryLoadTheme(templatesRoot) ?? EmailTheme.Default;
+        var theme = EmailTheme.ApplyDefaults(EmailTemplatePaths.TryLoadTheme(templatesRoot));
         var templates = EmailTemplatePaths.LoadTemplates(templatesRoot);
         return new EmailTemplateRenderer(theme, templates);
     }
@@ -66,6 +66,11 @@ internal sealed class EmailTemplateRenderer
         var projectName = context.Tokens.ProjectName ?? "Delivery";
         var projectLine = $"{projectCode} - {projectName}";
         var retention = context.RetentionUntilUtc.ToString("yyyy-MM-dd");
+        var preheaderText = "Your deliverables are ready.";
+        var headlineLine1 = "Deliverables";
+        var headlineLine2 = "Ready";
+        var ctaLabel = "Download deliverables";
+        var supportEmail = "info@mgfilms.pro";
         var showCountNote = context.Files.Count > 50
             ? $"Showing 50 of {context.Files.Count} files."
             : string.Empty;
@@ -83,6 +88,11 @@ internal sealed class EmailTemplateRenderer
             projectName = WebUtility.HtmlEncode(projectName);
             projectLine = WebUtility.HtmlEncode(projectLine);
             retention = WebUtility.HtmlEncode(retention);
+            preheaderText = WebUtility.HtmlEncode(preheaderText);
+            headlineLine1 = WebUtility.HtmlEncode(headlineLine1);
+            headlineLine2 = WebUtility.HtmlEncode(headlineLine2);
+            ctaLabel = WebUtility.HtmlEncode(ctaLabel);
+            supportEmail = WebUtility.HtmlEncode(supportEmail);
             showCountNote = WebUtility.HtmlEncode(showCountNote);
 
             foreach (var file in files)
@@ -120,7 +130,37 @@ internal sealed class EmailTemplateRenderer
             ["muted_text_color"] = theme.MutedTextColor,
             ["link_color"] = theme.LinkColor,
             ["button_background"] = theme.ButtonBackground,
-            ["button_text_color"] = theme.ButtonTextColor
+            ["button_text_color"] = theme.ButtonTextColor,
+            ["headline_size"] = theme.HeadlineSize,
+            ["headline_line_height"] = theme.HeadlineLineHeight,
+            ["headline_tracking"] = theme.HeadlineTracking,
+            ["section_label_size"] = theme.SectionLabelSize,
+            ["section_label_tracking"] = theme.SectionLabelTracking,
+            ["body_size"] = theme.BodySize,
+            ["body_line_height"] = theme.BodyLineHeight,
+            ["strong_weight"] = theme.StrongWeight,
+            ["normal_weight"] = theme.NormalWeight,
+            ["outer_padding_y"] = theme.OuterPaddingY,
+            ["outer_padding_x"] = theme.OuterPaddingX,
+            ["content_padding_y"] = theme.ContentPaddingY,
+            ["content_padding_x"] = theme.ContentPaddingX,
+            ["section_gap_sm"] = theme.SectionGapSm,
+            ["section_gap_md"] = theme.SectionGapMd,
+            ["section_gap_lg"] = theme.SectionGapLg,
+            ["rule_color"] = theme.RuleColor,
+            ["rule_thickness"] = theme.RuleThickness,
+            ["button_padding_y"] = theme.ButtonPaddingY,
+            ["button_padding_x"] = theme.ButtonPaddingX,
+            ["button_font_size"] = theme.ButtonFontSize,
+            ["button_weight"] = theme.ButtonWeight,
+            ["button_border_radius"] = theme.ButtonBorderRadius,
+            ["max_width"] = theme.MaxWidth,
+            ["logo_width"] = theme.LogoWidth,
+            ["preheader_text"] = preheaderText,
+            ["headline_line1"] = headlineLine1,
+            ["headline_line2"] = headlineLine2,
+            ["cta_label"] = ctaLabel,
+            ["support_email"] = supportEmail
         };
     }
 

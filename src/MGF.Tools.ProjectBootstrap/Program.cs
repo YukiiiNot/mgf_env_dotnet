@@ -457,13 +457,25 @@ static Command CreateEmailPreviewCommand()
     var projectIdOption = new Option<string>("--projectId")
     {
         Description = "Project ID to preview (e.g., prj_...).",
-        IsRequired = true
+        IsRequired = false
+    };
+
+    var fixtureOption = new Option<string>("--fixture")
+    {
+        Description = "Fixture name or path (basic, large_files, no_logo) for preview without a project.",
+        IsRequired = false
     };
 
     var outOption = new Option<string>("--out")
     {
         Description = "Output directory for preview.html/preview.txt/preview.json.",
         IsRequired = true
+    };
+
+    var writeSnapshotsOption = new Option<bool?>("--writeSnapshots")
+    {
+        Description = "Write golden HTML snapshot for the fixture (requires --fixture).",
+        Arity = ArgumentArity.ZeroOrOne
     };
 
     var toOption = new Option<string[]>("--to")
@@ -475,7 +487,9 @@ static Command CreateEmailPreviewCommand()
 
     command.AddOption(kindOption);
     command.AddOption(projectIdOption);
+    command.AddOption(fixtureOption);
     command.AddOption(outOption);
+    command.AddOption(writeSnapshotsOption);
     command.AddOption(toOption);
 
     command.SetHandler(async context =>
@@ -488,15 +502,39 @@ static Command CreateEmailPreviewCommand()
             return;
         }
 
-        var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
         var outDir = context.ParseResult.GetValueForOption(outOption) ?? string.Empty;
+        var fixture = context.ParseResult.GetValueForOption(fixtureOption);
+        var writeSnapshots = context.ParseResult.GetValueForOption(writeSnapshotsOption) ?? false;
         var toEmails = ParseEmails(context.ParseResult.GetValueForOption(toOption) ?? Array.Empty<string>());
         if (toEmails.Count == 0)
         {
             toEmails = new[] { "info@mgfilms.pro" };
         }
 
-        var exitCode = await RenderDeliveryPreviewAsync(projectId, outDir, toEmails);
+        int exitCode;
+        if (!string.IsNullOrWhiteSpace(fixture))
+        {
+            exitCode = await RenderDeliveryPreviewFromFixtureAsync(fixture, outDir, toEmails, writeSnapshots);
+        }
+        else
+        {
+            if (writeSnapshots)
+            {
+                Console.Error.WriteLine("bootstrap: email-preview --writeSnapshots requires --fixture.");
+                context.ExitCode = 1;
+                return;
+            }
+
+            var projectId = context.ParseResult.GetValueForOption(projectIdOption) ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(projectId))
+            {
+                Console.Error.WriteLine("bootstrap: email-preview requires either --projectId or --fixture.");
+                context.ExitCode = 1;
+                return;
+            }
+
+            exitCode = await RenderDeliveryPreviewAsync(projectId, outDir, toEmails);
+        }
         context.ExitCode = exitCode;
     });
 
@@ -2668,6 +2706,199 @@ static async Task<int> RenderDeliveryPreviewAsync(
     }
 }
 
+static async Task<int> RenderDeliveryPreviewFromFixtureAsync(
+    string fixture,
+    string outDir,
+    IReadOnlyList<string> toEmails,
+    bool writeSnapshots)
+{
+    try
+    {
+        var templatesRoot = ResolveEmailTemplatesRoot();
+        var fixturePath = ResolveFixturePath(templatesRoot, fixture);
+        if (!File.Exists(fixturePath))
+        {
+            Console.Error.WriteLine($"bootstrap: email-preview fixture not found: {fixturePath}");
+            return 1;
+        }
+
+        var json = await File.ReadAllTextAsync(fixturePath);
+        var fixtureModel = JsonSerializer.Deserialize<DeliveryPreviewFixture>(json, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        if (fixtureModel is null)
+        {
+            Console.Error.WriteLine($"bootstrap: email-preview invalid fixture: {fixturePath}");
+            return 1;
+        }
+
+        var tokens = ProvisioningTokens.Create(
+            fixtureModel.ProjectCode ?? "MGF25-TEST",
+            fixtureModel.ProjectName ?? "Delivery Preview",
+            fixtureModel.ClientName ?? "Client",
+            Array.Empty<string>());
+
+        var files = fixtureModel.Files?.Select(file =>
+            new DeliveryFileSummary(
+                file.RelativePath ?? "deliverable.mp4",
+                file.SizeBytes ?? 0,
+                file.LastWriteTimeUtc ?? DateTimeOffset.UtcNow))
+            .ToArray() ?? Array.Empty<DeliveryFileSummary>();
+
+        var config = BuildConfiguration();
+        var profile = EmailProfileResolver.Resolve(config, EmailProfiles.Deliveries);
+        var replyTo = profile.DefaultReplyTo ?? "info@mgfilms.pro";
+        var fromName = profile.DefaultFromName ?? "MG Films";
+
+        var recipients = toEmails.Count > 0
+            ? toEmails
+            : (fixtureModel.Recipients?.Where(email => !string.IsNullOrWhiteSpace(email)).ToArray() ?? Array.Empty<string>());
+        if (recipients.Count == 0)
+        {
+            recipients = new[] { "info@mgfilms.pro" };
+        }
+
+        var logoUrl = string.IsNullOrWhiteSpace(fixtureModel.LogoUrl) ? null : fixtureModel.LogoUrl;
+
+        var emailContext = new DeliveryReadyEmailContext(
+            tokens,
+            fixtureModel.ShareUrl ?? "https://dropbox.test/final",
+            fixtureModel.VersionLabel ?? "v1",
+            fixtureModel.RetentionUntilUtc ?? DateTimeOffset.UtcNow.AddMonths(3),
+            files,
+            recipients,
+            replyTo,
+            logoUrl,
+            fromName);
+
+        var composer = EmailComposerRegistry.CreateDefault().Get(EmailKind.DeliveryReady);
+        var message = composer.Build(emailContext);
+
+        Directory.CreateDirectory(outDir);
+        var previewTextPath = Path.Combine(outDir, "preview.txt");
+        var previewHtmlPath = Path.Combine(outDir, "preview.html");
+        var previewJsonPath = Path.Combine(outDir, "preview.json");
+
+        await File.WriteAllTextAsync(previewTextPath, message.BodyText);
+        await File.WriteAllTextAsync(previewHtmlPath, message.HtmlBody ?? message.BodyText);
+
+        var preview = new
+        {
+            kind = "delivery_ready",
+            fixture = fixture,
+            projectCode = fixtureModel.ProjectCode,
+            projectName = fixtureModel.ProjectName,
+            clientName = fixtureModel.ClientName,
+            subject = message.Subject,
+            stableShareUrl = fixtureModel.ShareUrl,
+            currentVersion = fixtureModel.VersionLabel,
+            retentionUntilUtc = fixtureModel.RetentionUntilUtc,
+            recipients,
+            replyTo,
+            fromName,
+            logoUrl,
+            files = files.Select(file => new
+            {
+                relativePath = file.RelativePath,
+                sizeBytes = file.SizeBytes,
+                lastWriteTimeUtc = file.LastWriteTimeUtc
+            })
+        };
+
+        var previewJson = JsonSerializer.Serialize(preview, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(previewJsonPath, previewJson);
+
+        Console.WriteLine($"bootstrap: email-preview wrote {previewTextPath}");
+        Console.WriteLine($"bootstrap: email-preview wrote {previewHtmlPath}");
+        Console.WriteLine($"bootstrap: email-preview wrote {previewJsonPath}");
+
+        if (writeSnapshots)
+        {
+            await WriteSnapshotAsync(fixture, message.HtmlBody ?? message.BodyText);
+        }
+
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: email-preview failed: {ex.Message}");
+        return 1;
+    }
+}
+
+static string ResolveEmailTemplatesRoot()
+{
+    var baseDir = AppContext.BaseDirectory;
+    var runtimePath = Path.Combine(baseDir, "Email", "Templates");
+    if (Directory.Exists(runtimePath) && HasEmailTemplates(runtimePath))
+    {
+        return runtimePath;
+    }
+
+    var repoRoot = FindRepoRoot(baseDir);
+    if (!string.IsNullOrWhiteSpace(repoRoot))
+    {
+        var repoPath = Path.Combine(repoRoot, "src", "MGF.Worker", "Email", "Templates");
+        if (Directory.Exists(repoPath) && HasEmailTemplates(repoPath))
+        {
+            return repoPath;
+        }
+    }
+
+    throw new DirectoryNotFoundException("Email templates folder not found.");
+}
+
+static bool HasEmailTemplates(string templatesRoot)
+{
+    return Directory.EnumerateFiles(templatesRoot, "*.html", SearchOption.AllDirectories).Any()
+        || Directory.EnumerateFiles(templatesRoot, "*.txt", SearchOption.AllDirectories).Any();
+}
+
+static string ResolveFixturePath(string templatesRoot, string fixture)
+{
+    var normalized = fixture.Trim();
+    if (normalized.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || normalized.Contains(Path.DirectorySeparatorChar))
+    {
+        return Path.GetFullPath(normalized);
+    }
+
+    return Path.Combine(templatesRoot, "fixtures", $"{normalized}.json");
+}
+
+static async Task WriteSnapshotAsync(string fixture, string htmlBody)
+{
+    var repoRoot = FindRepoRoot(AppContext.BaseDirectory);
+    if (string.IsNullOrWhiteSpace(repoRoot))
+    {
+        Console.Error.WriteLine("bootstrap: email-preview unable to locate repo root for snapshots.");
+        return;
+    }
+
+    var snapshotsDir = Path.Combine(repoRoot, "tests", "MGF.Worker.Tests", "EmailSnapshots");
+    Directory.CreateDirectory(snapshotsDir);
+    var snapshotPath = Path.Combine(snapshotsDir, $"delivery_ready_{fixture}.html");
+    await File.WriteAllTextAsync(snapshotPath, htmlBody);
+    Console.WriteLine($"bootstrap: email-preview wrote snapshot {snapshotPath}");
+}
+
+static string? FindRepoRoot(string start)
+{
+    var dir = new DirectoryInfo(start);
+    while (dir is not null)
+    {
+        if (dir.EnumerateFiles("MGF.sln").Any())
+        {
+            return dir.FullName;
+        }
+
+        dir = dir.Parent;
+    }
+
+    return null;
+}
+
 static async Task<DeliveryPreviewProject?> LoadProjectPreviewAsync(NpgsqlConnection conn, string projectId)
 {
     await using var cmd = new NpgsqlCommand(
@@ -3083,3 +3314,19 @@ sealed record DeliveryPreviewCurrent(
     string? ShareUrl,
     string? CurrentVersion,
     DateTimeOffset? RetentionUntilUtc);
+
+sealed record DeliveryPreviewFixture(
+    string? ProjectCode,
+    string? ProjectName,
+    string? ClientName,
+    string? ShareUrl,
+    string? VersionLabel,
+    DateTimeOffset? RetentionUntilUtc,
+    DeliveryPreviewFixtureFile[]? Files,
+    string[]? Recipients,
+    string? LogoUrl);
+
+sealed record DeliveryPreviewFixtureFile(
+    string? RelativePath,
+    long? SizeBytes,
+    DateTimeOffset? LastWriteTimeUtc);

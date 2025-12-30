@@ -45,11 +45,13 @@ public sealed class ProjectDeliveryEmailTests
             tokens,
             logoUrl: null);
 
-        Assert.Contains("Your deliverables are ready", html, StringComparison.Ordinal);
+        Assert.Contains("Deliverables", html, StringComparison.Ordinal);
+        Assert.Contains("Ready", html, StringComparison.Ordinal);
         Assert.Contains("MGF25-TEST", html, StringComparison.Ordinal);
         Assert.Contains("Sample Project", html, StringComparison.Ordinal);
         Assert.Contains("https://dropbox.test/final", html, StringComparison.Ordinal);
-        Assert.Contains("Current delivery version: v1", html, StringComparison.Ordinal);
+        Assert.Contains("Version:", html, StringComparison.Ordinal);
+        Assert.Contains("Access until:", html, StringComparison.Ordinal);
         Assert.Contains("Showing 50 of 55 files", html, StringComparison.Ordinal);
     }
 
@@ -80,7 +82,7 @@ public sealed class ProjectDeliveryEmailTests
         Assert.Contains("v2", composed.BodyText, StringComparison.Ordinal);
         Assert.Contains("final.mp4", composed.BodyText, StringComparison.Ordinal);
         Assert.Contains("https://dropbox.test/final", composed.HtmlBody ?? string.Empty, StringComparison.Ordinal);
-        Assert.Contains("Current delivery version: v2", composed.HtmlBody ?? string.Empty, StringComparison.Ordinal);
+        Assert.Contains("Version:", composed.HtmlBody ?? string.Empty, StringComparison.Ordinal);
     }
 
     [Fact]

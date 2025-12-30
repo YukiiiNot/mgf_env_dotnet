@@ -423,97 +423,19 @@ public sealed class ProjectDeliverer
         ProvisioningTokens tokens,
         string? logoUrl)
     {
-        const int maxFiles = 50;
-        var totalFiles = files.Count;
-        var visibleFiles = files.Take(maxFiles).ToArray();
-        var showCountNote = totalFiles > maxFiles
-            ? $"Showing {maxFiles} of {totalFiles} files."
-            : string.Empty;
+        var context = new DeliveryReadyEmailContext(
+            tokens,
+            shareUrl,
+            versionLabel,
+            retentionUntilUtc,
+            files,
+            Array.Empty<string>(),
+            null,
+            logoUrl,
+            "MG Films");
 
-        var safeShare = WebUtility.HtmlEncode(shareUrl);
-        var safeVersion = WebUtility.HtmlEncode(versionLabel);
-        var safeRetention = WebUtility.HtmlEncode(retentionUntilUtc.ToString("yyyy-MM-dd"));
-        var safeCode = WebUtility.HtmlEncode(tokens.ProjectCode ?? "MGF");
-        var safeName = WebUtility.HtmlEncode(tokens.ProjectName ?? "Delivery");
-        var safeProjectLine = $"{safeCode} \u2022 {safeName}";
-        var safeLogo = string.IsNullOrWhiteSpace(logoUrl) ? null : WebUtility.HtmlEncode(logoUrl);
-
-        var fileItems = new StringBuilder();
-        foreach (var file in visibleFiles)
-        {
-            fileItems.Append("<li style=\"margin:0 0 6px 0;\">");
-            fileItems.Append(WebUtility.HtmlEncode(file.RelativePath));
-            fileItems.Append("</li>");
-        }
-
-        var logoHtml = safeLogo is null
-            ? string.Empty
-            : $"<tr><td style=\"padding:0 0 24px 0;\"><img src=\"{safeLogo}\" alt=\"MGF\" width=\"180\" style=\"display:block;border:0;outline:none;text-decoration:none;\" /></td></tr>";
-
-        return $"""
-<!DOCTYPE html>
-<html>
-  <body style="margin:0;padding:0;background-color:#2b2b2b;">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#2b2b2b;">
-      <tr>
-        <td align="center" style="padding:32px 16px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="background-color:#111111;border-radius:8px;">
-            <tr>
-              <td style="padding:36px 40px;font-family:'Glacial Indifference','Garet','Segoe UI',Arial,sans-serif;color:#f5f5f5;">
-                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-                  {logoHtml}
-                  <tr>
-                    <td style="font-size:26px;font-weight:700;padding:0 0 8px 0;color:#ffffff;">Your deliverables are ready</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:#b3b3b3;padding:0 0 24px 0;">{safeProjectLine}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:0 0 24px 0;">
-                      <a href="{safeShare}" style="background-color:#3d7bff;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:4px;display:inline-block;font-size:14px;font-weight:600;">Download deliverables</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:13px;color:#b3b3b3;padding:0 0 6px 0;">Copy/paste link:</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:13px;word-break:break-word;padding:0 0 20px 0;"><a href="{safeShare}" style="color:#3d7bff;text-decoration:none;">{safeShare}</a></td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:14px;color:#f5f5f5;padding:0 0 6px 0;">Current delivery version: {safeVersion}</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:13px;color:#b3b3b3;padding:0 0 24px 0;">Link remains active for 3 months (until {safeRetention}).</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:14px;font-weight:600;padding:0 0 8px 0;color:#ffffff;">Files</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:13px;color:#b3b3b3;padding:0 0 12px 0;">{WebUtility.HtmlEncode(showCountNote)}</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <ul style="margin:0;padding:0 0 0 18px;font-size:13px;color:#f5f5f5;line-height:1.4;">
-                        {fileItems}
-                      </ul>
-                    </td>
-                  </tr>
-                  <tr> 
-                    <td style="font-size:13px;color:#b3b3b3;padding:24px 0 0 0;">If you have any questions, contact <a href="mailto:info@mgfilms.pro" style="color:#3d7bff;text-decoration:none;">info@mgfilms.pro</a>.</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:12px;color:#7a7a7a;padding:16px 0 0 0;">Automated message from MG Films Deliveries.</td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
-""";
+        var renderer = EmailTemplateRenderer.CreateDefault();
+        return renderer.RenderHtml("delivery_ready.html", context);
     }
 
     private async Task<DeliverySourceInfo> ResolveLucidlinkSourceAsync(

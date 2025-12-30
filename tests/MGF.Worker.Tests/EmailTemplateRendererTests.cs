@@ -54,7 +54,8 @@ public sealed class EmailTemplateRendererTests
         var html = renderer.RenderHtml("delivery_ready.html", context);
 
         Assert.DoesNotContain("<img", html, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Your deliverables are ready", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Deliverables", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Ready", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
