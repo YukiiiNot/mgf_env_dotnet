@@ -44,3 +44,6 @@ Thumbs.db
 ## Local Dropbox debug payloads
 dbx_body.json
 dbx_share.json
+
+## Local dev config (machine-specific)
+config/appsettings.Development.json
