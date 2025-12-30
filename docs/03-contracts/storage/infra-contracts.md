@@ -31,7 +31,7 @@ The Provisioner:
 
 Project Bootstrap:
 
-- defaults to nonâ€‘destructive behavior
+- defaults to non-destructive behavior
 - tolerates missing roots (skips unless explicitly allowed to create)
 - validates templates before any plan/apply/verify
 - records results into project metadata for auditing

@@ -1,8 +1,8 @@
-﻿# Phase 1 Core â€” Status
+﻿# Phase 1 Core Status
 
 Phase 1 Core is now implemented as **EF Core migrations** in `src/MGF.Infrastructure/Migrations/`, derived from the schema-doc CSVs in `docs/db_design/schema_csv/_core/` (including `_lookup` and `_join`).
 
-## Whatâ€™s implemented
+## What's implemented
 
 ### Migrations
 
@@ -24,7 +24,7 @@ Phase 1 Core is now implemented as **EF Core migrations** in `src/MGF.Infrastruc
 
 ## Notes / intentional deferrals
 
-- **Role scope enforcement**: `project_members.role_key` correctly references global `roles.role_key`, and scopes are modeled via `role_scopes` + `role_scope_roles`, but â€œonly project-scoped roles allowed in project_membersâ€ is not enforced at the DB level yet (would require either a redundant `scope_key` column on the join table, or a trigger). Validate in application logic for now.
+- **Role scope enforcement**: `project_members.role_key` correctly references global `roles.role_key`, and scopes are modeled via `role_scopes` + `role_scope_roles`, but only project-scoped roles allowed in project_members is not enforced at the DB level yet (would require either a redundant `scope_key` column on the join table, or a trigger). Validate in application logic for now.
 - **client_contacts primary key**: the CSV does not mark `Primary=true`; Phase 1 assumes a composite PK of `(client_id, person_id)` per intended join semantics.
 - **Recommended partial uniques**: some CSV notes recommend partial unique indexes (e.g., â€œone primary per â€¦â€). Phase 1 only implements uniqueness when it is explicitly documented in the `Constraints` field.
 
