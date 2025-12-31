@@ -4,16 +4,23 @@ using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using MGF.Provisioning;
 
-var root = new RootCommand("MGF Folder Template Provisioner");
+namespace MGF.ProvisionerCli;
 
-root.AddCommand(CreateProvisionCommand("plan", ProvisioningMode.Plan, includeForce: false));
-root.AddCommand(CreateProvisionCommand("apply", ProvisioningMode.Apply, includeForce: false));
-root.AddCommand(CreateProvisionCommand("verify", ProvisioningMode.Verify, includeForce: false));
-root.AddCommand(CreateProvisionCommand("repair", ProvisioningMode.Repair, includeForce: true));
-root.AddCommand(CreateValidateCommand());
+internal static class Program
+{
+    public static async Task<int> Main(string[] args)
+    {
+        var root = new RootCommand("MGF Folder Template Provisioner");
 
-var parser = new CommandLineBuilder(root).UseDefaults().Build();
-return await parser.InvokeAsync(args);
+        root.AddCommand(CreateProvisionCommand("plan", ProvisioningMode.Plan, includeForce: false));
+        root.AddCommand(CreateProvisionCommand("apply", ProvisioningMode.Apply, includeForce: false));
+        root.AddCommand(CreateProvisionCommand("verify", ProvisioningMode.Verify, includeForce: false));
+        root.AddCommand(CreateProvisionCommand("repair", ProvisioningMode.Repair, includeForce: true));
+        root.AddCommand(CreateValidateCommand());
+
+        var parser = new CommandLineBuilder(root).UseDefaults().Build();
+        return await parser.InvokeAsync(args);
+    }
 
 static Command CreateProvisionCommand(string name, ProvisioningMode mode, bool includeForce)
 {
@@ -261,5 +268,6 @@ static string FindRepoRoot()
     }
 
     throw new InvalidOperationException($"Could not locate repo root (MGF.sln) from {Directory.GetCurrentDirectory()}.");
+}
 }
 
