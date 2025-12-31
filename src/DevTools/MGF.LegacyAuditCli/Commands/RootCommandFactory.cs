@@ -1,4 +1,4 @@
-namespace MGF.Tools.LegacyAudit.Commands;
+namespace MGF.LegacyAuditCli.Commands;
 
 using System.CommandLine;
 
@@ -15,3 +15,4 @@ internal static class RootCommandFactory
         return root;
     }
 }
+

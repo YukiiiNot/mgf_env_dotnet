@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace MGF.Tools.LegacyAudit.Reporting;
+namespace MGF.LegacyAuditCli.Reporting;
 
 internal static class CsvWriter
 {
@@ -43,3 +43,4 @@ internal static class CsvWriter
         return $"\"{escaped}\"";
     }
 }
+

@@ -1,6 +1,6 @@
-using MGF.Tools.LegacyAudit.Scanning;
+using MGF.LegacyAuditCli.Scanning;
 
-namespace MGF.Tools.LegacyAudit.Tests;
+namespace MGF.LegacyAuditCli.Tests;
 
 public sealed class LegacyScannerTests
 {
@@ -139,3 +139,4 @@ public sealed class LegacyScannerTests
         return scanner.Scan(options, CancellationToken.None);
     }
 }
+

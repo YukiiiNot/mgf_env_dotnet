@@ -1,10 +1,10 @@
 
 using System.Text;
 using System.Text.Json;
-using MGF.Tools.LegacyAudit.Models;
-using MGF.Tools.LegacyAudit.Scanning;
+using MGF.LegacyAuditCli.Models;
+using MGF.LegacyAuditCli.Scanning;
 
-namespace MGF.Tools.LegacyAudit.Reporting;
+namespace MGF.LegacyAuditCli.Reporting;
 
 internal static class ReportWriter
 {
@@ -497,3 +497,4 @@ internal static class ReportWriter
         File.WriteAllLines(path, lines, new UTF8Encoding(false));
     }
 }
+

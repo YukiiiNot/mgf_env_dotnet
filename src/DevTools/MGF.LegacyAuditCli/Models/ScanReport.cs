@@ -1,4 +1,4 @@
-namespace MGF.Tools.LegacyAudit.Models;
+namespace MGF.LegacyAuditCli.Models;
 
 public sealed class ScanReport
 {
@@ -159,3 +159,4 @@ public sealed class ScanError
     public int ErrorCode { get; set; }
     public string Message { get; set; } = string.Empty;
 }
+

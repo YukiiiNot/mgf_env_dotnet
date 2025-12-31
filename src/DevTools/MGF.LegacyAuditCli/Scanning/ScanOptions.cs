@@ -1,4 +1,4 @@
-namespace MGF.Tools.LegacyAudit.Scanning;
+namespace MGF.LegacyAuditCli.Scanning;
 
 internal sealed class ScanOptions
 {
@@ -7,3 +7,4 @@ internal sealed class ScanOptions
     public ScanProfile Profile { get; init; } = ScanProfile.Editorial;
     public int MaxDepth { get; init; } = -1;
 }
+

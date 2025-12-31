@@ -1,4 +1,4 @@
-namespace MGF.Tools.LegacyAudit.Scanning;
+namespace MGF.LegacyAuditCli.Scanning;
 
 internal sealed class HeuristicScores
 {
@@ -359,3 +359,4 @@ internal static class KeywordMatcher
         return matches;
     }
 }
+

@@ -1,10 +1,10 @@
-namespace MGF.Tools.LegacyAudit.Commands;
+namespace MGF.LegacyAuditCli.Commands;
 
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Text.Json;
-using MGF.Tools.LegacyAudit.Models;
-using MGF.Tools.LegacyAudit.Reporting;
+using MGF.LegacyAuditCli.Models;
+using MGF.LegacyAuditCli.Reporting;
 
 internal static class ExportCommand
 {
@@ -76,3 +76,4 @@ internal static class ExportCommand
         return command;
     }
 }
+

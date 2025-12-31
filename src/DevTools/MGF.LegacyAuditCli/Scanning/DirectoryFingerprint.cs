@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace MGF.Tools.LegacyAudit.Scanning;
+namespace MGF.LegacyAuditCli.Scanning;
 
 internal static class DirectoryFingerprint
 {
@@ -18,3 +18,4 @@ internal static class DirectoryFingerprint
         return Convert.ToHexString(hash);
     }
 }
+

@@ -1,9 +1,9 @@
-namespace MGF.Tools.LegacyAudit.Commands;
+namespace MGF.LegacyAuditCli.Commands;
 
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Text.Json;
-using MGF.Tools.LegacyAudit.Models;
+using MGF.LegacyAuditCli.Models;
 
 internal static class SummaryCommand
 {
@@ -64,3 +64,4 @@ internal static class SummaryCommand
         return command;
     }
 }
+

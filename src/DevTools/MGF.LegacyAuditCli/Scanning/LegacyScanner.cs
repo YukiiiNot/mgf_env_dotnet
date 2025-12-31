@@ -1,9 +1,9 @@
 
 using System.Diagnostics;
 using System.Text.Json;
-using MGF.Tools.LegacyAudit.Models;
+using MGF.LegacyAuditCli.Models;
 
-namespace MGF.Tools.LegacyAudit.Scanning;
+namespace MGF.LegacyAuditCli.Scanning;
 
 internal sealed class LegacyScanner
 {
@@ -964,3 +964,4 @@ internal static class PathHelpers
         return Path.GetPathRoot(rootPath) ?? rootPath;
     }
 }
+

@@ -1,6 +1,6 @@
-using MGF.Tools.LegacyAudit.Commands;
+using MGF.LegacyAuditCli.Commands;
 
-namespace MGF.Tools.LegacyAudit.Tests;
+namespace MGF.LegacyAuditCli.Tests;
 
 public sealed class GuardrailsTests
 {
@@ -56,3 +56,4 @@ public sealed class GuardrailsTests
         }
     }
 }
+

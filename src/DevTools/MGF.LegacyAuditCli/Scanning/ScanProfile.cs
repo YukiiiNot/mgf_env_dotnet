@@ -1,4 +1,4 @@
-namespace MGF.Tools.LegacyAudit.Scanning;
+namespace MGF.LegacyAuditCli.Scanning;
 
 internal enum ScanProfile
 {
@@ -36,3 +36,4 @@ internal static class ScanProfileRules
         };
     }
 }
+

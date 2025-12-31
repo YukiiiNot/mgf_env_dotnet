@@ -1,4 +1,4 @@
-namespace MGF.Tools.LegacyAudit.Commands;
+namespace MGF.LegacyAuditCli.Commands;
 
 internal static class Guardrails
 {
@@ -130,3 +130,4 @@ internal static class Guardrails
         return label.Replace(' ', '_');
     }
 }
+

@@ -1,9 +1,9 @@
-namespace MGF.Tools.LegacyAudit.Commands;
+namespace MGF.LegacyAuditCli.Commands;
 
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using MGF.Tools.LegacyAudit.Reporting;
-using MGF.Tools.LegacyAudit.Scanning;
+using MGF.LegacyAuditCli.Reporting;
+using MGF.LegacyAuditCli.Scanning;
 
 internal static class ScanCommand
 {
@@ -108,3 +108,4 @@ Examples:
         Console.WriteLine($"errors={report.Errors.Count}");
     }
 }
+

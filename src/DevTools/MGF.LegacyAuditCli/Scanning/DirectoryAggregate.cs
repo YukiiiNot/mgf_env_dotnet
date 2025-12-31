@@ -1,6 +1,6 @@
-using MGF.Tools.LegacyAudit.Models;
+using MGF.LegacyAuditCli.Models;
 
-namespace MGF.Tools.LegacyAudit.Scanning;
+namespace MGF.LegacyAuditCli.Scanning;
 
 internal sealed class DirectoryAggregate
 {
@@ -69,3 +69,4 @@ internal sealed class DirectoryAggregate
     public int VideoPreviewFolderCount { get; set; }
     public string? Fingerprint { get; set; }
 }
+
