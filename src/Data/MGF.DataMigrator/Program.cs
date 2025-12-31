@@ -11,7 +11,7 @@ using MGF.Data.Data;
 using MGF.Data.Data.Seeding;
 using Npgsql;
 
-namespace MGF.Tools.Migrator;
+namespace MGF.DataMigrator;
 
 public static class Program
 {
@@ -383,5 +383,6 @@ public static class Program
         }
     }
 }
+
 
 
