@@ -12,9 +12,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\MGF.Application\MGF.Application.csproj" />
-    <ProjectReference Include="..\..\MGF.Domain\MGF.Domain.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Domain\MGF.Domain.csproj" />
     <ProjectReference Include="..\..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
+
 

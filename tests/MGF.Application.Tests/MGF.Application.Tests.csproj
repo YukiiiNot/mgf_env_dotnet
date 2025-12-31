@@ -20,7 +20,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\MGF.Application\MGF.Application.csproj" />
-    <ProjectReference Include="..\..\src\MGF.Domain\MGF.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\MGF.Domain\MGF.Domain.csproj" />
   </ItemGroup>
 
 </Project>
+
