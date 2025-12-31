@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Application\MGF.Application.csproj" />
     <ProjectReference Include="..\MGF.Infrastructure\MGF.Infrastructure.csproj" />
   </ItemGroup>
 
@@ -25,3 +25,4 @@
   </PropertyGroup>
 
 </Project>
+

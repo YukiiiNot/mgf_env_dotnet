@@ -11,7 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Application\MGF.Application.csproj" />
   </ItemGroup>
 
 </Project>
+
