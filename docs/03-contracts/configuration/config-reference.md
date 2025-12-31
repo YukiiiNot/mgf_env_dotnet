@@ -1,6 +1,6 @@
 ﻿# Configuration Reference
 
-Source of truth: `config/appsettings*.json`, `src/MGF.Api/appsettings*.json`, `src/Services/MGF.Worker/appsettings*.json`, `src/Data/MGF.Infrastructure/Options/Options.cs`
+Source of truth: `config/appsettings*.json`, `src/Services/MGF.Api/appsettings*.json`, `src/Services/MGF.Worker/appsettings*.json`, `src/Data/MGF.Infrastructure/Options/Options.cs`
 Change control: Update when config keys, defaults, or options bindings change.
 Last verified: 2025-12-30
 

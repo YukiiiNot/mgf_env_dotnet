@@ -1,4 +1,4 @@
-﻿# Source of truth: src/MGF.Api/Controllers, src/MGF.Api/Program.cs
+﻿# Source of truth: src/Services/MGF.Api/Controllers, src/Services/MGF.Api/Program.cs
 # Change control: Update when API endpoints, auth headers, or examples change.
 # Last verified: 2025-12-30
 

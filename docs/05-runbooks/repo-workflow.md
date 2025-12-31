@@ -53,7 +53,7 @@ Staging/prod migrations are applied only via GitHub Actions using EF bundles.
 
 ```powershell
 # API (expects X-MGF-API-KEY header on /api/*)
-dotnet run --project src/MGF.Api
+dotnet run --project src/Services/MGF.Api
 
 # Worker (polls public.jobs)
 dotnet run --project src/Services/MGF.Worker

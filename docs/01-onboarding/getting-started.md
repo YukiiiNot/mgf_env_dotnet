@@ -4,7 +4,7 @@ This guide gets a second developer productive without touching production.
 
 ## Repo layout (high level)
 
-- `src/MGF.Api` — internal Web API (DB entrypoint for apps)
+- `src/Services/MGF.Api` — internal Web API (DB entrypoint for apps)
 - `src/Services/MGF.Worker` — background jobs runner
 - `src/MGF.Tools.ProjectBootstrap` — CLI for bootstrap/archive/delivery/email/preview
 - `src/Data/MGF.Tools.Migrator` — migrations + lookup seeding

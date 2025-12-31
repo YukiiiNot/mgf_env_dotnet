@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Application.Tests", "te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Infrastructure.IntegrationTests", "tests\MGF.Infrastructure.IntegrationTests\MGF.Infrastructure.IntegrationTests.csproj", "{E2C25545-8E02-4D9A-843C-DE540BC85F69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Api", "src\MGF.Api\MGF.Api.csproj", "{5A38DC86-EC6E-49D0-8087-BECBD07FAF4C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Api", "src\Services\MGF.Api\MGF.Api.csproj", "{5A38DC86-EC6E-49D0-8087-BECBD07FAF4C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Worker", "src\Services\MGF.Worker\MGF.Worker.csproj", "{2D5304AF-DACF-472D-BB5B-79418082F00F}"
 EndProject
@@ -395,3 +395,4 @@ Global
 		{2D76D08D-0874-4FF0-AC9A-FEED97870831} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
+

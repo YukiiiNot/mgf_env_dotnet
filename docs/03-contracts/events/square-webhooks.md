@@ -1,6 +1,6 @@
 ﻿# Square Webhooks
 
-Source of truth: `src/MGF.Api/Controllers/SquareWebhooksController.cs`, `src/Data/MGF.Infrastructure/Data/SquareWebhookEvent.cs`, `src/Data/MGF.Infrastructure/Migrations/20251216074837_Phase1_05_SquareWebhookEvents.cs`
+Source of truth: `src/Services/MGF.Api/Controllers/SquareWebhooksController.cs`, `src/Data/MGF.Infrastructure/Data/SquareWebhookEvent.cs`, `src/Data/MGF.Infrastructure/Migrations/20251216074837_Phase1_05_SquareWebhookEvents.cs`
 Change control: Update when signature verification, payload fields, or persistence behavior changes.
 Last verified: 2025-12-30
 

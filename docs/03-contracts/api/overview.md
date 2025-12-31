@@ -1,6 +1,6 @@
 ﻿# API Contract Overview
 
-Source of truth: `src/MGF.Api/Controllers`, `src/MGF.Api/Program.cs`
+Source of truth: `src/Services/MGF.Api/Controllers`, `src/Services/MGF.Api/Program.cs`
 Change control: Update when endpoints, auth headers, or request/response models change.
 Last verified: 2025-12-30
 

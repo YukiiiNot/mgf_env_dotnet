@@ -3,7 +3,7 @@
 This repo hosts MGF's internal API, worker, desktop app, and supporting tools for storage provisioning, migrations, and delivery workflows.
 
 ## Components
-- `src/MGF.Api` - internal API entrypoint for apps and integrations.
+- `src/Services/MGF.Api` - internal API entrypoint for apps and integrations.
 - `src/Services/MGF.Worker` - background job processor for provisioning, delivery, and integrations.
 - `src/MGF.Desktop.Wpf` - desktop ops console (early stage).
 - `src/MGF.Tools.*` - CLIs for migrations, provisioning, delivery, and audits.
