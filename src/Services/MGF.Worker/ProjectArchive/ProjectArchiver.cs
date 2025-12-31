@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 using MGF.Tools.Provisioner;
 using MGF.Worker.ProjectBootstrap;
 

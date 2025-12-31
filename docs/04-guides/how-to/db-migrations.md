@@ -1,4 +1,4 @@
-﻿# Database workflow (Supabase + EF Core)
+# Database workflow (Supabase + EF Core)
 
 This repo treats **EF Core migrations** as the executable source of truth for the Postgres schema.
 The `MGF.DataMigrator` project is the **only** migration runner; the WPF host does not apply migrations.
@@ -46,8 +46,8 @@ Legacy fallback (only used when the env-specific key is missing):
 1) Set a local connection string (Npgsql format):
 
 ```powershell
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
-dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
+dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
 ```
 
 Example formats (do not commit real secrets; see `config/appsettings.Development.sample.json`):
@@ -62,7 +62,7 @@ Note: for proper certificate validation use `Ssl Mode=VerifyFull` plus `Root Cer
 2) Create/run migrations:
 
 ```powershell
-dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef migrations add <Name> --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 $env:MGF_DB_MODE = "direct"
 dotnet run --project src/Data/MGF.DataMigrator
 ```
@@ -93,7 +93,7 @@ dotnet test .\MGF.sln
 
 ## Where migrations live
 
-- Folder: `src/Data/MGF.Infrastructure/Migrations/`
+- Folder: `src/Data/MGF.Data/Migrations/`
 - Files: `*_<Name>.cs`, `*_<Name>.Designer.cs`, and `AppDbContextModelSnapshot.cs`
 
 ## Preflight: project_storage_roots unique index
@@ -111,18 +111,18 @@ HAVING COUNT(*) > 1;
 
 ### List migrations
 
-Shows migrations known to EF in `MGF.Infrastructure`:
+Shows migrations known to EF in `MGF.Data`:
 
 ```powershell
-dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef migrations list --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
 
 ### Add a migration
 
-Creates new migration files under `src/Data/MGF.Infrastructure/Migrations/`:
+Creates new migration files under `src/Data/MGF.Data/Migrations/`:
 
 ```powershell
-dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef migrations add <Name> --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
 
 ### Apply migrations (update the database)
@@ -136,7 +136,7 @@ dotnet run --project src/Data/MGF.DataMigrator
 EF CLI alternative (updates DB only; does not run custom seeding):
 
 ```powershell
-dotnet ef database update --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef database update --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
 
 ### Remove the latest migration
@@ -144,16 +144,16 @@ dotnet ef database update --project src/Data/MGF.Infrastructure --startup-projec
 Removes the most recent migration files (use with care):
 
 ```powershell
-dotnet ef migrations remove --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef migrations remove --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
 
 Notes:
-- If the migration has already been applied to a database, roll back first (or create a new â€œrevertâ€ migration) to avoid drift.
+- If the migration has already been applied to a database, roll back first (or create a new “revert” migration) to avoid drift.
 
 ### Roll back to a previous migration
 
 ```powershell
-dotnet ef database update <PreviousMigrationName> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef database update <PreviousMigrationName> --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
 
 ## Alternative: session env var (ad-hoc)
@@ -183,5 +183,7 @@ These are read-only / local-safe:
 
 ```powershell
 dotnet build .\MGF.sln
-dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef migrations list --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
+
+

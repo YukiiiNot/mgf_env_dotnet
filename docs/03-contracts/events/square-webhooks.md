@@ -1,6 +1,6 @@
-﻿# Square Webhooks
+# Square Webhooks
 
-Source of truth: `src/Services/MGF.Api/Controllers/SquareWebhooksController.cs`, `src/Data/MGF.Infrastructure/Data/SquareWebhookEvent.cs`, `src/Data/MGF.Infrastructure/Migrations/20251216074837_Phase1_05_SquareWebhookEvents.cs`
+Source of truth: `src/Services/MGF.Api/Controllers/SquareWebhooksController.cs`, `src/Data/MGF.Data/Data/SquareWebhookEvent.cs`, `src/Data/MGF.Data/Migrations/20251216074837_Phase1_05_SquareWebhookEvents.cs`
 Change control: Update when signature verification, payload fields, or persistence behavior changes.
 Last verified: 2025-12-30
 
@@ -17,3 +17,5 @@ Last verified: 2025-12-30
 ## Persistence and jobs
 - Payload stored in `public.square_webhook_events`.
 - Job enqueued: `square.webhook_event.process`.
+
+

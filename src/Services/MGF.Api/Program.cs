@@ -1,9 +1,9 @@
 using MGF.Api.Middleware;
 using MGF.Api.Services;
 using MGF.Api.Square;
-using MGF.Infrastructure;
-using MGF.Infrastructure.Configuration;
-using MGF.Infrastructure.Data;
+using MGF.Data;
+using MGF.Data.Configuration;
+using MGF.Data.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,3 +32,4 @@ app.UseMiddleware<ApiKeyMiddleware>();
 app.MapControllers();
 
 app.Run();
+

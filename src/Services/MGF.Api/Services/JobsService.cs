@@ -2,7 +2,7 @@ namespace MGF.Api.Services;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 
 public sealed class JobsService
 {
@@ -42,4 +42,5 @@ public sealed class JobsService
             .SingleOrDefaultAsync(cancellationToken);
     }
 }
+
 

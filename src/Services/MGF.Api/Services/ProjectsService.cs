@@ -3,7 +3,7 @@ namespace MGF.Api.Services;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 
 public sealed class ProjectsService
 {
@@ -174,4 +174,5 @@ public sealed class ProjectsService
         );
     }
 }
+
 

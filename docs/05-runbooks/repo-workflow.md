@@ -1,6 +1,6 @@
 # Repo workflow runbook (MGF)
 
-Source of truth: `.github/workflows/ci.yml`, `.github/workflows/migrate-staging.yml`, `.github/workflows/migrate-prod.yml`, `src/Data/MGF.Infrastructure/Migrations`, `src/Data/MGF.DataMigrator`
+Source of truth: `.github/workflows/ci.yml`, `.github/workflows/migrate-staging.yml`, `.github/workflows/migrate-prod.yml`, `src/Data/MGF.Data/Migrations`, `src/Data/MGF.DataMigrator`
 Change control: Update when branch model, CI gates, or migration automation changes.
 Last verified: 2025-12-30
 
@@ -19,16 +19,16 @@ Migrations are created locally, reviewed in PRs, validated by CI, applied automa
 
 ### 1) Set Dev DB user-secrets (recommended)
 
-Secrets are stored under the `MGF.Infrastructure` project.
+Secrets are stored under the `MGF.Data` project.
 
 ```powershell
 cd C:\dev\mgf_env_dotnet
 
 # Dev DB (direct host recommended for migrations)
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
 
 # Optional: app/runtime API key (needed to call /api/* endpoints)
-dotnet user-secrets set "Security:ApiKey" "<long random string>" --project src/Data/MGF.Infrastructure
+dotnet user-secrets set "Security:ApiKey" "<long random string>" --project src/Data/MGF.Data
 
 ```
 
@@ -107,21 +107,21 @@ All templates include:
 ## Creating migrations (local)
 
 Use EF CLI with:
-- migrations project: `src/Data/MGF.Infrastructure`
+- migrations project: `src/Data/MGF.Data`
 - startup project: `src/Data/MGF.DataMigrator`
 
 ```powershell
 dotnet tool restore
-dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef migrations add <Name> --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
 
-Reminder: commit the generated migration files under `src/Data/MGF.Infrastructure/Migrations/`.
+Reminder: commit the generated migration files under `src/Data/MGF.Data/Migrations/`.
 
 ## Check EF model drift locally
 
 ```powershell
 dotnet tool restore
-dotnet ef migrations has-pending-model-changes --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator -c Release
+dotnet ef migrations has-pending-model-changes --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator -c Release
 ```
 
 ## CI rules
@@ -194,13 +194,13 @@ dotnet test .\tests\MGF.Contracts.Tests\MGF.Contracts.Tests.csproj -c Release
 
 # add migration
 dotnet tool restore
-dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
+dotnet ef migrations add <Name> --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 
 # drift check
-dotnet ef migrations has-pending-model-changes --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator -c Release
+dotnet ef migrations has-pending-model-changes --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator -c Release
 
 # generate migrations bundle locally (optional)
-dotnet ef migrations bundle --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator -c Release --output .\runtime\efbundle-local.exe
+dotnet ef migrations bundle --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator -c Release --output .\runtime\efbundle-local.exe
 
 # branch flow example
 git checkout -b feature/my-change
@@ -213,4 +213,6 @@ git push
 
 # deploy prod by PR merging staging -> main (then push/merge triggers migrate-prod.yml)
 ```
+
+
 

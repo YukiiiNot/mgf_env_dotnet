@@ -1,9 +1,9 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MGF.Infrastructure.Options;
+using MGF.Data.Options;
 
 namespace MGF.Desktop.Wpf;
 
@@ -48,3 +48,4 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
+

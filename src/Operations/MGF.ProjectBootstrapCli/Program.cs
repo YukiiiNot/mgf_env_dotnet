@@ -7,8 +7,8 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using MGF.Domain.Entities;
-using MGF.Infrastructure.Configuration;
-using MGF.Infrastructure.Data;
+using MGF.Data.Configuration;
+using MGF.Data.Data;
 using MGF.Tools.Provisioner;
 using MGF.Tools.ProjectBootstrap;
 using MGF.Worker.Email.Composition;
@@ -3319,3 +3319,4 @@ sealed record DeliveryPreviewFixtureFile(
     string? RelativePath,
     long? SizeBytes,
     DateTimeOffset? LastWriteTimeUtc);
+

@@ -1,4 +1,4 @@
-﻿# Dev Secrets Inventory
+# Dev Secrets Inventory
 
 Source of truth: `tools/dev-secrets/secrets.required.json`, `tools/dev-secrets/src/DevSecretsTool`
 Change control: Update when required/optional keys or secret policy changes.
@@ -11,7 +11,7 @@ This inventory lists the developer secrets that can be exported/imported for **l
 
 ## Projects with User Secrets
 
-### MGF.Infrastructure
+### MGF.Data
 - **UserSecretsId:** `8f8e4093-a213-4629-bbd1-2a67c4e9000e`
 - **Required keys**
   - `Database:Dev:DirectConnectionString`
@@ -30,7 +30,7 @@ This inventory lists the developer secrets that can be exported/imported for **l
   - `Integrations:Dropbox:*`
   - `Integrations:Email:*`
 
-> Note: The worker loads configuration via `MGF.Infrastructure`'s UserSecretsId by default, but we include the Worker ID so local tooling can remain consistent if secrets are stored there.
+> Note: The worker loads configuration via `MGF.Data`'s UserSecretsId by default, but we include the Worker ID so local tooling can remain consistent if secrets are stored there.
 
 ## Global Policy
 
@@ -53,3 +53,5 @@ Disallowed key patterns:
 - **Email:** keys are used by SMTP relay or Gmail API in the delivery email workflow.
 
 No production or staging secrets should appear in local developer exports.
+
+

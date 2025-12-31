@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 
 namespace MGF.Worker.RootIntegrity;
 
@@ -561,3 +561,4 @@ public sealed class RootIntegrityChecker
         }
     }
 }
+

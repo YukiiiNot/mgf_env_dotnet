@@ -1,4 +1,4 @@
-using MGF.Infrastructure.Configuration;
+using MGF.Data.Configuration;
 using MGF.Tools.SquareImport.Guards;
 using Xunit;
 
@@ -76,3 +76,4 @@ public sealed class CustomersResetGuardTests
         Assert.True(decision.RequiresConfirmation);
     }
 }
+

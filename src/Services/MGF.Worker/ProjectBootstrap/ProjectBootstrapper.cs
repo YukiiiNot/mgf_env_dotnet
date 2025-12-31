@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Domain.Entities;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 using MGF.Tools.Provisioner;
 using Npgsql;
 

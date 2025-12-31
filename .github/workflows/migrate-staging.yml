@@ -47,10 +47,10 @@ jobs:
         run: New-Item -ItemType Directory -Force -Path .\runtime | Out-Null
 
       - name: Migrations (before)
-        run: dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator --configuration Release --no-build
+        run: dotnet ef migrations list --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator --configuration Release --no-build
 
       - name: Build migrations bundle
-        run: dotnet ef migrations bundle --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator --configuration Release --output .\runtime\efbundle-staging.exe
+        run: dotnet ef migrations bundle --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator --configuration Release --output .\runtime\efbundle-staging.exe
 
       - name: Apply migrations (bundle)
         run: .\runtime\efbundle-staging.exe --connection "$env:Database__Staging__DirectConnectionString" --verbose
@@ -60,4 +60,4 @@ jobs:
         run: dotnet run --project src/DevTools/MGF.DbMigrationsInfoCli -c Release -- --connection $env:Database__Staging__DirectConnectionString
 
       - name: Migrations (after)
-        run: dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator --configuration Release --no-build
+        run: dotnet ef migrations list --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator --configuration Release --no-build

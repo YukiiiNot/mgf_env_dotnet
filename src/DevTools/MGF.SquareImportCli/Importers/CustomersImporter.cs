@@ -2,8 +2,8 @@ namespace MGF.Tools.SquareImport.Importers;
 
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
-using MGF.Infrastructure.Configuration;
-using MGF.Infrastructure.Data;
+using MGF.Data.Configuration;
+using MGF.Data.Data;
 using MGF.Tools.SquareImport.Normalization;
 using MGF.Tools.SquareImport.Parsing;
 using MGF.Tools.SquareImport.Reporting;
@@ -1415,3 +1415,4 @@ internal sealed partial class CustomersImporter
             + BillingProfilesSkipped;
     }
 }
+

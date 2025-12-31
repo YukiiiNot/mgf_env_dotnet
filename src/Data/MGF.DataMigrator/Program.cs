@@ -5,10 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MGF.Domain.Entities;
-using MGF.Infrastructure;
-using MGF.Infrastructure.Configuration;
-using MGF.Infrastructure.Data;
-using MGF.Infrastructure.Data.Seeding;
+using MGF.Data;
+using MGF.Data.Configuration;
+using MGF.Data.Data;
+using MGF.Data.Data.Seeding;
 using Npgsql;
 
 namespace MGF.Tools.Migrator;
@@ -383,4 +383,5 @@ public static class Program
         }
     }
 }
+
 

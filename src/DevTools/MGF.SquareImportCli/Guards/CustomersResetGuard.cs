@@ -1,6 +1,6 @@
 namespace MGF.Tools.SquareImport.Guards;
 
-using MGF.Infrastructure.Configuration;
+using MGF.Data.Configuration;
 
 internal readonly record struct ResetGuardDecision(bool Allowed, string? ErrorMessage, bool RequiresConfirmation);
 
@@ -48,3 +48,4 @@ internal static class CustomersResetGuard
         );
     }
 }
+

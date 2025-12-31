@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Data\MGF.Data\MGF.Data.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,3 +32,4 @@
   </ItemGroup>
 
 </Project>
+

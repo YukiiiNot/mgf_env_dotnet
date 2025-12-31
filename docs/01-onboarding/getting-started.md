@@ -14,7 +14,7 @@ This guide gets a second developer productive without touching production.
 
 ## Local config + precedence
 
-Configuration is built by `AddMgfConfiguration` (see `src/Data/MGF.Infrastructure/Configuration/MgfConfiguration.cs`):
+Configuration is built by `AddMgfConfiguration` (see `src/Data/MGF.Data/Configuration/MgfConfiguration.cs`):
 
 1. `MGF_CONFIG_DIR` (if set) -> `appsettings.json` and `appsettings.{ENV}.json`
 2. Local `appsettings.json` / `appsettings.{ENV}.json`
@@ -32,11 +32,11 @@ $env:MGF_CONFIG_DIR = 'C:\dev\mgf_env_dotnet\config'
 
 ## Required secrets (Dev)
 
-Store secrets in `MGF.Infrastructure` user-secrets (no secrets in git):
+Store secrets in `MGF.Data` user-secrets (no secrets in git):
 
 ```powershell
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
-dotnet user-secrets set "Security:ApiKey" "<api key>" --project src/Data/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
+dotnet user-secrets set "Security:ApiKey" "<api key>" --project src/Data/MGF.Data
 ```
 
 ## Core workflows (Dev)
@@ -92,4 +92,6 @@ dotnet test -c Release tests\MGF.ProjectBootstrapCli.Tests\MGF.ProjectBootstrapC
 - **EmailKind**: enum identifying an email type (delivery_ready, etc.).
 - **EmailProfile**: sender policy (allowed From addresses, defaults).
 - **Root contract**: required/optional top-level folders for Dropbox/LucidLink/NAS roots.
+
+
 

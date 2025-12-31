@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Domain", "src\Core\MGF.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Contracts", "src\Core\MGF.Contracts\MGF.Contracts.csproj", "{5297B927-98B8-4700-9E26-865943304B21}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Infrastructure", "src\Data\MGF.Infrastructure\MGF.Infrastructure.csproj", "{8BA684C5-3FEB-4222-B0CD-CDE6AD0D98CA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Data", "src\Data\MGF.Data\MGF.Data.csproj", "{8BA684C5-3FEB-4222-B0CD-CDE6AD0D98CA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Desktop.Wpf", "src\Ui\MGF.Desktop.Wpf\MGF.Desktop.Wpf.csproj", "{9605EFFB-D58D-4939-934A-C60B61580218}"
 EndProject

@@ -4,7 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 using MGF.Worker.Email;
 using MGF.Worker.Email.Composition;
 using MGF.Worker.Email.Models;
@@ -482,3 +482,4 @@ public sealed class ProjectDeliveryEmailer
         return list;
     }
 }
+

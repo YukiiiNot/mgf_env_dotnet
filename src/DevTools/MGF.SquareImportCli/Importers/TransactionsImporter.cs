@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 using MGF.Tools.SquareImport.Parsing;
 using MGF.Tools.SquareImport.Reporting;
 
@@ -1250,3 +1250,4 @@ internal sealed class TransactionsImporter
         return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 }
+

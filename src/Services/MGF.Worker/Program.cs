@@ -1,6 +1,6 @@
-using MGF.Infrastructure;
-using MGF.Infrastructure.Configuration;
-using MGF.Infrastructure.Data;
+using MGF.Data;
+using MGF.Data.Configuration;
+using MGF.Data.Data;
 using MGF.Worker;
 using MGF.Worker.Square;
 
@@ -58,3 +58,4 @@ static string[] ParseWorkerArgs(string[] args, out Dictionary<string, string?> s
 
     return remaining.ToArray();
 }
+

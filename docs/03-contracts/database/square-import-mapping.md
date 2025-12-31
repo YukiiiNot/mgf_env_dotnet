@@ -1,6 +1,6 @@
-ï»¿# Square Transactions import: DB mapping (current schema)
+# Square Transactions import: DB mapping (current schema)
 
-Source of truth: `src/DevTools/MGF.SquareImportCli/**`, `src/Data/MGF.Infrastructure/Migrations/*`
+Source of truth: `src/DevTools/MGF.SquareImportCli/**`, `src/Data/MGF.Data/Migrations/*`
 Change control: Update when Square import mapping or DB schema changes.
 Last verified: 2025-12-30
 
@@ -11,7 +11,7 @@ Last verified: 2025-12-30
 - `payments`
 - `invoice_integrations_square` (optional 1:1 integration row)
 
-Defined in `src/Data/MGF.Infrastructure/Migrations/20251215075215_Phase1_02_Core.cs`.
+Defined in `src/Data/MGF.Data/Migrations/20251215075215_Phase1_02_Core.cs`.
 
 ## Relevant columns (payments)
 
@@ -35,12 +35,12 @@ There is no `jsonb` metadata/payload column on `payments` or `invoices` in the c
 ## External id fields (candidate natural key)
 
 - `payments.processor_key` (`text`, NULL, FK `payment_processors.processor_key`)
-- `payments.processor_payment_id` (`text`, NULL) â€” indexed via `IX_payments_processor_payment_id` but **not unique**
+- `payments.processor_payment_id` (`text`, NULL) — indexed via `IX_payments_processor_payment_id` but **not unique**
 - `payments.processor_refund_id` (`text`, NULL)
 
 ## Square id storage + idempotency (importer)
 
-- Store the Square exportâ€™s `Transaction ID` in `payments.processor_payment_id` with `payments.processor_key = 'square'`.
+- Store the Square export’s `Transaction ID` in `payments.processor_payment_id` with `payments.processor_key = 'square'`.
 - Enforce idempotency by looking up an existing `payments` row by (`processor_key`, `processor_payment_id`) and reusing its `invoice_id`.
 - Create/update `invoice_integrations_square.square_customer_id` when available.
 
@@ -54,3 +54,4 @@ There is no `jsonb` metadata/payload column on `payments` or `invoices` in the c
 - `invoices.tax_amount`: populated from Square `Tax` when parseable; otherwise `0.00`.
 - If `square_customer_id` does not resolve to a client, rows are imported under a single system "unmatched" client (marked via a `clients.notes` marker).
 - Since `invoices.project_id` is NOT NULL, the importer ensures a per-client ledger project named `Square Transactions (Imported)`.
+

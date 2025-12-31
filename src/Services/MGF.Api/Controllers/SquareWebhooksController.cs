@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using MGF.Api.Square;
 using MGF.Domain.Entities;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 
 [ApiController]
 [Route("webhooks/square")]
@@ -327,3 +327,4 @@ public sealed class SquareWebhooksController : ControllerBase
         return null;
     }
 }
+

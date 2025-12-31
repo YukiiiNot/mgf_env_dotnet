@@ -1,7 +1,7 @@
 namespace MGF.Api.Services;
 
 using Microsoft.EntityFrameworkCore;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 
 public sealed class PeopleService
 {
@@ -41,4 +41,5 @@ public sealed class PeopleService
             .ToListAsync(cancellationToken);
     }
 }
+
 

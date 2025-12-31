@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
   </ItemGroup>
 
@@ -28,4 +28,5 @@
     </Content>
   </ItemGroup>
 </Project>
+
 

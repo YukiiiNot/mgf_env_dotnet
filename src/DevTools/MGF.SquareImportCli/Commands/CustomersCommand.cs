@@ -3,8 +3,8 @@ namespace MGF.Tools.SquareImport.Commands;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Microsoft.Extensions.Configuration;
-using MGF.Infrastructure.Configuration;
-using MGF.Infrastructure.Data;
+using MGF.Data.Configuration;
+using MGF.Data.Data;
 using MGF.Tools.SquareImport.Importers;
 using MGF.Tools.SquareImport.Guards;
 using MGF.Tools.SquareImport.Reporting;
@@ -271,3 +271,4 @@ internal static class CustomersCommand
             || value.Contains("live", StringComparison.Ordinal);
     }
 }
+

@@ -1,6 +1,6 @@
-﻿# Phase 1 Core Status
+# Phase 1 Core Status
 
-Phase 1 Core is now implemented as **EF Core migrations** in `src/Data/MGF.Infrastructure/Migrations/`, derived from the schema-doc CSVs in `docs/db_design/schema_csv/_core/` (including `_lookup` and `_join`).
+Phase 1 Core is now implemented as **EF Core migrations** in `src/Data/MGF.Data/Migrations/`, derived from the schema-doc CSVs in `docs/db_design/schema_csv/_core/` (including `_lookup` and `_join`).
 
 ## What's implemented
 
@@ -12,24 +12,25 @@ Phase 1 Core is now implemented as **EF Core migrations** in `src/Data/MGF.Infra
 
 ### EF model strategy
 
-- Runtime model is built in `src/Data/MGF.Infrastructure/Data/AppDbContextModelBuilder.cs` and used by `src/Data/MGF.Infrastructure/Data/AppDbContext.cs`.
-- Migration snapshot lives in `src/Data/MGF.Infrastructure/Migrations/AppDbContextModelSnapshot.cs` and tracks the current model for EF.
-- Executable schema changes live in `src/Data/MGF.Infrastructure/Migrations/*.cs`.
+- Runtime model is built in `src/Data/MGF.Data/Data/AppDbContextModelBuilder.cs` and used by `src/Data/MGF.Data/Data/AppDbContext.cs`.
+- Migration snapshot lives in `src/Data/MGF.Data/Migrations/AppDbContextModelSnapshot.cs` and tracks the current model for EF.
+- Executable schema changes live in `src/Data/MGF.Data/Migrations/*.cs`.
 - Schema CSVs in `docs/db_design/schema_csv/_core/` are design-time docs; they are not parsed at runtime.
 
 ### Lookup seeding
 
-- `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs` seeds stable lookup rows and counters idempotently (UPSERT).
-- `MGF.DataMigrator` runs: migrations â†’ lookup seeding.
+- `src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs` seeds stable lookup rows and counters idempotently (UPSERT).
+- `MGF.DataMigrator` runs: migrations → lookup seeding.
 
 ## Notes / intentional deferrals
 
 - **Role scope enforcement**: `project_members.role_key` correctly references global `roles.role_key`, and scopes are modeled via `role_scopes` + `role_scope_roles`, but only project-scoped roles allowed in project_members is not enforced at the DB level yet (would require either a redundant `scope_key` column on the join table, or a trigger). Validate in application logic for now.
 - **client_contacts primary key**: the CSV does not mark `Primary=true`; Phase 1 assumes a composite PK of `(client_id, person_id)` per intended join semantics.
-- **Recommended partial uniques**: some CSV notes recommend partial unique indexes (e.g., â€œone primary per â€¦â€). Phase 1 only implements uniqueness when it is explicitly documented in the `Constraints` field.
+- **Recommended partial uniques**: some CSV notes recommend partial unique indexes (e.g., “one primary per …”). Phase 1 only implements uniqueness when it is explicitly documented in the `Constraints` field.
 
 ## Quick references
 
 - Design docs root: `docs/db_design/schema_csv/_core/`
 - Inventory: `docs/db_design/schema_csv/_notes/schema_inventory.json`
 - Migration runner: `src/Data/MGF.DataMigrator`
+

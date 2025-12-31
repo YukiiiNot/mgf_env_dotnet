@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
-using MGF.Infrastructure.Data;
+using MGF.Data.Data;
 using MGF.Worker.Square;
 using MGF.Worker.ProjectArchive;
 using MGF.Worker.ProjectBootstrap;
@@ -2128,3 +2128,4 @@ public sealed class JobWorker : BackgroundService
         command.Parameters.Add(parameter);
     }
 }
+

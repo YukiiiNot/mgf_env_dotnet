@@ -1,6 +1,6 @@
-﻿# Database environments (Dev / Staging / Prod)
+# Database environments (Dev / Staging / Prod)
 
-Source of truth: `src/Data/MGF.Infrastructure/Configuration/MgfConfiguration.cs`, `src/Data/MGF.Infrastructure/Options/Options.cs`, `config/appsettings*.json`
+Source of truth: `src/Data/MGF.Data/Configuration/MgfConfiguration.cs`, `src/Data/MGF.Data/Options/Options.cs`, `config/appsettings*.json`
 Change control: Update when config keys, precedence, or environment selection changes.
 Last verified: 2025-12-30
 
@@ -30,14 +30,14 @@ Legacy fallback (only used when the env-specific key is missing):
 User-secrets are per-developer and are **not committed to git**.
 
 ```powershell
-dotnet user-secrets init --project src/Data/MGF.Infrastructure
+dotnet user-secrets init --project src/Data/MGF.Data
 
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
-dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
-dotnet user-secrets set "Database:Staging:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
-dotnet user-secrets set "Database:Staging:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
-dotnet user-secrets set "Database:Prod:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
-dotnet user-secrets set "Database:Prod:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
+dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
+dotnet user-secrets set "Database:Staging:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
+dotnet user-secrets set "Database:Staging:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
+dotnet user-secrets set "Database:Prod:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
+dotnet user-secrets set "Database:Prod:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
 ```
 
 Example (Npgsql format):
@@ -114,3 +114,4 @@ dotnet test .\MGF.sln
 ```
 
 Never set `MGF_ALLOW_DESTRUCTIVE=true` for Prod (Prod blocks it anyway).
+

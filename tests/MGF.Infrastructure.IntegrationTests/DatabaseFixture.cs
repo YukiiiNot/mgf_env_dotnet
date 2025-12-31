@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using MGF.Infrastructure.Configuration;
-using MGF.Infrastructure.Data;
-using MGF.Infrastructure.Data.Seeding;
+using MGF.Data.Configuration;
+using MGF.Data.Data;
+using MGF.Data.Data.Seeding;
 
 namespace MGF.Infrastructure.IntegrationTests;
 
@@ -81,3 +81,4 @@ public sealed class DatabaseFixture : IAsyncLifetime
         }
     }
 }
+

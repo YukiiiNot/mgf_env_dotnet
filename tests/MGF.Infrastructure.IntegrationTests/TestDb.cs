@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using MGF.Infrastructure.Data;
-using MGF.Infrastructure.Configuration;
+using MGF.Data.Data;
+using MGF.Data.Configuration;
 
 namespace MGF.Infrastructure.IntegrationTests;
 
@@ -34,3 +34,4 @@ internal static class TestDb
             .Build();
     }
 }
+

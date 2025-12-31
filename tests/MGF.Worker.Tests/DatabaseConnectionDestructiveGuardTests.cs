@@ -1,4 +1,4 @@
-using MGF.Infrastructure.Configuration;
+using MGF.Data.Configuration;
 using Xunit;
 
 namespace MGF.Worker.Tests;
@@ -78,3 +78,4 @@ public sealed class DatabaseConnectionDestructiveGuardTests
         }
     }
 }
+
