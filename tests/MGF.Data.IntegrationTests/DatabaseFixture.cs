@@ -3,7 +3,7 @@ using MGF.Data.Configuration;
 using MGF.Data.Data;
 using MGF.Data.Data.Seeding;
 
-namespace MGF.Infrastructure.IntegrationTests;
+namespace MGF.Data.IntegrationTests;
 
 public sealed class DatabaseFixture : IAsyncLifetime
 {
@@ -81,4 +81,5 @@ public sealed class DatabaseFixture : IAsyncLifetime
         }
     }
 }
+
 

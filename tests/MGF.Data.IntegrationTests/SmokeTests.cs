@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
 using MGF.Data.Data;
 
-namespace MGF.Infrastructure.IntegrationTests;
+namespace MGF.Data.IntegrationTests;
 
 public sealed class SmokeTests(DatabaseFixture fixture) : IClassFixture<DatabaseFixture>
 {
@@ -356,4 +356,5 @@ public sealed class SmokeTests(DatabaseFixture fixture) : IClassFixture<Database
         }
     }
 }
+
 

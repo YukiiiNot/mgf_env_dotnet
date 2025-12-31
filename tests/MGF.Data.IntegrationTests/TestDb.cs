@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using MGF.Data.Data;
 using MGF.Data.Configuration;
 
-namespace MGF.Infrastructure.IntegrationTests;
+namespace MGF.Data.IntegrationTests;
 
 internal static class TestDb
 {
@@ -34,4 +34,5 @@ internal static class TestDb
             .Build();
     }
 }
+
 

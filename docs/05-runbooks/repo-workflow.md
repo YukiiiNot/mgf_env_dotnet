@@ -177,7 +177,7 @@ What it does:
 ## Safety rules
 
 - Staging/prod DB credentials must only live in GitHub Environment secrets (never in git, never in shared docs/chat logs).
-- Don't run integration tests against shared DBs: `tests/MGF.Infrastructure.IntegrationTests` **TRUNCATE** core tables by design.
+- Don't run integration tests against shared DBs: `tests/MGF.Data.IntegrationTests` **TRUNCATE** core tables by design.
 - Destructive flags are for local Dev DB only when intentionally resetting data:
   - `MGF_ALLOW_DESTRUCTIVE=true`
   - `MGF_DESTRUCTIVE_ACK=I_UNDERSTAND`

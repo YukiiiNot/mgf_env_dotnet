@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <AssemblyName>MGF.Data.IntegrationTests</AssemblyName>
+    <RootNamespace>MGF.Data.IntegrationTests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

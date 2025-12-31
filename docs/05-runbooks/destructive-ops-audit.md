@@ -1,6 +1,6 @@
 ﻿# Destructive Operations Audit
 
-Source of truth: `tests/MGF.Infrastructure.IntegrationTests/DatabaseFixture.cs`, `src/DevTools/MGF.SquareImportCli/Importers/CustomersImporter.cs`, `src/DevTools/MGF.SquareImportCli/Commands/CustomersCommand.cs`
+Source of truth: `tests/MGF.Data.IntegrationTests/DatabaseFixture.cs`, `src/DevTools/MGF.SquareImportCli/Importers/CustomersImporter.cs`, `src/DevTools/MGF.SquareImportCli/Commands/CustomersCommand.cs`
 Change control: Update when destructive operations or guardrails change.
 Last verified: 2025-12-30
 
@@ -20,7 +20,7 @@ These scripts dropped/recreated the `public` schema and were removed to reduce a
 
 ### 1) Integration tests TRUNCATE core tables (DEV-only, gated)
 
-**Path:** `tests/MGF.Infrastructure.IntegrationTests/DatabaseFixture.cs`  
+**Path:** `tests/MGF.Data.IntegrationTests/DatabaseFixture.cs`  
 **Snippet:**
 
 ```csharp
