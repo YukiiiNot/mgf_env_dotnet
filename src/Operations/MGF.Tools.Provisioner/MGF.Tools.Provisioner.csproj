@@ -13,7 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\..\artifacts\schemas\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <TargetPath>artifacts\schemas\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
   </ItemGroup>
 
 </Project>

@@ -8,7 +8,7 @@ Changes to the following require review from the infra owner (Ermano):
 
 - `docs/templates/**`
 - `docs/schemas/**`
-- `src/MGF.Tools.Provisioner/**`
+- `src/Operations/MGF.Tools.Provisioner/**`
 - `src/MGF.Tools.ProjectBootstrap/**`
 - `src/MGF.Worker/**`
 - Database migrations

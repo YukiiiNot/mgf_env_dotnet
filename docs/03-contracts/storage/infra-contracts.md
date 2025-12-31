@@ -1,6 +1,6 @@
 ﻿# Infrastructure Contracts
 
-Source of truth: `docs/templates/*.json`, `docs/schemas/*.schema.json`, `src/MGF.Tools.Provisioner`, `src/MGF.Tools.ProjectBootstrap`
+Source of truth: `docs/templates/*.json`, `docs/schemas/*.schema.json`, `src/Operations/MGF.Tools.Provisioner`, `src/MGF.Tools.ProjectBootstrap`
 Change control: Update when template structure, schemas, or provisioning guarantees change.
 Last verified: 2025-12-30
 

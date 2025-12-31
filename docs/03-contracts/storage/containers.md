@@ -1,6 +1,6 @@
 ﻿# Container Templates
 
-Source of truth: `docs/templates/*.json`, `docs/schemas/*.schema.json`, `src/MGF.Tools.Provisioner`
+Source of truth: `docs/templates/*.json`, `docs/schemas/*.schema.json`, `src/Operations/MGF.Tools.Provisioner`
 Change control: Update when container folder structures or naming rules change.
 Last verified: 2025-12-30
 

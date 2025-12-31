@@ -33,7 +33,7 @@ static Command CreateProvisionCommand(string name, ProvisioningMode mode, bool i
 
     var schemaOption = new Option<string?>("--schema")
     {
-        Description = "Optional path to the folder template JSON schema. Defaults to .\\docs\\schemas\\mgf.folderTemplate.schema.json.",
+        Description = "Optional path to the folder template JSON schema. Defaults to .\\artifacts\\schemas\\mgf.folderTemplate.schema.json.",
         IsRequired = false
     };
 
@@ -119,7 +119,7 @@ static Command CreateValidateCommand()
 
     var schemaOption = new Option<string?>("--schema")
     {
-        Description = "Optional path to the folder template JSON schema. Defaults to .\\docs\\schemas\\mgf.folderTemplate.schema.json.",
+        Description = "Optional path to the folder template JSON schema. Defaults to .\\artifacts\\schemas\\mgf.folderTemplate.schema.json.",
         IsRequired = false
     };
 
@@ -209,8 +209,8 @@ static string ResolveSchemaPath(string? schemaPath)
         return Path.GetFullPath(schemaPath);
     }
 
-    var repoRoot = FindRepoRoot();
-    var defaultSchema = Path.Combine(repoRoot, "docs", "schemas", "mgf.folderTemplate.schema.json");
+    var baseDir = AppContext.BaseDirectory;
+    var defaultSchema = Path.Combine(baseDir, "artifacts", "schemas", "mgf.folderTemplate.schema.json");
     if (!File.Exists(defaultSchema))
     {
         throw new InvalidOperationException($"Default schema not found at {defaultSchema}. Provide --schema explicitly.");
