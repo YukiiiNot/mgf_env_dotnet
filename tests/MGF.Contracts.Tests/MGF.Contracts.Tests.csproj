@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <AssemblyName>MGF.Contracts.Tests</AssemblyName>
+    <RootNamespace>MGF.Contracts.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Domain.Tests", "tests\MGF.Domain.Tests\MGF.Domain.Tests.csproj", "{223C07C1-4CDA-4DAD-A564-8782B3BD5088}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Application.Tests", "tests\MGF.Application.Tests\MGF.Application.Tests.csproj", "{5534A907-9024-46D4-96D2-63A52B650774}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Contracts.Tests", "tests\MGF.Contracts.Tests\MGF.Contracts.Tests.csproj", "{5534A907-9024-46D4-96D2-63A52B650774}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Infrastructure.IntegrationTests", "tests\MGF.Infrastructure.IntegrationTests\MGF.Infrastructure.IntegrationTests.csproj", "{E2C25545-8E02-4D9A-843C-DE540BC85F69}"
 EndProject

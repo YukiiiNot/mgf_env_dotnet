@@ -136,7 +136,7 @@ CI checks:
 - restore + build in `Release` (includes the WPF project; Windows runner required)
 - unit tests only:
   - `tests/MGF.Domain.Tests/MGF.Domain.Tests.csproj`
-  - `tests/MGF.Application.Tests/MGF.Application.Tests.csproj`
+  - `tests/MGF.Contracts.Tests/MGF.Contracts.Tests.csproj`
 - EF drift check: `dotnet ef migrations has-pending-model-changes ...`
 - guardrail scan for destructive SQL keywords in non-test code
 
@@ -190,7 +190,7 @@ dotnet build .\MGF.sln -c Release
 
 # unit tests only
 dotnet test .\tests\MGF.Domain.Tests\MGF.Domain.Tests.csproj -c Release
-dotnet test .\tests\MGF.Application.Tests\MGF.Application.Tests.csproj -c Release
+dotnet test .\tests\MGF.Contracts.Tests\MGF.Contracts.Tests.csproj -c Release
 
 # add migration
 dotnet tool restore

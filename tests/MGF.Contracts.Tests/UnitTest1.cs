@@ -1,4 +1,4 @@
-﻿namespace MGF.Application.Tests;
+namespace MGF.Contracts.Tests;
 
 public class UnitTest1
 {
@@ -8,3 +8,4 @@ public class UnitTest1
 
     }
 }
+
