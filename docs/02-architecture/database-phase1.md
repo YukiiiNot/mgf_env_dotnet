@@ -20,7 +20,7 @@ Phase 1 Core is now implemented as **EF Core migrations** in `src/Data/MGF.Infra
 ### Lookup seeding
 
 - `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs` seeds stable lookup rows and counters idempotently (UPSERT).
-- `MGF.Tools.Migrator` runs: migrations â†’ lookup seeding.
+- `MGF.DataMigrator` runs: migrations â†’ lookup seeding.
 
 ## Notes / intentional deferrals
 
@@ -32,4 +32,4 @@ Phase 1 Core is now implemented as **EF Core migrations** in `src/Data/MGF.Infra
 
 - Design docs root: `docs/db_design/schema_csv/_core/`
 - Inventory: `docs/db_design/schema_csv/_notes/schema_inventory.json`
-- Migration runner: `src/Data/MGF.Tools.Migrator`
+- Migration runner: `src/Data/MGF.DataMigrator`

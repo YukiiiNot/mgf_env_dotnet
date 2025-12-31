@@ -652,7 +652,7 @@ public static class LookupSeeder
 
                 if (!existingPublicTables.Contains(statement.TableName))
                 {
-                    Console.WriteLine($"MGF.Tools.Migrator: seed skipped (missing table): {statement.TableName}");
+                    Console.WriteLine($"MGF.DataMigrator: seed skipped (missing table): {statement.TableName}");
                     skippedMissingTables++;
                     continue;
                 }
@@ -669,7 +669,7 @@ public static class LookupSeeder
         }
 
         Console.WriteLine(
-            $"MGF.Tools.Migrator: lookup seeding complete (seeded={seededStatements}, skipped_missing={skippedMissingTables})."
+            $"MGF.DataMigrator: lookup seeding complete (seeded={seededStatements}, skipped_missing={skippedMissingTables})."
         );
     }
 

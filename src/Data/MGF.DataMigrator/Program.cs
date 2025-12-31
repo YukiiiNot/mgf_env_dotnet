@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,24 +34,24 @@ public static class Program
             return 0;
         }
 
-        Console.WriteLine("MGF.Tools.Migrator: starting migration runner...");
+        Console.WriteLine("MGF.DataMigrator: starting migration runner...");
 
         try
         {
             var mgfEnv = DatabaseConnection.GetEnvironment();
             var mgfDbMode = DatabaseConnection.GetDatabaseMode();
-            Console.WriteLine($"MGF.Tools.Migrator: MGF_ENV={mgfEnv}");
-            Console.WriteLine($"MGF.Tools.Migrator: MGF_DB_MODE={mgfDbMode}");
-            Console.WriteLine($"MGF.Tools.Migrator: MGF_ALLOW_DESTRUCTIVE={GetEnvOrUnset("MGF_ALLOW_DESTRUCTIVE")}");
-            Console.WriteLine($"MGF.Tools.Migrator: DOTNET_ENVIRONMENT={GetEnvOrUnset("DOTNET_ENVIRONMENT")}");
-            Console.WriteLine($"MGF.Tools.Migrator: ASPNETCORE_ENVIRONMENT={GetEnvOrUnset("ASPNETCORE_ENVIRONMENT")}");
-            Console.WriteLine($"MGF.Tools.Migrator: mode={parsed.Mode}");
+            Console.WriteLine($"MGF.DataMigrator: MGF_ENV={mgfEnv}");
+            Console.WriteLine($"MGF.DataMigrator: MGF_DB_MODE={mgfDbMode}");
+            Console.WriteLine($"MGF.DataMigrator: MGF_ALLOW_DESTRUCTIVE={GetEnvOrUnset("MGF_ALLOW_DESTRUCTIVE")}");
+            Console.WriteLine($"MGF.DataMigrator: DOTNET_ENVIRONMENT={GetEnvOrUnset("DOTNET_ENVIRONMENT")}");
+            Console.WriteLine($"MGF.DataMigrator: ASPNETCORE_ENVIRONMENT={GetEnvOrUnset("ASPNETCORE_ENVIRONMENT")}");
+            Console.WriteLine($"MGF.DataMigrator: mode={parsed.Mode}");
             TryEnableNpgsqlLogging(mgfEnv);
             LogVersionInfo();
 
             if (parsed.Mode == MigratorMode.SeedLookupsOnly && parsed.Smoke)
             {
-                Console.Error.WriteLine("MGF.Tools.Migrator: --smoke cannot be used with --seed-lookups.");
+                Console.Error.WriteLine("MGF.DataMigrator: --smoke cannot be used with --seed-lookups.");
                 return 2;
             }
 
@@ -78,7 +78,7 @@ public static class Program
                 })
                 .Build();
 
-            Console.WriteLine($"MGF.Tools.Migrator: config environment={host.Services.GetRequiredService<IHostEnvironment>().EnvironmentName}");
+            Console.WriteLine($"MGF.DataMigrator: config environment={host.Services.GetRequiredService<IHostEnvironment>().EnvironmentName}");
 
             var configuration = host.Services.GetRequiredService<IConfiguration>();
             var connectionString = DatabaseConnection.ResolveConnectionString(configuration);
@@ -100,9 +100,9 @@ public static class Program
                         await using var scope = host.Services.CreateAsyncScope();
                         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                        Console.WriteLine("MGF.Tools.Migrator: seeding lookup tables (seed-only, migrations skipped)...");
+                        Console.WriteLine("MGF.DataMigrator: seeding lookup tables (seed-only, migrations skipped)...");
                         await LookupSeeder.SeedAsync(db, cancellationToken);
-                        Console.WriteLine("MGF.Tools.Migrator: seeding completed.");
+                        Console.WriteLine("MGF.DataMigrator: seeding completed.");
                     },
                     maxAttempts: 3,
                     initialDelay: TimeSpan.FromSeconds(2)
@@ -117,19 +117,19 @@ public static class Program
                         await using var scope = host.Services.CreateAsyncScope();
                         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                        Console.WriteLine("MGF.Tools.Migrator: applying EF Core migrations...");
+                        Console.WriteLine("MGF.DataMigrator: applying EF Core migrations...");
                         await db.Database.MigrateAsync(cancellationToken);
-                        Console.WriteLine("MGF.Tools.Migrator: migrations applied successfully.");
+                        Console.WriteLine("MGF.DataMigrator: migrations applied successfully.");
 
-                        Console.WriteLine("MGF.Tools.Migrator: seeding lookup tables...");
+                        Console.WriteLine("MGF.DataMigrator: seeding lookup tables...");
                         await LookupSeeder.SeedAsync(db, cancellationToken);
-                        Console.WriteLine("MGF.Tools.Migrator: seeding completed.");
+                        Console.WriteLine("MGF.DataMigrator: seeding completed.");
 
                         if (parsed.Smoke)
                         {
-                            Console.WriteLine("MGF.Tools.Migrator: running smoke checks...");
+                            Console.WriteLine("MGF.DataMigrator: running smoke checks...");
                             await RunSmokeAsync(db);
-                            Console.WriteLine("MGF.Tools.Migrator: smoke checks passed.");
+                            Console.WriteLine("MGF.DataMigrator: smoke checks passed.");
                         }
                     },
                     maxAttempts: 3,
@@ -141,7 +141,7 @@ public static class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("MGF.Tools.Migrator: migration failed.");
+            Console.Error.WriteLine("MGF.DataMigrator: migration failed.");
             Console.Error.WriteLine(ex.ToString());
             return 1;
         }
@@ -187,12 +187,12 @@ public static class Program
     {
         Console.WriteLine(
             """
-            MGF.Tools.Migrator
+            MGF.DataMigrator
 
             Usage:
-              dotnet run --project src/Data/MGF.Tools.Migrator
-              dotnet run --project src/Data/MGF.Tools.Migrator -- --seed-lookups
-              dotnet run --project src/Data/MGF.Tools.Migrator -- --smoke
+              dotnet run --project src/Data/MGF.DataMigrator
+              dotnet run --project src/Data/MGF.DataMigrator -- --seed-lookups
+              dotnet run --project src/Data/MGF.DataMigrator -- --smoke
 
             Options:
               --seed-lookups       Seed lookup/reference tables only (does NOT apply EF migrations)
@@ -212,7 +212,7 @@ public static class Program
     {
         var efVersion = typeof(DbContext).Assembly.GetName().Version?.ToString() ?? "unknown";
         var npgsqlVersion = typeof(NpgsqlConnection).Assembly.GetName().Version?.ToString() ?? "unknown";
-        Console.WriteLine($"MGF.Tools.Migrator: EF Core={efVersion}; Npgsql={npgsqlVersion}");
+        Console.WriteLine($"MGF.DataMigrator: EF Core={efVersion}; Npgsql={npgsqlVersion}");
     }
 
     private static void TryEnableNpgsqlLogging(MgfEnvironment mgfEnv)
@@ -225,7 +225,7 @@ public static class Program
         var parameterLoggingEnabled = GetEnvBool("MGF_NPGSQL_LOG_PARAMETERS");
         if (parameterLoggingEnabled && mgfEnv != MgfEnvironment.Dev)
         {
-            Console.WriteLine("MGF.Tools.Migrator: refusing to enable Npgsql parameter logging outside Dev.");
+            Console.WriteLine("MGF.DataMigrator: refusing to enable Npgsql parameter logging outside Dev.");
             parameterLoggingEnabled = false;
         }
 
@@ -239,7 +239,7 @@ public static class Program
         NpgsqlLoggingConfiguration.InitializeLogging(NpgsqlLoggerFactory, parameterLoggingEnabled);
 
         Console.WriteLine(
-            $"MGF.Tools.Migrator: Npgsql logging enabled (parameters={parameterLoggingEnabled})."
+            $"MGF.DataMigrator: Npgsql logging enabled (parameters={parameterLoggingEnabled})."
         );
     }
 
@@ -261,11 +261,11 @@ public static class Program
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
 
         Console.WriteLine(
-            $"MGF.Tools.Migrator: DB target Host={builder.Host};Port={builder.Port};Database={builder.Database};Username={builder.Username}"
+            $"MGF.DataMigrator: DB target Host={builder.Host};Port={builder.Port};Database={builder.Database};Username={builder.Username}"
         );
 
         Console.WriteLine(
-            $"MGF.Tools.Migrator: DB options SslMode={builder.SslMode};Pooling={builder.Pooling};Multiplexing={builder.Multiplexing}"
+            $"MGF.DataMigrator: DB options SslMode={builder.SslMode};Pooling={builder.Pooling};Multiplexing={builder.Multiplexing}"
         );
     }
 
@@ -307,10 +307,10 @@ public static class Program
             catch (Exception ex) when (attempt < maxAttempts && IsTransient(ex))
             {
                 Console.Error.WriteLine(
-                    $"MGF.Tools.Migrator: transient failure during {operationName} (attempt {attempt}/{maxAttempts}): {ex.GetType().Name}: {ex.Message}"
+                    $"MGF.DataMigrator: transient failure during {operationName} (attempt {attempt}/{maxAttempts}): {ex.GetType().Name}: {ex.Message}"
                 );
 
-                Console.Error.WriteLine($"MGF.Tools.Migrator: retrying in {delay.TotalSeconds:0.0}s...");
+                Console.Error.WriteLine($"MGF.DataMigrator: retrying in {delay.TotalSeconds:0.0}s...");
                 await Task.Delay(delay);
                 delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 30));
             }
@@ -383,3 +383,4 @@ public static class Program
         }
     }
 }
+

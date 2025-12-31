@@ -1,19 +1,19 @@
 ﻿# Database workflow (Supabase + EF Core)
 
 This repo treats **EF Core migrations** as the executable source of truth for the Postgres schema.
-The `MGF.Tools.Migrator` project is the **only** migration runner; the WPF host does not apply migrations.
+The `MGF.DataMigrator` project is the **only** migration runner; the WPF host does not apply migrations.
 
 ## Principles
 
 - Do **not** make schema changes in the Supabase UI.
-- Apply schema changes via **EF migrations**, executed by `MGF.Tools.Migrator`.
+- Apply schema changes via **EF migrations**, executed by `MGF.DataMigrator`.
 - Do **not** commit database secrets to git.
-- Prefer the Supabase **direct DB host** (`db.<project-ref>.supabase.co:5432`) for migrations (`dotnet ef` + `MGF.Tools.Migrator`).
+- Prefer the Supabase **direct DB host** (`db.<project-ref>.supabase.co:5432`) for migrations (`dotnet ef` + `MGF.DataMigrator`).
 - Use the Supabase **session pooler** host (`*.pooler.supabase.com:5432`) for app runtime connections if you need pooling at the edge.
 
 ## Configuration sources (precedence)
 
-Both `dotnet ef` (design-time) and `MGF.Tools.Migrator` (runtime) load config in this order:
+Both `dotnet ef` (design-time) and `MGF.DataMigrator` (runtime) load config in this order:
 
 1. `config/appsettings.json` (committed defaults)
 2. `config/appsettings.{Environment}.json` (committed, non-secret overrides)
@@ -62,12 +62,12 @@ Note: for proper certificate validation use `Ssl Mode=VerifyFull` plus `Root Cer
 2) Create/run migrations:
 
 ```powershell
-dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
 $env:MGF_DB_MODE = "direct"
-dotnet run --project src/Data/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.DataMigrator
 ```
 
-`MGF.Tools.Migrator` will:
+`MGF.DataMigrator` will:
 - apply migrations
 - seed core lookup tables idempotently (safe to run multiple times)
 
@@ -79,7 +79,7 @@ If a full Dev reset is ever required, handle it manually outside the repo and th
 ```powershell
 $env:MGF_ENV = "Dev"
 $env:MGF_DB_MODE = "direct"
-dotnet run --project src/Data/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.DataMigrator
 ```
 
 Integration tests may truncate data between test classes and require explicit opt-in flags:
@@ -114,7 +114,7 @@ HAVING COUNT(*) > 1;
 Shows migrations known to EF in `MGF.Infrastructure`:
 
 ```powershell
-dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
 ```
 
 ### Add a migration
@@ -122,7 +122,7 @@ dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-projec
 Creates new migration files under `src/Data/MGF.Infrastructure/Migrations/`:
 
 ```powershell
-dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
 ```
 
 ### Apply migrations (update the database)
@@ -130,13 +130,13 @@ dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-
 Recommended (applies migrations + seeds lookups):
 
 ```powershell
-dotnet run --project src/Data/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.DataMigrator
 ```
 
 EF CLI alternative (updates DB only; does not run custom seeding):
 
 ```powershell
-dotnet ef database update --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef database update --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
 ```
 
 ### Remove the latest migration
@@ -144,7 +144,7 @@ dotnet ef database update --project src/Data/MGF.Infrastructure --startup-projec
 Removes the most recent migration files (use with care):
 
 ```powershell
-dotnet ef migrations remove --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations remove --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
 ```
 
 Notes:
@@ -153,7 +153,7 @@ Notes:
 ### Roll back to a previous migration
 
 ```powershell
-dotnet ef database update <PreviousMigrationName> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef database update <PreviousMigrationName> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
 ```
 
 ## Alternative: session env var (ad-hoc)
@@ -164,7 +164,7 @@ For one PowerShell session:
 $env:MGF_DB_MODE = "direct"
 $env:Database__Dev__DirectConnectionString = "<Npgsql connection string>"
 $env:MGF_ENV = "Dev"
-dotnet run --project src/Data/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.DataMigrator
 ```
 
 Or use `scripts/set-dev-connection.ps1` to set the session env var without committing secrets.
@@ -174,7 +174,7 @@ Or use `scripts/set-dev-connection.ps1` to set the session env var without commi
 Set `Database__Prod__DirectConnectionString`, `MGF_DB_MODE=direct`, and `MGF_ENV=Prod` as secret environment variables in the deployment pipeline, then run:
 
 ```powershell
-dotnet run --project src/Data/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.DataMigrator
 ```
 
 ## Teammate-safe commands
@@ -183,5 +183,5 @@ These are read-only / local-safe:
 
 ```powershell
 dotnet build .\MGF.sln
-dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator
 ```

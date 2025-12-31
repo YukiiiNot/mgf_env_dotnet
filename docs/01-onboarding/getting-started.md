@@ -7,7 +7,7 @@ This guide gets a second developer productive without touching production.
 - `src/Services/MGF.Api` — internal Web API (DB entrypoint for apps)
 - `src/Services/MGF.Worker` — background jobs runner
 - `src/Operations/MGF.ProjectBootstrapCli` — CLI for bootstrap/archive/delivery/email/preview
-- `src/Data/MGF.Tools.Migrator` — migrations + lookup seeding
+- `src/Data/MGF.DataMigrator` — migrations + lookup seeding
 - `src/Services/MGF.Worker/Email` — email subsystem (templates, senders, preview)
 - `docs/` — runbooks, workflow, templates, contracts
 - `tests/` — unit + contract tests

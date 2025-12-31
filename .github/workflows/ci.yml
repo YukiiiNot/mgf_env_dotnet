@@ -82,4 +82,4 @@ jobs:
           MGF_ENV: Dev
           MGF_DB_MODE: direct
           Database__Dev__DirectConnectionString: "Host=example.invalid;Port=5432;Database=postgres;Username=postgres;Password=notreal;Ssl Mode=Disable;Pooling=false;Multiplexing=false"
-        run: dotnet ef migrations has-pending-model-changes --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator --configuration Release
+        run: dotnet ef migrations has-pending-model-changes --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.DataMigrator --configuration Release
