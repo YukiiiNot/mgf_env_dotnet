@@ -1,6 +1,6 @@
 using Npgsql;
 
-namespace MGF.Tools.DbMigrationsInfo;
+namespace MGF.DbMigrationsInfoCli;
 
 public static class Program
 {
@@ -108,3 +108,4 @@ public static class Program
         );
     }
 }
+
