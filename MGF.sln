@@ -27,7 +27,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Api", "src\MGF.Api\MGF.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Worker", "src\MGF.Worker\MGF.Worker.csproj", "{2D5304AF-DACF-472D-BB5B-79418082F00F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.SquareImport", "src\MGF.Tools.SquareImport\MGF.Tools.SquareImport.csproj", "{CA1639AE-FFAA-4378-AE1A-904D4456F738}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.SquareImport", "src\DevTools\MGF.Tools.SquareImport\MGF.Tools.SquareImport.csproj", "{CA1639AE-FFAA-4378-AE1A-904D4456F738}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.DbMigrationsInfo", "src\DevTools\MGF.Tools.DbMigrationsInfo\MGF.Tools.DbMigrationsInfo.csproj", "{709E55AA-D087-42A5-A0D7-3610CB0B362F}"
 EndProject

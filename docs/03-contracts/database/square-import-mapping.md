@@ -1,6 +1,6 @@
 ﻿# Square Transactions import: DB mapping (current schema)
 
-Source of truth: `src/MGF.Tools.SquareImport/**`, `src/MGF.Infrastructure/Migrations/*`
+Source of truth: `src/DevTools/MGF.Tools.SquareImport/**`, `src/MGF.Infrastructure/Migrations/*`
 Change control: Update when Square import mapping or DB schema changes.
 Last verified: 2025-12-30
 
