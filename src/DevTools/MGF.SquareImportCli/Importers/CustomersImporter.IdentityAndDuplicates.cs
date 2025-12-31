@@ -1,8 +1,8 @@
-namespace MGF.Tools.SquareImport.Importers;
+namespace MGF.SquareImportCli.Importers;
 
 using System.Diagnostics.CodeAnalysis;
-using MGF.Tools.SquareImport.Normalization;
-using MGF.Tools.SquareImport.Parsing;
+using MGF.SquareImportCli.Normalization;
+using MGF.SquareImportCli.Parsing;
 
 internal sealed partial class CustomersImporter
 {
@@ -667,3 +667,4 @@ internal sealed partial class CustomersImporter
         }
     }
 }
+

@@ -1,12 +1,12 @@
-namespace MGF.Tools.SquareImport.Importers;
+namespace MGF.SquareImportCli.Importers;
 
 using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
-using MGF.Tools.SquareImport.Normalization;
-using MGF.Tools.SquareImport.Reporting;
+using MGF.SquareImportCli.Normalization;
+using MGF.SquareImportCli.Reporting;
 
 internal sealed partial class CustomersImporter
 {
@@ -543,3 +543,4 @@ internal sealed partial class CustomersImporter
         existing["updated_at"] = DateTimeOffset.UtcNow;
     }
 }
+

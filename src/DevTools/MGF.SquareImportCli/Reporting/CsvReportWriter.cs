@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Reporting;
+namespace MGF.SquareImportCli.Reporting;
 
 using System.Globalization;
 using System.Text;
@@ -48,4 +48,5 @@ internal sealed class CsvReportWriter<T> : IDisposable
         streamWriter.Dispose();
     }
 }
+
 

@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Parsing;
+namespace MGF.SquareImportCli.Parsing;
 
 public sealed record SquareInvoiceRow(
     string SourceFile,
@@ -27,4 +27,5 @@ public sealed record SquareInvoiceRow(
     DateTimeOffset? ServiceDate,
     IReadOnlyDictionary<string, string?> RawFields
 );
+
 

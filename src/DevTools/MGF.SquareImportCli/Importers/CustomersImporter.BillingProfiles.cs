@@ -1,7 +1,7 @@
-namespace MGF.Tools.SquareImport.Importers;
+namespace MGF.SquareImportCli.Importers;
 
 using Microsoft.EntityFrameworkCore;
-using MGF.Tools.SquareImport.Normalization;
+using MGF.SquareImportCli.Normalization;
 
 internal sealed partial class CustomersImporter
 {
@@ -109,4 +109,5 @@ internal sealed partial class CustomersImporter
         return true;
     }
 }
+
 

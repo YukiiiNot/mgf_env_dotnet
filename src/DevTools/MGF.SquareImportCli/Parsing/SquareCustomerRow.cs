@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Parsing;
+namespace MGF.SquareImportCli.Parsing;
 
 public sealed record SquareCustomerRow(
     string SourceFile,
@@ -28,4 +28,5 @@ public sealed record SquareCustomerRow(
     string? InstantProfile,
     IReadOnlyDictionary<string, string?> RawFields
 );
+
 

@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Reporting;
+namespace MGF.SquareImportCli.Reporting;
 
 public sealed record ImportSummary(int Inserted, int Updated, int Skipped, int Errors)
 {
@@ -9,4 +9,5 @@ public sealed record ImportSummary(int Inserted, int Updated, int Skipped, int E
         Console.WriteLine($"square-import {commandName}: summary inserted={Inserted} updated={Updated} skipped={Skipped} errors={Errors}");
     }
 }
+
 

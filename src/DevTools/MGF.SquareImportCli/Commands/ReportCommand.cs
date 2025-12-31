@@ -1,8 +1,8 @@
-namespace MGF.Tools.SquareImport.Commands;
+namespace MGF.SquareImportCli.Commands;
 
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using MGF.Tools.SquareImport.Importers;
+using MGF.SquareImportCli.Importers;
 
 internal static class ReportCommand
 {
@@ -33,4 +33,5 @@ internal static class ReportCommand
         return command;
     }
 }
+
 

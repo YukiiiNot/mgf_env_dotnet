@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Importers;
+namespace MGF.SquareImportCli.Importers;
 
 internal enum CustomersMinConfidenceToAutoLink
 {
@@ -96,3 +96,4 @@ internal sealed record CustomersImportOptions(
         return false;
     }
 }
+

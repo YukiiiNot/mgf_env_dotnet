@@ -1,12 +1,12 @@
-namespace MGF.Tools.SquareImport.Importers;
+namespace MGF.SquareImportCli.Importers;
 
 using System.Globalization;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
 using MGF.Data.Data;
-using MGF.Tools.SquareImport.Parsing;
-using MGF.Tools.SquareImport.Reporting;
+using MGF.SquareImportCli.Parsing;
+using MGF.SquareImportCli.Reporting;
 
 internal sealed class TransactionsImporter
 {
@@ -1250,4 +1250,5 @@ internal sealed class TransactionsImporter
         return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 }
+
 

@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Guards;
+namespace MGF.SquareImportCli.Guards;
 
 using MGF.Data.Configuration;
 
@@ -48,4 +48,5 @@ internal static class CustomersResetGuard
         );
     }
 }
+
 

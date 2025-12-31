@@ -1,8 +1,8 @@
-namespace MGF.Tools.SquareImport.Parsing;
+namespace MGF.SquareImportCli.Parsing;
 
 using System.Globalization;
 using CsvHelper;
-using MGF.Tools.SquareImport.Normalization;
+using MGF.SquareImportCli.Normalization;
 
 public static class CsvLoader
 {
@@ -515,3 +515,4 @@ public static class CsvLoader
         return matches.Count == 1 ? matches[0] : null;
     }
 }
+

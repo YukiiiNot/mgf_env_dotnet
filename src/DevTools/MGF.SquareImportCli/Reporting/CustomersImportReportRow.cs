@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Reporting;
+namespace MGF.SquareImportCli.Reporting;
 
 internal sealed record CustomersImportReportRow(
     string SquareCustomerId,
@@ -15,4 +15,5 @@ internal sealed record CustomersImportReportRow(
     string SourceFile,
     int RowNumber
 );
+
 

@@ -1,9 +1,9 @@
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
-using MGF.Tools.SquareImport.Commands;
+using MGF.SquareImportCli.Commands;
 using Xunit;
 
-namespace MGF.Tools.SquareImport.Tests;
+namespace MGF.SquareImportCli.Tests;
 
 public sealed class CustomersResetCommandTests
 {
@@ -111,3 +111,4 @@ public sealed class CustomersResetCommandTests
         }
     }
 }
+

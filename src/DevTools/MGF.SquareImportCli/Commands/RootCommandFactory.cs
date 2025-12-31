@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Commands;
+namespace MGF.SquareImportCli.Commands;
 
 using System.CommandLine;
 
@@ -16,4 +16,5 @@ internal static class RootCommandFactory
         return root;
     }
 }
+
 

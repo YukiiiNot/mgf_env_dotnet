@@ -1,7 +1,7 @@
-namespace MGF.Tools.SquareImport.Importers;
+namespace MGF.SquareImportCli.Importers;
 
 using MGF.Data.Data;
-using MGF.Tools.SquareImport.Reporting;
+using MGF.SquareImportCli.Reporting;
 
 internal sealed class ReportGenerator
 {
@@ -24,5 +24,6 @@ internal sealed class ReportGenerator
         return Task.FromResult(ImportSummary.Empty());
     }
 }
+
 
 

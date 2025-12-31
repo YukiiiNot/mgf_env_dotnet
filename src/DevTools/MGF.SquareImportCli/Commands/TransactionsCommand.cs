@@ -1,9 +1,9 @@
-namespace MGF.Tools.SquareImport.Commands;
+namespace MGF.SquareImportCli.Commands;
 
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using MGF.Tools.SquareImport.Importers;
-using MGF.Tools.SquareImport.Reporting;
+using MGF.SquareImportCli.Importers;
+using MGF.SquareImportCli.Reporting;
 
 internal static class TransactionsCommand
 {
@@ -75,3 +75,4 @@ internal static class TransactionsCommand
         return command;
     }
 }
+

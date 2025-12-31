@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Commands;
+namespace MGF.SquareImportCli.Commands;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
-using MGF.Tools.SquareImport.Reporting;
+using MGF.SquareImportCli.Reporting;
 using Npgsql;
 
 internal static class SquareImportCommandRunner
@@ -95,4 +95,5 @@ internal static class SquareImportCommandRunner
         }
     }
 }
+
 

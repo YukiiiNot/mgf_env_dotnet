@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Normalization;
+namespace MGF.SquareImportCli.Normalization;
 
 public static class IdentityKeys
 {
@@ -86,4 +86,5 @@ public static class IdentityKeys
         return idx == 0 ? null : new string(buffer[..idx]);
     }
 }
+
 

@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Parsing;
+namespace MGF.SquareImportCli.Parsing;
 
 public sealed record SquareTransactionRow(
     string SourceFile,
@@ -47,3 +47,4 @@ public sealed record SquareTransactionRow(
     string? CurrencyCode,
     IReadOnlyDictionary<string, string?> RawFields
 );
+

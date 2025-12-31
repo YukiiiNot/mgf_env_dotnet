@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using MGF.Data.Data;
-using MGF.Tools.SquareImport.Importers;
+using MGF.SquareImportCli.Importers;
 using Xunit;
 
-namespace MGF.Tools.SquareImport.Tests;
+namespace MGF.SquareImportCli.Tests;
 
 public sealed class CustomersImporterTests
 {
@@ -33,4 +33,5 @@ public sealed class CustomersImporterTests
         }
     }
 }
+
 

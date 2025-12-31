@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Parsing;
+namespace MGF.SquareImportCli.Parsing;
 
 using System.Globalization;
 using CsvHelper;
@@ -23,4 +23,5 @@ internal static class CsvReaderFactory
         return new CsvReader(reader, config);
     }
 }
+
 

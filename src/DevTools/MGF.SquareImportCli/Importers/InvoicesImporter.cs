@@ -1,8 +1,8 @@
-namespace MGF.Tools.SquareImport.Importers;
+namespace MGF.SquareImportCli.Importers;
 
 using MGF.Data.Data;
-using MGF.Tools.SquareImport.Parsing;
-using MGF.Tools.SquareImport.Reporting;
+using MGF.SquareImportCli.Parsing;
+using MGF.SquareImportCli.Reporting;
 
 internal sealed class InvoicesImporter
 {
@@ -24,4 +24,5 @@ internal sealed class InvoicesImporter
         return Task.FromResult(ImportSummary.Empty());
     }
 }
+
 

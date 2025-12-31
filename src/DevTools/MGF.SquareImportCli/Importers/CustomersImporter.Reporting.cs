@@ -1,4 +1,4 @@
-namespace MGF.Tools.SquareImport.Importers;
+namespace MGF.SquareImportCli.Importers;
 
 internal sealed partial class CustomersImporter
 {
@@ -82,3 +82,4 @@ internal sealed partial class CustomersImporter
         }
     }
 }
+
