@@ -1,6 +1,6 @@
 ﻿# Repo workflow runbook (MGF)
 
-Source of truth: `.github/workflows/ci.yml`, `.github/workflows/migrate-staging.yml`, `.github/workflows/migrate-prod.yml`, `src/MGF.Infrastructure/Migrations`, `src/MGF.Tools.Migrator`
+Source of truth: `.github/workflows/ci.yml`, `.github/workflows/migrate-staging.yml`, `.github/workflows/migrate-prod.yml`, `src/MGF.Infrastructure/Migrations`, `src/Data/MGF.Tools.Migrator`
 Change control: Update when branch model, CI gates, or migration automation changes.
 Last verified: 2025-12-30
 
@@ -43,7 +43,7 @@ $env:MGF_DB_MODE = "direct"
 ### 3) Apply migrations + seed lookups (Dev)
 
 ```powershell
-dotnet run --project src/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.Tools.Migrator
 ```
 
 âš ï¸ Do not run this against staging or prod.
@@ -108,11 +108,11 @@ All templates include:
 
 Use EF CLI with:
 - migrations project: `src/MGF.Infrastructure`
-- startup project: `src/MGF.Tools.Migrator`
+- startup project: `src/Data/MGF.Tools.Migrator`
 
 ```powershell
 dotnet tool restore
-dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 Reminder: commit the generated migration files under `src/MGF.Infrastructure/Migrations/`.
@@ -121,7 +121,7 @@ Reminder: commit the generated migration files under `src/MGF.Infrastructure/Mig
 
 ```powershell
 dotnet tool restore
-dotnet ef migrations has-pending-model-changes --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator -c Release
+dotnet ef migrations has-pending-model-changes --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator -c Release
 ```
 
 ## CI rules
@@ -194,13 +194,13 @@ dotnet test .\tests\MGF.Application.Tests\MGF.Application.Tests.csproj -c Releas
 
 # add migration
 dotnet tool restore
-dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 
 # drift check
-dotnet ef migrations has-pending-model-changes --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator -c Release
+dotnet ef migrations has-pending-model-changes --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator -c Release
 
 # generate migrations bundle locally (optional)
-dotnet ef migrations bundle --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator -c Release --output .\runtime\efbundle-local.exe
+dotnet ef migrations bundle --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator -c Release --output .\runtime\efbundle-local.exe
 
 # branch flow example
 git checkout -b feature/my-change

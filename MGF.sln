@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Infrastructure", "src\M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Desktop.Wpf", "src\MGF.Desktop.Wpf\MGF.Desktop.Wpf.csproj", "{9605EFFB-D58D-4939-934A-C60B61580218}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.Migrator", "src\MGF.Tools.Migrator\MGF.Tools.Migrator.csproj", "{15072A07-6D2E-4800-8326-41BE141FF996}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.Migrator", "src\Data\MGF.Tools.Migrator\MGF.Tools.Migrator.csproj", "{15072A07-6D2E-4800-8326-41BE141FF996}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject

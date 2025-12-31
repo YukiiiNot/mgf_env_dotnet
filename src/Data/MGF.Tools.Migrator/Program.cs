@@ -190,9 +190,9 @@ public static class Program
             MGF.Tools.Migrator
 
             Usage:
-              dotnet run --project src/MGF.Tools.Migrator
-              dotnet run --project src/MGF.Tools.Migrator -- --seed-lookups
-              dotnet run --project src/MGF.Tools.Migrator -- --smoke
+              dotnet run --project src/Data/MGF.Tools.Migrator
+              dotnet run --project src/Data/MGF.Tools.Migrator -- --seed-lookups
+              dotnet run --project src/Data/MGF.Tools.Migrator -- --smoke
 
             Options:
               --seed-lookups       Seed lookup/reference tables only (does NOT apply EF migrations)

@@ -32,4 +32,4 @@ Phase 1 Core is now implemented as **EF Core migrations** in `src/MGF.Infrastruc
 
 - Design docs root: `docs/db_design/schema_csv/_core/`
 - Inventory: `docs/db_design/schema_csv/_notes/schema_inventory.json`
-- Migration runner: `src/MGF.Tools.Migrator`
+- Migration runner: `src/Data/MGF.Tools.Migrator`

@@ -94,7 +94,7 @@ setx MGF_ENV Dev
 
 ```powershell
 $env:MGF_DB_MODE = "direct"
-dotnet run --project src/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.Tools.Migrator
 ```
 
 ## Integration tests (destructive guardrails)

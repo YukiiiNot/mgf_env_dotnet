@@ -62,9 +62,9 @@ Note: for proper certificate validation use `Ssl Mode=VerifyFull` plus `Root Cer
 2) Create/run migrations:
 
 ```powershell
-dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 $env:MGF_DB_MODE = "direct"
-dotnet run --project src/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.Tools.Migrator
 ```
 
 `MGF.Tools.Migrator` will:
@@ -79,7 +79,7 @@ If a full Dev reset is ever required, handle it manually outside the repo and th
 ```powershell
 $env:MGF_ENV = "Dev"
 $env:MGF_DB_MODE = "direct"
-dotnet run --project src/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.Tools.Migrator
 ```
 
 Integration tests may truncate data between test classes and require explicit opt-in flags:
@@ -114,7 +114,7 @@ HAVING COUNT(*) > 1;
 Shows migrations known to EF in `MGF.Infrastructure`:
 
 ```powershell
-dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 ### Add a migration
@@ -122,7 +122,7 @@ dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src
 Creates new migration files under `src/MGF.Infrastructure/Migrations/`:
 
 ```powershell
-dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 ### Apply migrations (update the database)
@@ -130,13 +130,13 @@ dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-proje
 Recommended (applies migrations + seeds lookups):
 
 ```powershell
-dotnet run --project src/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.Tools.Migrator
 ```
 
 EF CLI alternative (updates DB only; does not run custom seeding):
 
 ```powershell
-dotnet ef database update --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef database update --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 ### Remove the latest migration
@@ -144,7 +144,7 @@ dotnet ef database update --project src/MGF.Infrastructure --startup-project src
 Removes the most recent migration files (use with care):
 
 ```powershell
-dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 Notes:
@@ -153,7 +153,7 @@ Notes:
 ### Roll back to a previous migration
 
 ```powershell
-dotnet ef database update <PreviousMigrationName> --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef database update <PreviousMigrationName> --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 ## Alternative: session env var (ad-hoc)
@@ -164,7 +164,7 @@ For one PowerShell session:
 $env:MGF_DB_MODE = "direct"
 $env:Database__Dev__DirectConnectionString = "<Npgsql connection string>"
 $env:MGF_ENV = "Dev"
-dotnet run --project src/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.Tools.Migrator
 ```
 
 Or use `scripts/set-dev-connection.ps1` to set the session env var without committing secrets.
@@ -174,7 +174,7 @@ Or use `scripts/set-dev-connection.ps1` to set the session env var without commi
 Set `Database__Prod__DirectConnectionString`, `MGF_DB_MODE=direct`, and `MGF_ENV=Prod` as secret environment variables in the deployment pipeline, then run:
 
 ```powershell
-dotnet run --project src/MGF.Tools.Migrator
+dotnet run --project src/Data/MGF.Tools.Migrator
 ```
 
 ## Teammate-safe commands
@@ -183,5 +183,5 @@ These are read-only / local-safe:
 
 ```powershell
 dotnet build .\MGF.sln
-dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator
+dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
