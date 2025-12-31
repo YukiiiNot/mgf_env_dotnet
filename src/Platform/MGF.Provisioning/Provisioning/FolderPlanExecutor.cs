@@ -1,4 +1,4 @@
-using MGF.Application.Abstractions;
+using MGF.Contracts.Abstractions;
 
 namespace MGF.Tools.Provisioner;
 
@@ -180,3 +180,4 @@ public sealed class ExecutionResult
     public List<string> Warnings { get; } = new();
     public List<string> Errors { get; } = new();
 }
+

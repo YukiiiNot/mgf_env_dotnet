@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
     <ProjectReference Include="..\..\Core\MGF.Domain\MGF.Domain.csproj" />
   </ItemGroup>
 
@@ -25,5 +25,6 @@
   </PropertyGroup>
 
 </Project>
+
 
 

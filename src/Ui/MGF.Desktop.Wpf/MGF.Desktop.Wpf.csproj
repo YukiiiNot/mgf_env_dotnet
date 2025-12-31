@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
     <ProjectReference Include="..\..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
   </ItemGroup>
 
@@ -26,5 +26,6 @@
   </ItemGroup>
 
 </Project>
+
 
 

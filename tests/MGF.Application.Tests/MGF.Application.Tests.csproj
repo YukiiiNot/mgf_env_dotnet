@@ -19,10 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Core\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\MGF.Contracts\MGF.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Core\MGF.Domain\MGF.Domain.csproj" />
   </ItemGroup>
 
 </Project>
+
 
 

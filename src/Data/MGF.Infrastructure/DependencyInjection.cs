@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MGF.Application.Abstractions;
+using MGF.Contracts.Abstractions;
 using MGF.Infrastructure.Configuration;
 using MGF.Infrastructure.Data;
 using MGF.Infrastructure.Data.Repositories;
@@ -30,3 +30,4 @@ public static class DependencyInjection
         return services;
     }
 }
+

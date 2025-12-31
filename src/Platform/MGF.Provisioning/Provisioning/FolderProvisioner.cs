@@ -1,4 +1,4 @@
-using MGF.Application.Abstractions;
+using MGF.Contracts.Abstractions;
 
 namespace MGF.Tools.Provisioner;
 
@@ -120,3 +120,4 @@ public sealed class FolderProvisioner
         };
     }
 }
+

@@ -1,6 +1,6 @@
-﻿using MGF.Domain.Entities;
+using MGF.Domain.Entities;
 
-namespace MGF.Application.Abstractions;
+namespace MGF.Contracts.Abstractions;
 
 public interface IFileStore
 {
@@ -34,3 +34,4 @@ public interface IProjectService
 {
     Task<Project> CreateProjectAsync(string clientId, string projectName, CancellationToken cancellationToken = default);
 }
+

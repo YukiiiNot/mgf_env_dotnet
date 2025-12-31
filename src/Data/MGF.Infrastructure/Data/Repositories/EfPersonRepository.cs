@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using MGF.Application.Abstractions;
+using MGF.Contracts.Abstractions;
 using MGF.Domain.Entities;
 
 namespace MGF.Infrastructure.Data.Repositories;
@@ -35,3 +35,4 @@ public sealed class EfPersonRepository : IPersonRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 }
+
