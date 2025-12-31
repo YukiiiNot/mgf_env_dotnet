@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace MGF.Tools.ProjectBootstrap;
+namespace MGF.ProjectBootstrapCli;
 
 public sealed class DevTestRootCleaner
 {
@@ -448,3 +448,4 @@ public sealed record DevTestRootApplyResult(
     IReadOnlyList<string> Actions,
     IReadOnlyList<string> Errors
 );
+

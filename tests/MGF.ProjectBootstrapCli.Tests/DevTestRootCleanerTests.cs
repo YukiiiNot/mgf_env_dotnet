@@ -1,4 +1,4 @@
-using MGF.Tools.ProjectBootstrap;
+using MGF.ProjectBootstrapCli;
 
 public sealed class DevTestRootCleanerTests
 {
@@ -166,3 +166,4 @@ public sealed class DevTestRootCleanerTests
         return root;
     }
 }
+

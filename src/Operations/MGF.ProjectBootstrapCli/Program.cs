@@ -10,7 +10,7 @@ using MGF.Domain.Entities;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
 using MGF.Provisioning;
-using MGF.Tools.ProjectBootstrap;
+using MGF.ProjectBootstrapCli;
 using MGF.Worker.Email.Composition;
 using MGF.Worker.Email.Models;
 using MGF.Worker.Email.Registry;
@@ -3319,5 +3319,6 @@ sealed record DeliveryPreviewFixtureFile(
     string? RelativePath,
     long? SizeBytes,
     DateTimeOffset? LastWriteTimeUtc);
+
 
 
