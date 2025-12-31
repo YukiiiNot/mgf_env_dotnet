@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Json.Schema;
 
-namespace MGF.Tools.Provisioner;
+namespace MGF.Provisioning;
 
 public sealed class FolderTemplateLoader
 {
@@ -127,3 +127,4 @@ public sealed record LoadedTemplate(
     string TemplatePath,
     string SchemaPath
 );
+

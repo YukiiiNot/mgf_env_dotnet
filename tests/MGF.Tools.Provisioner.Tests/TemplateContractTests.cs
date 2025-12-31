@@ -1,4 +1,4 @@
-namespace MGF.Tools.Provisioner.Tests;
+namespace MGF.Provisioning.Tests;
 
 public sealed class TemplateContractTests
 {

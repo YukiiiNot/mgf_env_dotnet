@@ -1,6 +1,6 @@
 namespace MGF.Worker.ProjectBootstrap;
 
-using MGF.Tools.Provisioner;
+using MGF.Provisioning;
 
 internal static class ProjectBootstrapGuards
 {
@@ -95,3 +95,4 @@ internal static class ProjectBootstrapGuards
             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     }
 }
+

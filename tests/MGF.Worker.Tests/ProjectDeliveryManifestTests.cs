@@ -1,4 +1,4 @@
-using MGF.Tools.Provisioner;
+using MGF.Provisioning;
 using MGF.Worker.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
@@ -36,3 +36,4 @@ public sealed class ProjectDeliveryManifestTests
         Assert.Equal("https://dropbox.test/share", manifest.StableShareUrl);
     }
 }
+

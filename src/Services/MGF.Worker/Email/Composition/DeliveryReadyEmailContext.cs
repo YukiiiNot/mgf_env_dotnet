@@ -1,6 +1,6 @@
 namespace MGF.Worker.Email.Composition;
 
-using MGF.Tools.Provisioner;
+using MGF.Provisioning;
 using MGF.Worker.ProjectDelivery;
 
 public sealed record DeliveryReadyEmailContext(
@@ -13,3 +13,4 @@ public sealed record DeliveryReadyEmailContext(
     string? ReplyTo,
     string? LogoUrl,
     string? FromName);
+

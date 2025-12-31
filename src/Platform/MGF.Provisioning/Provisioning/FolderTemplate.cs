@@ -1,4 +1,4 @@
-namespace MGF.Tools.Provisioner;
+namespace MGF.Provisioning;
 
 public sealed class FolderTemplate
 {
@@ -44,3 +44,4 @@ public enum FolderNodeKind
     Folder,
     File
 }
+

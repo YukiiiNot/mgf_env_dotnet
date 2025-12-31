@@ -1,4 +1,4 @@
-namespace MGF.Tools.Provisioner;
+namespace MGF.Provisioning;
 
 public sealed record ProvisioningResult(
     ProvisioningMode Mode,
@@ -35,3 +35,4 @@ public sealed record ProvisioningResult(
         Console.WriteLine($"provisioner: manifest={ManifestPath}");
     }
 }
+

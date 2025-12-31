@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using MGF.Tools.Provisioner;
+using MGF.Provisioning;
 using MGF.Worker.Email.Models;
 using MGF.Worker.Email.Composition;
 using MGF.Worker.ProjectDelivery;
@@ -167,3 +167,4 @@ public sealed class ProjectDeliveryEmailTests
 
     // no extra helpers
 }
+

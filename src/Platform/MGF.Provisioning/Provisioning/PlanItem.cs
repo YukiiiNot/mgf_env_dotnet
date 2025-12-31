@@ -1,4 +1,4 @@
-namespace MGF.Tools.Provisioner;
+namespace MGF.Provisioning;
 
 public enum PlanItemKind
 {
@@ -19,3 +19,4 @@ public sealed record FolderPlan(
     string TargetRoot,
     IReadOnlyList<PlanItem> Items
 );
+

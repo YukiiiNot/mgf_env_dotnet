@@ -1,4 +1,4 @@
-namespace MGF.Tools.Provisioner;
+namespace MGF.Provisioning;
 
 public static class TokenExpander
 {
@@ -87,3 +87,4 @@ public static class TokenExpander
         return input.Replace(token, value, StringComparison.Ordinal);
     }
 }
+

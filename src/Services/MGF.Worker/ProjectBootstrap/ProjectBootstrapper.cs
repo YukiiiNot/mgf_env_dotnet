@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Domain.Entities;
 using MGF.Data.Data;
-using MGF.Tools.Provisioner;
+using MGF.Provisioning;
 using Npgsql;
 
 public sealed class ProjectBootstrapper

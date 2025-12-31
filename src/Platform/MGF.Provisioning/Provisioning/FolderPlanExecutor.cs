@@ -1,6 +1,6 @@
 using MGF.Contracts.Abstractions;
 
-namespace MGF.Tools.Provisioner;
+namespace MGF.Provisioning;
 
 public sealed class FolderPlanExecutor
 {
@@ -180,4 +180,5 @@ public sealed class ExecutionResult
     public List<string> Warnings { get; } = new();
     public List<string> Errors { get; } = new();
 }
+
 

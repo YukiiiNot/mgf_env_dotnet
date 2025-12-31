@@ -1,6 +1,6 @@
 using MGF.Contracts.Abstractions;
 
-namespace MGF.Tools.Provisioner;
+namespace MGF.Provisioning;
 
 public sealed class LocalFileStore : IFileStore
 {
@@ -54,4 +54,5 @@ public sealed class LocalFileStore : IFileStore
         return Task.CompletedTask;
     }
 }
+
 

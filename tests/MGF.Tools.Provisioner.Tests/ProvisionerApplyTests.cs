@@ -1,4 +1,4 @@
-namespace MGF.Tools.Provisioner.Tests;
+namespace MGF.Provisioning.Tests;
 
 public sealed class ProvisionerApplyTests
 {
@@ -65,3 +65,4 @@ public sealed class ProvisionerApplyTests
         }
     }
 }
+

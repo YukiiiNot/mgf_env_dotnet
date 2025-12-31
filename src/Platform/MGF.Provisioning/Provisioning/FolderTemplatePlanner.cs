@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace MGF.Tools.Provisioner;
+namespace MGF.Provisioning;
 
 public sealed class FolderTemplatePlanner
 {
@@ -130,3 +130,4 @@ public sealed class FolderTemplatePlanner
         }
     }
 }
+

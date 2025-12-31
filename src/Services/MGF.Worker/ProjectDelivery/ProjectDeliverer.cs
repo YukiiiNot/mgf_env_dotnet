@@ -14,7 +14,7 @@ using MGF.Worker.Email.Composition;
 using MGF.Worker.Email.Models;
 using MGF.Worker.Email.Registry;
 using MGF.Worker.Email.Sending;
-using MGF.Tools.Provisioner;
+using MGF.Provisioning;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.Integrations.Dropbox;
 
