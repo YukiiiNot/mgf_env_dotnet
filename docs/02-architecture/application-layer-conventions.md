@@ -15,7 +15,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 ## Examples (current state)
 - `src/Services/MGF.Api`: HTTP host; controllers and middleware are service concerns today.
 - `src/Services/MGF.Worker`: job runner; many workflow handlers currently live in Worker.
-- `src/Operations/MGF.Tools.ProjectBootstrap`: CLI orchestrator for provisioning/delivery flows.
+- `src/Operations/MGF.ProjectBootstrapCli`: CLI orchestrator for provisioning/delivery flows.
 - `src/Core/MGF.Application`: current home for application abstractions and shared workflow helpers.
 - `src/Core/MGF.Domain`: domain entities and IDs.
 

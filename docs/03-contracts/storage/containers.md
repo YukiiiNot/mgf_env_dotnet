@@ -1,11 +1,11 @@
 ﻿# Container Templates
 
-Source of truth: `docs/templates/*.json`, `docs/schemas/*.schema.json`, `src/Operations/MGF.Tools.Provisioner`
+Source of truth: `artifacts/templates/*.json`, `artifacts/schemas/*.schema.json`, `src/Operations/MGF.ProvisionerCli`
 Change control: Update when container folder structures or naming rules change.
 Last verified: 2025-12-30
 
 
-These templates describe the three storage roles used for MGFilms projects. They are "shells" only and live under `docs/templates/`.
+These templates describe the three storage roles used for MGFilms projects. They are "shells" only and live under `artifacts/templates/`.
 
 ## Dropbox (business + exchange)
 

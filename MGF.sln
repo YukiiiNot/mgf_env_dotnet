@@ -31,7 +31,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.SquareImportCli", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.DbMigrationsInfoCli", "src\DevTools\MGF.DbMigrationsInfoCli\MGF.DbMigrationsInfoCli.csproj", "{709E55AA-D087-42A5-A0D7-3610CB0B362F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.Provisioner", "src\Operations\MGF.Tools.Provisioner\MGF.Tools.Provisioner.csproj", "{AE045178-4EC0-4367-A63B-427C113D7648}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.ProvisionerCli", "src\Operations\MGF.ProvisionerCli\MGF.ProvisionerCli.csproj", "{AE045178-4EC0-4367-A63B-427C113D7648}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Provisioning", "src\Platform\MGF.Provisioning\MGF.Provisioning.csproj", "{B5B9483E-3FD3-4F87-A80E-4FCD1490A629}"
 EndProject
@@ -39,7 +39,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.Provisioner.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.TemplateValidation.Tests", "tests\MGF.TemplateValidation.Tests\MGF.TemplateValidation.Tests.csproj", "{A12C1D09-C51E-4BED-9B5D-85ECDA1F84A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.ProjectBootstrap", "src\Operations\MGF.Tools.ProjectBootstrap\MGF.Tools.ProjectBootstrap.csproj", "{9FA4B1BC-A43F-4A2D-A5D5-618C400CA4A9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.ProjectBootstrapCli", "src\Operations\MGF.ProjectBootstrapCli\MGF.ProjectBootstrapCli.csproj", "{9FA4B1BC-A43F-4A2D-A5D5-618C400CA4A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.LegacyAuditCli", "src\DevTools\MGF.LegacyAuditCli\MGF.LegacyAuditCli.csproj", "{A09AEA20-8FEF-4C03-ADB7-BD1B95CB3340}"
 EndProject
@@ -47,7 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.LegacyAuditCli.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Worker.Tests", "tests\MGF.Worker.Tests\MGF.Worker.Tests.csproj", "{E9423ABD-6256-4DF9-876D-8ADE5ED88A97}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.ProjectBootstrap.Tests", "tests\MGF.Tools.ProjectBootstrap.Tests\MGF.Tools.ProjectBootstrap.Tests.csproj", "{EAC860A6-AE17-41FC-B5C5-BE1A48C278AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.ProjectBootstrapCli.Tests", "tests\MGF.ProjectBootstrapCli.Tests\MGF.ProjectBootstrapCli.Tests.csproj", "{EAC860A6-AE17-41FC-B5C5-BE1A48C278AE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{07C2787E-EAC7-C090-1BA3-A61EC2A24D84}"
 EndProject

@@ -1,16 +1,16 @@
-ï»¿# Onboarding (MGF)
+# Onboarding (MGF)
 
 This guide gets a second developer productive without touching production.
 
 ## Repo layout (high level)
 
-- `src/Services/MGF.Api` â€” internal Web API (DB entrypoint for apps)
-- `src/Services/MGF.Worker` â€” background jobs runner
-- `src/Operations/MGF.Tools.ProjectBootstrap` â€” CLI for bootstrap/archive/delivery/email/preview
-- `src/Data/MGF.Tools.Migrator` â€” migrations + lookup seeding
-- `src/Services/MGF.Worker/Email` â€” email subsystem (templates, senders, preview)
-- `docs/` â€” runbooks, workflow, templates, contracts
-- `tests/` â€” unit + contract tests
+- `src/Services/MGF.Api` — internal Web API (DB entrypoint for apps)
+- `src/Services/MGF.Worker` — background jobs runner
+- `src/Operations/MGF.ProjectBootstrapCli` — CLI for bootstrap/archive/delivery/email/preview
+- `src/Data/MGF.Tools.Migrator` — migrations + lookup seeding
+- `src/Services/MGF.Worker/Email` — email subsystem (templates, senders, preview)
+- `docs/` — runbooks, workflow, templates, contracts
+- `tests/` — unit + contract tests
 
 ## Local config + precedence
 
@@ -51,20 +51,20 @@ Common commands:
 
 ```powershell
 # mark ready_to_provision
-dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- ready --projectId <PROJECT_ID>
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- ready --projectId <PROJECT_ID>
 
 # bootstrap
-dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- enqueue --projectId <PROJECT_ID> --editors TE --verifyDomainRoots true --createDomainRoots true --provisionProjectContainers true
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- enqueue --projectId <PROJECT_ID> --editors TE --verifyDomainRoots true --createDomainRoots true --provisionProjectContainers true
 
 # deliver (see docs/05-runbooks/delivery.md for the full sequence)
-dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
-dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- deliver --projectId <PROJECT_ID> --editorInitials TE
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- to-deliver --projectId <PROJECT_ID>
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- deliver --projectId <PROJECT_ID> --editorInitials TE
 ```
 
 ### Email preview (no send)
 
 ```powershell
-dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- email-preview --fixture basic --out .\runtime\email_preview
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- email-preview --fixture basic --out .\runtime\email_preview
 ```
 
 ## Tests to run
@@ -74,7 +74,7 @@ dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- email-preview 
 dotnet test -c Release tests\MGF.Worker.Tests\MGF.Worker.Tests.csproj
 
 # ProjectBootstrap CLI tests
-dotnet test -c Release tests\MGF.Tools.ProjectBootstrap.Tests\MGF.Tools.ProjectBootstrap.Tests.csproj
+dotnet test -c Release tests\MGF.ProjectBootstrapCli.Tests\MGF.ProjectBootstrapCli.Tests.csproj
 ```
 
 ## Where to start (new dev)
@@ -92,3 +92,4 @@ dotnet test -c Release tests\MGF.Tools.ProjectBootstrap.Tests\MGF.Tools.ProjectB
 - **EmailKind**: enum identifying an email type (delivery_ready, etc.).
 - **EmailProfile**: sender policy (allowed From addresses, defaults).
 - **Root contract**: required/optional top-level folders for Dropbox/LucidLink/NAS roots.
+

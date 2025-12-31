@@ -6,7 +6,7 @@ Short, daily-readable map of what exists, what is partial, and what we do next.
 
 | Workflow | Status | Key commands/jobs | Next concrete milestone |
 | --- | --- | --- | --- |
-| Project lifecycle (create → bootstrap/provision → active) | Done (v1) | `project.bootstrap` job, `MGF.Tools.ProjectBootstrap` | Reduce manual steps for new project setup (UI/ops console) |
+| Project lifecycle (create → bootstrap/provision → active) | Done (v1) | `project.bootstrap` job, `MGF.ProjectBootstrapCli` | Reduce manual steps for new project setup (UI/ops console) |
 | Archive (active → to_archive → archived) | Done (v1) | `project.archive` job | Add retention reporting (report-only) |
 | Delivery (versioned exports + share + email) | Done (v1.3) | `project.delivery`, `project.delivery_email` | Delivery runs table + retention report (no deletes) |
 | Asset ingest | Not Started | — | Define ingest contract + guardrails |
@@ -60,7 +60,7 @@ Short, daily-readable map of what exists, what is partial, and what we do next.
   - Email subsystem: `src/Services/MGF.Worker/Email/`
   - Delivery: `src/Services/MGF.Worker/ProjectDelivery/`
   - Bootstrap/Archive: `src/Services/MGF.Worker/ProjectBootstrap/`
-  - Templates/Contracts: `docs/templates/`, `docs/03-contracts/storage/infra-contracts.md`
+  - Templates/Contracts: `artifacts/templates/`, `docs/03-contracts/storage/infra-contracts.md`
 - Communicate changes in ROADMAP + README docs index.
 
 ## WPF App (Ops Console) scope

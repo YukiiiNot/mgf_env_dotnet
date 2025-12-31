@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <AssemblyName>MGF.ProjectBootstrapCli.Tests</AssemblyName>
+    <RootNamespace>MGF.ProjectBootstrapCli.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Operations\MGF.Tools.ProjectBootstrap\MGF.Tools.ProjectBootstrap.csproj" />
+    <ProjectReference Include="..\..\src\Operations\MGF.ProjectBootstrapCli\MGF.ProjectBootstrapCli.csproj" />
   </ItemGroup>
 
 </Project>

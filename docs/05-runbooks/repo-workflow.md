@@ -1,4 +1,4 @@
-﻿# Repo workflow runbook (MGF)
+# Repo workflow runbook (MGF)
 
 Source of truth: `.github/workflows/ci.yml`, `.github/workflows/migrate-staging.yml`, `.github/workflows/migrate-prod.yml`, `src/Data/MGF.Infrastructure/Migrations`, `src/Data/MGF.Tools.Migrator`
 Change control: Update when branch model, CI gates, or migration automation changes.
@@ -46,7 +46,7 @@ $env:MGF_DB_MODE = "direct"
 dotnet run --project src/Data/MGF.Tools.Migrator
 ```
 
-âš ï¸ Do not run this against staging or prod.
+?? Do not run this against staging or prod.
 Staging/prod migrations are applied only via GitHub Actions using EF bundles.
 
 ### 4) Run API / Worker locally
@@ -68,8 +68,8 @@ Project creation is **draft-first** and provisioning/delivery are **explicit** j
 
 ```powershell
 # Bootstrap (project + roots)
-dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- ready --projectId <PROJECT_ID>
-dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- enqueue `
+dotnet run --project src/Operations/MGF.ProjectBootstrapCli -- ready --projectId <PROJECT_ID>
+dotnet run --project src/Operations/MGF.ProjectBootstrapCli -- enqueue `
   --projectId <PROJECT_ID> `
   --editors TE `
   --verifyDomainRoots true `
@@ -77,8 +77,8 @@ dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- enqueue `
   --provisionProjectContainers true
 
 # Delivery (see delivery.md for full flow)
-dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
-dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- deliver --projectId <PROJECT_ID> --editorInitials TE
+dotnet run --project src/Operations/MGF.ProjectBootstrapCli -- to-deliver --projectId <PROJECT_ID>
+dotnet run --project src/Operations/MGF.ProjectBootstrapCli -- deliver --projectId <PROJECT_ID> --editorInitials TE
 ```
 
 ## Editorial file naming + templates
@@ -92,11 +92,11 @@ We follow Adobe Premiere Productions norms. The system **does not** version or m
 - Exports/renders **do** use versioning (e.g., `..._EXPORT_v###.mp4`).
 
 Templates and schemas:
-- Folder templates live in `docs/templates/`
+- Folder templates live in `artifacts/templates/`
   - Domain roots: `domain_dropbox_root.json`, `domain_lucidlink_root.json`, `domain_nas_root.json`
   - Project containers: `dropbox_project_container.json`, `lucidlink_production_container.json`, `nas_archive_container.json`
   - Delivery container: `dropbox_delivery_container.json`
-- JSON Schemas live in `docs/schemas/`
+- JSON Schemas live in `artifacts/schemas/`
   - `mgf.folderTemplate.schema.json`
   - `mgf.namingRules.schema.json`
 
@@ -213,3 +213,4 @@ git push
 
 # deploy prod by PR merging staging -> main (then push/merge triggers migrate-prod.yml)
 ```
+

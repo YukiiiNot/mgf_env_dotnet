@@ -6,10 +6,10 @@ This repo runs production workflows. Some areas are long-lived infrastructure co
 
 Changes to the following require review from the infra owner (Ermano):
 
-- `docs/templates/**`
-- `docs/schemas/**`
-- `src/Operations/MGF.Tools.Provisioner/**`
-- `src/Operations/MGF.Tools.ProjectBootstrap/**`
+- `artifacts/templates/**`
+- `artifacts/schemas/**`
+- `src/Operations/MGF.ProvisionerCli/**`
+- `src/Operations/MGF.ProjectBootstrapCli/**`
 - `src/Services/MGF.Worker/**`
 - Database migrations
 - Any code that provisions, validates, repairs, or bootstraps storage

@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
+    <AssemblyName>MGF.ProjectBootstrapCli</AssemblyName>
+    <RootNamespace>MGF.ProjectBootstrapCli</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

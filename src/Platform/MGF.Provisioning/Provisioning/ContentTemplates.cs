@@ -24,7 +24,7 @@ public static class ContentTemplates
             }
 
             builder.AppendLine();
-            builder.AppendLine("This folder structure was created by MGF.Tools.Provisioner.");
+            builder.AppendLine("This folder structure was created by MGF.ProvisionerCli.");
             builder.AppendLine("Place additional notes for the team here.");
 
             content = Encoding.UTF8.GetBytes(builder.ToString());

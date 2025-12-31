@@ -30,25 +30,27 @@ Project Container templates:
 - `lucidlink_production_container.json`
 - `nas_archive_container.json`
 
-Schemas live in `../schemas/`
+Templates live in `../../artifacts/templates/`
+
+Schemas live in `../../artifacts/schemas/`
 
 ## How to run the Provisioner (defaults)
 
-Validate a template (uses `.\docs\schemas\mgf.folderTemplate.schema.json` by default):
+Validate a template (uses `.\artifacts\schemas\mgf.folderTemplate.schema.json` by default):
 
 ```powershell
-dotnet run --project .\src\Operations\MGF.Tools.Provisioner -- validate --template .\docs\templates\lucidlink_production_container.json
+dotnet run --project .\src\Operations\MGF.ProvisionerCli -- validate --template .\artifacts\templates\lucidlink_production_container.json
 ```
 
 Plan a folder tree (defaults output to `.\runtime\provisioner_runs`):
 
 ```powershell
-dotnet run --project .\src\Operations\MGF.Tools.Provisioner -- plan --template .\docs\templates\lucidlink_production_container.json --projectCode MGF25-0001 --projectName Example --clientName Client --editors ER
+dotnet run --project .\src\Operations\MGF.ProvisionerCli -- plan --template .\artifacts\templates\lucidlink_production_container.json --projectCode MGF25-0001 --projectName Example --clientName Client --editors ER
 ```
 
 Apply + verify (also defaults to `.\runtime\provisioner_runs`):
 
 ```powershell
-dotnet run --project .\src\Operations\MGF.Tools.Provisioner -- apply --template .\docs\templates\lucidlink_production_container.json --projectCode MGF25-0002 --projectName ExampleApply --clientName Client --editors ER
-dotnet run --project .\src\Operations\MGF.Tools.Provisioner -- verify --template .\docs\templates\lucidlink_production_container.json --projectCode MGF25-0002 --projectName ExampleApply --clientName Client --editors ER
+dotnet run --project .\src\Operations\MGF.ProvisionerCli -- apply --template .\artifacts\templates\lucidlink_production_container.json --projectCode MGF25-0002 --projectName ExampleApply --clientName Client --editors ER
+dotnet run --project .\src\Operations\MGF.ProvisionerCli -- verify --template .\artifacts\templates\lucidlink_production_container.json --projectCode MGF25-0002 --projectName ExampleApply --clientName Client --editors ER
 ```

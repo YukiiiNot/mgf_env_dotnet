@@ -478,6 +478,12 @@ static Command CreateEmailPreviewCommand()
         Arity = ArgumentArity.ZeroOrOne
     };
 
+    var snapshotOutOption = new Option<string?>("--snapshotOut")
+    {
+        Description = "Output directory for snapshot HTML when --writeSnapshots is set (dev-only).",
+        IsRequired = false
+    };
+
     var toOption = new Option<string[]>("--to")
     {
         Description = "Preview recipient(s) (optional; default info@mgfilms.pro).",
@@ -490,6 +496,7 @@ static Command CreateEmailPreviewCommand()
     command.AddOption(fixtureOption);
     command.AddOption(outOption);
     command.AddOption(writeSnapshotsOption);
+    command.AddOption(snapshotOutOption);
     command.AddOption(toOption);
 
     command.SetHandler(async context =>
@@ -505,6 +512,7 @@ static Command CreateEmailPreviewCommand()
         var outDir = context.ParseResult.GetValueForOption(outOption) ?? string.Empty;
         var fixture = context.ParseResult.GetValueForOption(fixtureOption);
         var writeSnapshots = context.ParseResult.GetValueForOption(writeSnapshotsOption) ?? false;
+        var snapshotOut = context.ParseResult.GetValueForOption(snapshotOutOption);
         var toEmails = ParseEmails(context.ParseResult.GetValueForOption(toOption) ?? Array.Empty<string>());
         if (toEmails.Count == 0)
         {
@@ -514,7 +522,14 @@ static Command CreateEmailPreviewCommand()
         int exitCode;
         if (!string.IsNullOrWhiteSpace(fixture))
         {
-            exitCode = await RenderDeliveryPreviewFromFixtureAsync(fixture, outDir, toEmails, writeSnapshots);
+            if (writeSnapshots && string.IsNullOrWhiteSpace(snapshotOut))
+            {
+                Console.Error.WriteLine("bootstrap: email-preview --writeSnapshots requires --snapshotOut.");
+                context.ExitCode = 1;
+                return;
+            }
+
+            exitCode = await RenderDeliveryPreviewFromFixtureAsync(fixture, outDir, toEmails, writeSnapshots, snapshotOut);
         }
         else
         {
@@ -2390,7 +2405,7 @@ static async Task<int> CreateTestProjectAsync(
         {
             ["test_key"] = testKey,
             ["test_type"] = "bootstrap",
-            ["created_by"] = "MGF.Tools.ProjectBootstrap",
+            ["created_by"] = "MGF.ProjectBootstrapCli",
             ["created_at"] = DateTimeOffset.UtcNow.ToString("O")
         });
 
@@ -2710,7 +2725,8 @@ static async Task<int> RenderDeliveryPreviewFromFixtureAsync(
     string fixture,
     string outDir,
     IReadOnlyList<string> toEmails,
-    bool writeSnapshots)
+    bool writeSnapshots,
+    string? snapshotOut)
 {
     try
     {
@@ -2816,7 +2832,7 @@ static async Task<int> RenderDeliveryPreviewFromFixtureAsync(
 
         if (writeSnapshots)
         {
-            await WriteSnapshotAsync(fixture, message.HtmlBody ?? message.BodyText);
+            await WriteSnapshotAsync(fixture, message.HtmlBody ?? message.BodyText, snapshotOut);
         }
 
         return 0;
@@ -2837,17 +2853,7 @@ static string ResolveEmailTemplatesRoot()
         return runtimePath;
     }
 
-    var repoRoot = FindRepoRoot(baseDir);
-    if (!string.IsNullOrWhiteSpace(repoRoot))
-    {
-        var repoPath = Path.Combine(repoRoot, "src", "MGF.Worker", "Email", "Templates");
-        if (Directory.Exists(repoPath) && HasEmailTemplates(repoPath))
-        {
-            return repoPath;
-        }
-    }
-
-    throw new DirectoryNotFoundException("Email templates folder not found.");
+    throw new DirectoryNotFoundException($"Email templates folder not found at {runtimePath}.");
 }
 
 static bool HasEmailTemplates(string templatesRoot)
@@ -2867,36 +2873,19 @@ static string ResolveFixturePath(string templatesRoot, string fixture)
     return Path.Combine(templatesRoot, "fixtures", $"{normalized}.json");
 }
 
-static async Task WriteSnapshotAsync(string fixture, string htmlBody)
+static async Task WriteSnapshotAsync(string fixture, string htmlBody, string? snapshotOut)
 {
-    var repoRoot = FindRepoRoot(AppContext.BaseDirectory);
-    if (string.IsNullOrWhiteSpace(repoRoot))
+    if (string.IsNullOrWhiteSpace(snapshotOut))
     {
-        Console.Error.WriteLine("bootstrap: email-preview unable to locate repo root for snapshots.");
+        Console.Error.WriteLine("bootstrap: email-preview snapshot output path is required.");
         return;
     }
 
-    var snapshotsDir = Path.Combine(repoRoot, "tests", "MGF.Worker.Tests", "EmailSnapshots");
+    var snapshotsDir = Path.GetFullPath(snapshotOut);
     Directory.CreateDirectory(snapshotsDir);
     var snapshotPath = Path.Combine(snapshotsDir, $"delivery_ready_{fixture}.html");
     await File.WriteAllTextAsync(snapshotPath, htmlBody);
     Console.WriteLine($"bootstrap: email-preview wrote snapshot {snapshotPath}");
-}
-
-static string? FindRepoRoot(string start)
-{
-    var dir = new DirectoryInfo(start);
-    while (dir is not null)
-    {
-        if (dir.EnumerateFiles("MGF.sln").Any())
-        {
-            return dir.FullName;
-        }
-
-        dir = dir.Parent;
-    }
-
-    return null;
 }
 
 static async Task<DeliveryPreviewProject?> LoadProjectPreviewAsync(NpgsqlConnection conn, string projectId)

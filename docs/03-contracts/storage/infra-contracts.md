@@ -1,6 +1,6 @@
 ﻿# Infrastructure Contracts
 
-Source of truth: `docs/templates/*.json`, `docs/schemas/*.schema.json`, `src/Operations/MGF.Tools.Provisioner`, `src/Operations/MGF.Tools.ProjectBootstrap`
+Source of truth: `artifacts/templates/*.json`, `artifacts/schemas/*.schema.json`, `src/Operations/MGF.ProvisionerCli`, `src/Operations/MGF.ProjectBootstrapCli`
 Change control: Update when template structure, schemas, or provisioning guarantees change.
 Last verified: 2025-12-30
 
@@ -15,7 +15,7 @@ This document explains the intent behind our infrastructure contracts. It is for
 
 ## What templates represent
 
-Templates under `docs/templates/` are contracts, not suggestions. They define the expected folder layout
+Templates under `artifacts/templates/` are contracts, not suggestions. They define the expected folder layout
 for domains and projects. They must stay stable over time so old projects still match the contract.
 
 ## What the Provisioner guarantees

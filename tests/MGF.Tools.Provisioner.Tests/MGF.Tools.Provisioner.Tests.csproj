@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Operations\MGF.Tools.Provisioner\MGF.Tools.Provisioner.csproj" />
+    <ProjectReference Include="..\..\src\Operations\MGF.ProvisionerCli\MGF.ProvisionerCli.csproj" />
   </ItemGroup>
 
 </Project>
