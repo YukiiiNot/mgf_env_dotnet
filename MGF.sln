@@ -27,7 +27,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Api", "src\Services\MGF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Worker", "src\Services\MGF.Worker\MGF.Worker.csproj", "{2D5304AF-DACF-472D-BB5B-79418082F00F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.SquareImport", "src\DevTools\MGF.Tools.SquareImport\MGF.Tools.SquareImport.csproj", "{CA1639AE-FFAA-4378-AE1A-904D4456F738}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.SquareImportCli", "src\DevTools\MGF.SquareImportCli\MGF.SquareImportCli.csproj", "{CA1639AE-FFAA-4378-AE1A-904D4456F738}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.DbMigrationsInfoCli", "src\DevTools\MGF.DbMigrationsInfoCli\MGF.DbMigrationsInfoCli.csproj", "{709E55AA-D087-42A5-A0D7-3610CB0B362F}"
 EndProject
@@ -41,9 +41,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.TemplateValidation.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.ProjectBootstrap", "src\Operations\MGF.Tools.ProjectBootstrap\MGF.Tools.ProjectBootstrap.csproj", "{9FA4B1BC-A43F-4A2D-A5D5-618C400CA4A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.LegacyAudit", "src\DevTools\MGF.Tools.LegacyAudit\MGF.Tools.LegacyAudit.csproj", "{A09AEA20-8FEF-4C03-ADB7-BD1B95CB3340}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.LegacyAuditCli", "src\DevTools\MGF.LegacyAuditCli\MGF.LegacyAuditCli.csproj", "{A09AEA20-8FEF-4C03-ADB7-BD1B95CB3340}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.LegacyAudit.Tests", "tests\MGF.Tools.LegacyAudit.Tests\MGF.Tools.LegacyAudit.Tests.csproj", "{D7CA95D2-1857-4354-A450-952E20730651}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.LegacyAuditCli.Tests", "tests\MGF.LegacyAuditCli.Tests\MGF.LegacyAuditCli.Tests.csproj", "{D7CA95D2-1857-4354-A450-952E20730651}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Worker.Tests", "tests\MGF.Worker.Tests\MGF.Worker.Tests.csproj", "{E9423ABD-6256-4DF9-876D-8ADE5ED88A97}"
 EndProject
@@ -61,7 +61,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{732B4FAF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevSecretsTool.Tests", "tools\dev-secrets\tests\DevSecretsTool.Tests\DevSecretsTool.Tests.csproj", "{94E49E1C-15AD-485E-A33C-90117AD4C11D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.SquareImport.Tests", "tests\MGF.Tools.SquareImport.Tests\MGF.Tools.SquareImport.Tests.csproj", "{2D76D08D-0874-4FF0-AC9A-FEED97870831}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.SquareImportCli.Tests", "tests\MGF.SquareImportCli.Tests\MGF.SquareImportCli.Tests.csproj", "{2D76D08D-0874-4FF0-AC9A-FEED97870831}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

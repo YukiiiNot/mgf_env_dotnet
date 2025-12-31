@@ -5,6 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>MGF.LegacyAuditCli</AssemblyName>
+    <RootNamespace>MGF.LegacyAuditCli</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

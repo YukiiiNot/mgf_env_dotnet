@@ -1,6 +1,6 @@
 ﻿# Destructive Operations Audit
 
-Source of truth: `tests/MGF.Infrastructure.IntegrationTests/DatabaseFixture.cs`, `src/DevTools/MGF.Tools.SquareImport/Importers/CustomersImporter.cs`, `src/DevTools/MGF.Tools.SquareImport/Commands/CustomersCommand.cs`
+Source of truth: `tests/MGF.Infrastructure.IntegrationTests/DatabaseFixture.cs`, `src/DevTools/MGF.SquareImportCli/Importers/CustomersImporter.cs`, `src/DevTools/MGF.SquareImportCli/Commands/CustomersCommand.cs`
 Change control: Update when destructive operations or guardrails change.
 Last verified: 2025-12-30
 
@@ -61,7 +61,7 @@ dotnet test .\MGF.sln
 
 ### 2) Square import customers reset (DEV-only, gated)
 
-**Path:** `src/DevTools/MGF.Tools.SquareImport/Importers/CustomersImporter.cs`  
+**Path:** `src/DevTools/MGF.SquareImportCli/Importers/CustomersImporter.cs`  
 **Snippet:**
 
 ```csharp
@@ -76,7 +76,7 @@ clientsRemoved += await db.Clients
     .ExecuteDeleteAsync(cancellationToken);
 ```
 
-**Path:** `src/DevTools/MGF.Tools.SquareImport/Commands/CustomersCommand.cs`  
+**Path:** `src/DevTools/MGF.SquareImportCli/Commands/CustomersCommand.cs`  
 **Snippet:**
 
 ```csharp
@@ -101,7 +101,7 @@ Console.Write("Type RESET to confirm destructive customer reset: ");
 
 ```powershell
 $env:MGF_ENV = "Dev"
-dotnet run --project src/DevTools/MGF.Tools.SquareImport -- customers --reset --i-understand-this-will-destroy-data
+dotnet run --project src/DevTools/MGF.SquareImportCli -- customers --reset --i-understand-this-will-destroy-data
 ```
 
 ---

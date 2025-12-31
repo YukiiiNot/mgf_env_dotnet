@@ -1,4 +1,4 @@
-﻿# MGF.Tools.LegacyAudit
+# MGF.LegacyAuditCli
 
 Read-only NAS audit tool for legacy cleanup planning. Scans a UNC root and produces JSON + CSV reports in a local output folder.
 
@@ -7,7 +7,7 @@ Read-only NAS audit tool for legacy cleanup planning. Scans a UNC root and produ
 ```powershell
 # Writes are gated: use --apply to write reports.
 # Output defaults under .\runtime\legacy_audit\outputs\<root>_<timestamp>
-dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --apply
+dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --apply
 ```
 
 ## Profiles
@@ -19,22 +19,22 @@ dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root "\\Truena
 
 ```powershell
 # OFFLOAD 2 (default output under ./runtime)
-dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --apply
+dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --apply
 
 # OFDLOAD 3 (spelling as-is)
-dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFDLOAD 3" --apply
+dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zan4k pool\OFDLOAD 3" --apply
 
 # OFFLOAD 4 (empty)
-dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 4" --apply
+dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zan4k pool\OFFLOAD 4" --apply
 
 # OFFLOAD 5 (empty)
-dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zan4k pool\OFFLOAD 5" --apply
+dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zan4k pool\OFFLOAD 5" --apply
 
 # ZANA Sector 2
-dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zana 10tb - 01\Sector 2" --apply
+dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zana 10tb - 01\Sector 2" --apply
 
 # ZANA Sector 01
-dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root "\\Truenas\zana 20tb - 00\SECTOR 01" --apply
+dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zana 20tb - 00\SECTOR 01" --apply
 ```
 
 ## Classifications
@@ -81,3 +81,4 @@ If `_mgf_project.tag.json` or `_MGF_PROJECT.tag.json` exists in a folder, that f
 - `kind=container` => `container_confirmed`
 
 Heuristic and hierarchy scores are still computed and included in `scan_report.json` for transparency.
+

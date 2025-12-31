@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <AssemblyName>MGF.LegacyAuditCli.Tests</AssemblyName>
+    <RootNamespace>MGF.LegacyAuditCli.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DevTools\MGF.Tools.LegacyAudit\MGF.Tools.LegacyAudit.csproj" />
+    <ProjectReference Include="..\..\src\DevTools\MGF.LegacyAuditCli\MGF.LegacyAuditCli.csproj" />
   </ItemGroup>
 
 </Project>
