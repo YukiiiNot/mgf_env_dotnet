@@ -52,4 +52,4 @@ jobs:
 
       - name: Applied migrations (after)
         shell: pwsh
-        run: dotnet run --project src/MGF.Tools.DbMigrationsInfo -c Release -- --connection $env:Database__Prod__DirectConnectionString
+        run: dotnet run --project src/DevTools/MGF.DbMigrationsInfoCli -c Release -- --connection $env:Database__Prod__DirectConnectionString

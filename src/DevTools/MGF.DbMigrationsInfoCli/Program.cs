@@ -97,10 +97,10 @@ public static class Program
     {
         Console.WriteLine(
             """
-            MGF.Tools.DbMigrationsInfo
+            MGF.DbMigrationsInfoCli
 
             Usage:
-              dotnet run --project src/DevTools/MGF.Tools.DbMigrationsInfo -- --connection "<Npgsql connection string>"
+              dotnet run --project src/DevTools/MGF.DbMigrationsInfoCli -- --connection "<Npgsql connection string>"
 
             Or set:
               DB_CONNECTION_STRING="<Npgsql connection string>"

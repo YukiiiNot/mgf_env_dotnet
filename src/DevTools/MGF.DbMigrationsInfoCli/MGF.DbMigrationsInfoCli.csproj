@@ -5,6 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>MGF.DbMigrationsInfoCli</AssemblyName>
+    <RootNamespace>MGF.DbMigrationsInfoCli</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
