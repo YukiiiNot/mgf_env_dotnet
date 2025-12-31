@@ -39,7 +39,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.TemplateValidation.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.ProjectBootstrap", "src\MGF.Tools.ProjectBootstrap\MGF.Tools.ProjectBootstrap.csproj", "{9FA4B1BC-A43F-4A2D-A5D5-618C400CA4A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.LegacyAudit", "src\MGF.Tools.LegacyAudit\MGF.Tools.LegacyAudit.csproj", "{A09AEA20-8FEF-4C03-ADB7-BD1B95CB3340}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.LegacyAudit", "src\DevTools\MGF.Tools.LegacyAudit\MGF.Tools.LegacyAudit.csproj", "{A09AEA20-8FEF-4C03-ADB7-BD1B95CB3340}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.LegacyAudit.Tests", "tests\MGF.Tools.LegacyAudit.Tests\MGF.Tools.LegacyAudit.Tests.csproj", "{D7CA95D2-1857-4354-A450-952E20730651}"
 EndProject

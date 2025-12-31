@@ -12,8 +12,8 @@ internal static class ScanCommand
         var command = new Command("scan", @"Scan a NAS root (read-only) and produce audit reports.
 
 Examples:
-  dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root ""\\Truenas\zan4k pool\OFFLOAD 2"" --out ""C:\mgf_audit_out\OFFLOAD_2""
-  dotnet run --project src/MGF.Tools.LegacyAudit -- scan --root ""\\Truenas\zana 10tb - 01\Sector 2"" --out ""C:\mgf_audit_out\ZANA10_Sector2""");
+  dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root ""\\Truenas\zan4k pool\OFFLOAD 2"" --out ""C:\mgf_audit_out\OFFLOAD_2""
+  dotnet run --project src/DevTools/MGF.Tools.LegacyAudit -- scan --root ""\\Truenas\zana 10tb - 01\Sector 2"" --out ""C:\mgf_audit_out\ZANA10_Sector2""");
 
         var rootOption = new Option<string>("--root") { IsRequired = true, Description = "UNC path to scan (required)." };
         var outOption = new Option<string>("--out") { Description = "Local output folder for reports (defaults under ./runtime)." };
