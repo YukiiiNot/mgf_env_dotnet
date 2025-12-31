@@ -57,9 +57,9 @@ Short, daily-readable map of what exists, what is partial, and what we do next.
 - Small, focused PRs only. Avoid sweeping refactors.
 - Contract-first: update docs/tests/runbooks with each workflow change.
 - Avoid overlapping files. Use ownership zones:
-  - Email subsystem: `src/MGF.Worker/Email/`
-  - Delivery: `src/MGF.Worker/ProjectDelivery/`
-  - Bootstrap/Archive: `src/MGF.Worker/ProjectBootstrap/`
+  - Email subsystem: `src/Services/MGF.Worker/Email/`
+  - Delivery: `src/Services/MGF.Worker/ProjectDelivery/`
+  - Bootstrap/Archive: `src/Services/MGF.Worker/ProjectBootstrap/`
   - Templates/Contracts: `docs/templates/`, `docs/03-contracts/storage/infra-contracts.md`
 - Communicate changes in ROADMAP + README docs index.
 

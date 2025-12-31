@@ -56,7 +56,7 @@ Staging/prod migrations are applied only via GitHub Actions using EF bundles.
 dotnet run --project src/MGF.Api
 
 # Worker (polls public.jobs)
-dotnet run --project src/MGF.Worker
+dotnet run --project src/Services/MGF.Worker
 ```
 
 ### 5) Project provisioning + delivery (jobs)

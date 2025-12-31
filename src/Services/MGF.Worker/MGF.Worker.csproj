@@ -14,11 +14,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
-    <ProjectReference Include="..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
+    <ProjectReference Include="..\..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Update="Email\Templates\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\..\artifacts\templates\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <TargetPath>artifacts\templates\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
+    <Content Include="..\..\..\artifacts\schemas\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <TargetPath>artifacts\schemas\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
   </ItemGroup>
 </Project>
+

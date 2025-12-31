@@ -13,12 +13,12 @@ This repo favors guardrails, contracts, and runbooks over cleverness.
 
 ## Integrations
 
-Add new integrations under `src/MGF.Worker/Integrations/<Provider>`.
+Add new integrations under `src/Services/MGF.Worker/Integrations/<Provider>`.
 Keep APIs behind small interfaces so tests can fake them.
 
 ## Email subsystem
 
-All email work lives under `src/MGF.Worker/Email/`.
+All email work lives under `src/Services/MGF.Worker/Email/`.
 Add new emails by:
 1. Create context model + composer
 2. Add templates (.html/.txt)
@@ -33,7 +33,7 @@ Add new emails by:
 
 ## Where to add new workflows
 
-- Job handlers: `src/MGF.Worker/<Workflow>`
+- Job handlers: `src/Services/MGF.Worker/<Workflow>`
 - CLI commands: `src/MGF.Tools.ProjectBootstrap/Program.cs`
 - Runbooks: `docs/05-runbooks/`
 - Templates/contracts: `docs/templates/` and `docs/03-contracts/storage/infra-contracts.md`

@@ -10,7 +10,7 @@ Changes to the following require review from the infra owner (Ermano):
 - `docs/schemas/**`
 - `src/Operations/MGF.Tools.Provisioner/**`
 - `src/MGF.Tools.ProjectBootstrap/**`
-- `src/MGF.Worker/**`
+- `src/Services/MGF.Worker/**`
 - Database migrations
 - Any code that provisions, validates, repairs, or bootstraps storage
 

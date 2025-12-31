@@ -1,11 +1,11 @@
 ﻿# Jobs Contract
 
-Source of truth: `src/MGF.Worker/**`, `src/Data/MGF.Infrastructure/Migrations/*`, `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`
+Source of truth: `src/Services/MGF.Worker/**`, `src/Data/MGF.Infrastructure/Migrations/*`, `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`
 Change control: Update when job schema, status transitions, or payload shape changes.
 Last verified: 2025-12-30
 
 ## Scope
-- Jobs are persisted in `public.jobs` and processed by `src/MGF.Worker`.
+- Jobs are persisted in `public.jobs` and processed by `src/Services/MGF.Worker`.
 - Job types and payload shapes must remain compatible across releases.
 
 ## Job schema (public.jobs)
@@ -30,7 +30,7 @@ Source: `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`
 Note: `notion.sync_booking` is seeded but currently has no handler in `JobWorker`.
 
 ## Worker-handled job types
-Source: `src/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
+Source: `src/Services/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 
 - `dropbox.create_project_structure`
 - `project.bootstrap`
@@ -44,11 +44,11 @@ Source: `src/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 
 ## Payload shapes (JSONB)
 - `dropbox.create_project_structure`: `{ projectId?, clientId?, templateKey? }` (read directly in `JobWorker`).
-- `project.bootstrap`: `ProjectBootstrapPayload` in `src/MGF.Worker/ProjectBootstrap/ProjectBootstrapModels.cs`.
-- `project.archive`: `ProjectArchivePayload` in `src/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`.
-- `project.delivery`: `ProjectDeliveryPayload` in `src/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`.
-- `project.delivery_email`: `ProjectDeliveryEmailPayload` in `src/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`.
-- `domain.root_integrity`: `RootIntegrityPayload` in `src/MGF.Worker/RootIntegrity/RootIntegrityModels.cs`.
+- `project.bootstrap`: `ProjectBootstrapPayload` in `src/Services/MGF.Worker/ProjectBootstrap/ProjectBootstrapModels.cs`.
+- `project.archive`: `ProjectArchivePayload` in `src/Services/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`.
+- `project.delivery`: `ProjectDeliveryPayload` in `src/Services/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`.
+- `project.delivery_email`: `ProjectDeliveryEmailPayload` in `src/Services/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`.
+- `domain.root_integrity`: `RootIntegrityPayload` in `src/Services/MGF.Worker/RootIntegrity/RootIntegrityModels.cs`.
 - `square.webhook_event.process`: `{ square_event_id }` required; parsed by `JobWorker.TryExtractSquareEventId`.
 - `square.payment.upsert`: `{ square_payment_id }` required; parsed by `JobWorker.ExtractSquarePaymentId`.
 - `square.reconcile.payments`: no payload fields required; behavior is driven by config and reconcile cursor state.
@@ -57,6 +57,6 @@ Source: `src/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 - Update this doc when `job_types` seed list changes, handler dispatch list changes, payload model records change, or `public.jobs` schema changes.
 
 ## References
-- Worker dispatch: `src/MGF.Worker/JobWorker.cs`
-- Payload models: `src/MGF.Worker/ProjectBootstrap/ProjectBootstrapModels.cs`, `src/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`, `src/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`, `src/MGF.Worker/RootIntegrity/RootIntegrityModels.cs`
+- Worker dispatch: `src/Services/MGF.Worker/JobWorker.cs`
+- Payload models: `src/Services/MGF.Worker/ProjectBootstrap/ProjectBootstrapModels.cs`, `src/Services/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`, `src/Services/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`, `src/Services/MGF.Worker/RootIntegrity/RootIntegrityModels.cs`
 - Job types seed: `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`

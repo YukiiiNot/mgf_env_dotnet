@@ -25,7 +25,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Infrastructure.Integrat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Api", "src\MGF.Api\MGF.Api.csproj", "{5A38DC86-EC6E-49D0-8087-BECBD07FAF4C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Worker", "src\MGF.Worker\MGF.Worker.csproj", "{2D5304AF-DACF-472D-BB5B-79418082F00F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Worker", "src\Services\MGF.Worker\MGF.Worker.csproj", "{2D5304AF-DACF-472D-BB5B-79418082F00F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.SquareImport", "src\DevTools\MGF.Tools.SquareImport\MGF.Tools.SquareImport.csproj", "{CA1639AE-FFAA-4378-AE1A-904D4456F738}"
 EndProject

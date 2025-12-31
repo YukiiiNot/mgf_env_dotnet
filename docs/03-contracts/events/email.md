@@ -1,7 +1,7 @@
 ﻿MGF Email Contract (Internal)
 =============================
 
-Source of truth: `src/MGF.Worker/Email/**`, `src/MGF.Tools.ProjectBootstrap`, `tests/MGF.Worker.Tests/EmailSnapshots`
+Source of truth: `src/Services/MGF.Worker/Email/**`, `src/MGF.Tools.ProjectBootstrap`, `tests/MGF.Worker.Tests/EmailSnapshots`
 Change control: Update when email metadata contract, allowlist, or template versions change.
 Last verified: 2025-12-30
 
@@ -80,9 +80,9 @@ After the email subsystem refactor:
 MGF Email Kit (templates + theme)
 ---------------------------------
 Templates live under:
-- src/MGF.Worker/Email/Templates/
-- src/MGF.Worker/Email/Templates/partials/
-- src/MGF.Worker/Email/Templates/theme.json
+- src/Services/MGF.Worker/Email/Templates/
+- src/Services/MGF.Worker/Email/Templates/partials/
+- src/Services/MGF.Worker/Email/Templates/theme.json
 
 The delivery-ready HTML template is assembled from partials:
 layout_start â†’ header_block â†’ headline_block â†’ rule â†’ CTA â†’ link â†’ rule â†’ details â†’ rule â†’ files â†’ footer â†’ layout_end.

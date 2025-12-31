@@ -1,6 +1,6 @@
 ﻿# Delivery Runbook (Dev/Test)
 
-Source of truth: `src/MGF.Tools.ProjectBootstrap`, `src/MGF.Worker`, `src/MGF.Worker/Email`
+Source of truth: `src/MGF.Tools.ProjectBootstrap`, `src/Services/MGF.Worker`, `src/Services/MGF.Worker/Email`
 Change control: Update when delivery CLI flags, job flow, or email behavior changes.
 Last verified: 2025-12-30
 
@@ -68,7 +68,7 @@ dotnet run --project src\MGF.Tools.ProjectBootstrap -- deliver `
 Process exactly one job:
 
 ```powershell
-dotnet run -c Release --project src\MGF.Worker --no-build -- --maxJobs 1
+dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 1
 ```
 
 ### 4) Re-run delivery (should reuse share link + no v2)
@@ -79,7 +79,7 @@ dotnet run --project src\MGF.Tools.ProjectBootstrap -- deliver `
   --editorInitials TE `
   --testMode true `
   --allowTestCleanup false
-dotnet run -c Release --project src\MGF.Worker --no-build -- --maxJobs 1
+dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 1
 ```
 
 ### 5) Send delivery email
@@ -90,7 +90,7 @@ dotnet run --project src\MGF.Tools.ProjectBootstrap -- delivery-email `
   --to "info@mgfilms.pro" `
   --from "deliveries@mgfilms.pro" `
   --replyTo "info@mgfilms.pro"
-dotnet run -c Release --project src\MGF.Worker --no-build -- --maxJobs 1
+dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 1
 ```
 
 ### 6) Verify
