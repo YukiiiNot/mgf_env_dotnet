@@ -1,4 +1,4 @@
-namespace MGF.Tools.DevSecrets;
+namespace MGF.DevSecretsCli;
 
 using System.Text.Json;
 
@@ -227,3 +227,4 @@ internal static class DevSecretsCommands
             .OrderBy(project => project.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 }
+

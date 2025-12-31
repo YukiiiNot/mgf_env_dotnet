@@ -1,4 +1,4 @@
-namespace MGF.Tools.DevSecrets;
+namespace MGF.DevSecretsCli;
 
 internal static class RepoLocator
 {
@@ -36,3 +36,4 @@ internal static class RepoLocator
             "Run from the repo root or pass --required with an explicit path.");
     }
 }
+

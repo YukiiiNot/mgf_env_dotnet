@@ -6,8 +6,8 @@ public sealed class TemplateContractTests
     public async Task AllTemplates_IncludeDumpAndManifestFolder()
     {
         var repoRoot = FindRepoRoot();
-        var templatesDir = Path.Combine(repoRoot, "docs", "templates");
-        var schemaPath = Path.Combine(repoRoot, "docs", "schemas", "mgf.folderTemplate.schema.json");
+        var templatesDir = Path.Combine(repoRoot, "artifacts", "templates");
+        var schemaPath = Path.Combine(repoRoot, "artifacts", "schemas", "mgf.folderTemplate.schema.json");
 
         var loader = new FolderTemplateLoader();
         var templateFiles = Directory.GetFiles(templatesDir, "*.json", SearchOption.TopDirectoryOnly);
@@ -50,3 +50,4 @@ public sealed class TemplateContractTests
         throw new InvalidOperationException("Could not locate repo root for schema path.");
     }
 }
+

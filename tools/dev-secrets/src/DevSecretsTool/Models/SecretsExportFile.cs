@@ -1,4 +1,4 @@
-namespace MGF.Tools.DevSecrets;
+namespace MGF.DevSecretsCli;
 
 using System.Text.Json;
 
@@ -44,3 +44,4 @@ internal sealed class ProjectSecretsExport
     public string UserSecretsId { get; init; } = string.Empty;
     public SortedDictionary<string, string> Secrets { get; init; } = new(StringComparer.Ordinal);
 }
+

@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
-using MGF.Tools.DevSecrets;
+using MGF.DevSecretsCli;
 
 var root = new RootCommand("MGF developer secrets export/import tool");
 root.AddCommand(CreateExportCommand());
@@ -119,3 +119,4 @@ static Command CreateValidateCommand()
 
     return command;
 }
+

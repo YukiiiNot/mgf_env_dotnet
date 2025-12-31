@@ -1,4 +1,4 @@
-using MGF.Tools.DevSecrets;
+using MGF.DevSecretsCli;
 
 public class SecretsRequiredConfigTests
 {
@@ -22,3 +22,4 @@ public class SecretsRequiredConfigTests
         Assert.Contains("missing projects", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
+

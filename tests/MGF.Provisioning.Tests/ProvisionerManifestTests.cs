@@ -11,8 +11,8 @@ public sealed class ProvisionerManifestTests
         try
         {
             var repoRoot = FindRepoRoot();
-            var templatePath = Path.Combine(repoRoot, "docs", "templates", "dropbox_project_container.json");
-            var schemaPath = Path.Combine(repoRoot, "docs", "schemas", "mgf.folderTemplate.schema.json");
+            var templatePath = Path.Combine(repoRoot, "artifacts", "templates", "dropbox_project_container.json");
+            var schemaPath = Path.Combine(repoRoot, "artifacts", "schemas", "mgf.folderTemplate.schema.json");
 
             var tokens = ProvisioningTokens.Create("MGF25-TEST", "ManifestTest", "Client", Array.Empty<string>());
             var provisioner = new FolderProvisioner(new LocalFileStore());
@@ -22,7 +22,7 @@ public sealed class ProvisionerManifestTests
                     TemplatePath: templatePath,
                     SchemaPath: schemaPath,
                     BasePath: tempBase,
-                    SeedsPath: Path.Combine(repoRoot, "docs", "templates", "seeds"),
+                    SeedsPath: Path.Combine(repoRoot, "artifacts", "templates", "seeds"),
                     Tokens: tokens,
                     Mode: ProvisioningMode.Apply,
                     ForceOverwriteSeededFiles: false
@@ -52,8 +52,8 @@ public sealed class ProvisionerManifestTests
         try
         {
             var repoRoot = FindRepoRoot();
-            var templatePath = Path.Combine(repoRoot, "docs", "templates", "nas_archive_container.json");
-            var schemaPath = Path.Combine(repoRoot, "docs", "schemas", "mgf.folderTemplate.schema.json");
+            var templatePath = Path.Combine(repoRoot, "artifacts", "templates", "nas_archive_container.json");
+            var schemaPath = Path.Combine(repoRoot, "artifacts", "schemas", "mgf.folderTemplate.schema.json");
 
             var tokens = ProvisioningTokens.Create("MGF25-TEST", "ManifestTest", "Client", Array.Empty<string>());
             var provisioner = new FolderProvisioner(new LocalFileStore());
@@ -63,7 +63,7 @@ public sealed class ProvisionerManifestTests
                     TemplatePath: templatePath,
                     SchemaPath: schemaPath,
                     BasePath: tempBase,
-                    SeedsPath: Path.Combine(repoRoot, "docs", "templates", "seeds"),
+                    SeedsPath: Path.Combine(repoRoot, "artifacts", "templates", "seeds"),
                     Tokens: tokens,
                     Mode: ProvisioningMode.Apply,
                     ForceOverwriteSeededFiles: false
@@ -100,3 +100,4 @@ public sealed class ProvisionerManifestTests
         throw new InvalidOperationException("Could not locate repo root for schema path.");
     }
 }
+

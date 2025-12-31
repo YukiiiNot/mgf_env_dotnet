@@ -1,4 +1,4 @@
-namespace MGF.Tools.DevSecrets;
+namespace MGF.DevSecretsCli;
 
 using System.Text.RegularExpressions;
 
@@ -173,3 +173,4 @@ internal static class SecretsPolicy
         return Regex.IsMatch(input, regexPattern, RegexOptions.IgnoreCase);
     }
 }
+

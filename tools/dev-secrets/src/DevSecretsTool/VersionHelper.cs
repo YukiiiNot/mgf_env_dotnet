@@ -1,4 +1,4 @@
-namespace MGF.Tools.DevSecrets;
+namespace MGF.DevSecretsCli;
 
 using System.Reflection;
 
@@ -10,3 +10,4 @@ internal static class VersionHelper
         return version?.ToString() ?? "0.0.0";
     }
 }
+

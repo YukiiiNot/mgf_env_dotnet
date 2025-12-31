@@ -1,4 +1,4 @@
-﻿using MGF.Tools.DevSecrets;
+using MGF.DevSecretsCli;
 
 public class DevSecretsCommandsTests
 {
@@ -17,3 +17,4 @@ public class DevSecretsCommandsTests
         Assert.Equal(new[] { "Alpha", "beta" }, names);
     }
 }
+

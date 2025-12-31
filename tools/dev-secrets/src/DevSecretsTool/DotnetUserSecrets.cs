@@ -1,4 +1,4 @@
-namespace MGF.Tools.DevSecrets;
+namespace MGF.DevSecretsCli;
 
 internal sealed class DotnetUserSecrets
 {
@@ -62,3 +62,4 @@ internal sealed class DotnetUserSecrets
         return secrets;
     }
 }
+

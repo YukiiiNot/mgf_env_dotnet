@@ -1,4 +1,4 @@
-namespace MGF.Tools.DevSecrets;
+namespace MGF.DevSecretsCli;
 
 using System.Text.Json;
 
@@ -47,3 +47,4 @@ internal sealed class GlobalPolicy
     public List<string> AllowedDbConnectionKeyPatterns { get; init; } = new();
     public List<string> DisallowedKeyPatterns { get; init; } = new();
 }
+

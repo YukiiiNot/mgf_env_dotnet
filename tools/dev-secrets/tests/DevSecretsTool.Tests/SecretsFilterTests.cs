@@ -1,4 +1,4 @@
-﻿using MGF.Tools.DevSecrets;
+using MGF.DevSecretsCli;
 
 public class SecretsFilterTests
 {
@@ -177,3 +177,4 @@ public class SecretsFilterTests
         Assert.Contains("violates policy", validation.Error ?? string.Empty, StringComparison.OrdinalIgnoreCase);
     }
 }
+

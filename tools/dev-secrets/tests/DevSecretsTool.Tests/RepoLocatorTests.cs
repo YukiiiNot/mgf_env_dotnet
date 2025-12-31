@@ -1,4 +1,4 @@
-﻿using MGF.Tools.DevSecrets;
+using MGF.DevSecretsCli;
 
 public class RepoLocatorTests
 {
@@ -50,3 +50,4 @@ public class RepoLocatorTests
         }
     }
 }
+

@@ -1,4 +1,4 @@
-namespace MGF.Tools.DevSecrets;
+namespace MGF.DevSecretsCli;
 
 using System.Diagnostics;
 
@@ -27,3 +27,4 @@ internal static class GitHelper
         }
     }
 }
+
