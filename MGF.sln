@@ -29,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Worker", "src\MGF.Worke
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.SquareImport", "src\MGF.Tools.SquareImport\MGF.Tools.SquareImport.csproj", "{CA1639AE-FFAA-4378-AE1A-904D4456F738}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.DbMigrationsInfo", "src\MGF.Tools.DbMigrationsInfo\MGF.Tools.DbMigrationsInfo.csproj", "{709E55AA-D087-42A5-A0D7-3610CB0B362F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.DbMigrationsInfo", "src\DevTools\MGF.Tools.DbMigrationsInfo\MGF.Tools.DbMigrationsInfo.csproj", "{709E55AA-D087-42A5-A0D7-3610CB0B362F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MGF.Tools.Provisioner", "src\MGF.Tools.Provisioner\MGF.Tools.Provisioner.csproj", "{AE045178-4EC0-4367-A63B-427C113D7648}"
 EndProject

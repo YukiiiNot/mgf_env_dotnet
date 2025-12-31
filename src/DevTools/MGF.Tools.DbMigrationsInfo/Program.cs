@@ -100,7 +100,7 @@ public static class Program
             MGF.Tools.DbMigrationsInfo
 
             Usage:
-              dotnet run --project src/MGF.Tools.DbMigrationsInfo -- --connection "<Npgsql connection string>"
+              dotnet run --project src/DevTools/MGF.Tools.DbMigrationsInfo -- --connection "<Npgsql connection string>"
 
             Or set:
               DB_CONNECTION_STRING="<Npgsql connection string>"
