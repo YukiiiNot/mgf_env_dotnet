@@ -110,7 +110,7 @@ dotnet run --project src/DevTools/MGF.Tools.SquareImport -- customers --reset --
 
 These commands update job states but do not delete application data:
 
-**Path:** `src/MGF.Tools.ProjectBootstrap/Program.cs`  
+**Path:** `src/Operations/MGF.Tools.ProjectBootstrap/Program.cs`  
 **Snippet (jobs reaper):**
 
 ```csharp

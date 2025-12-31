@@ -6,7 +6,7 @@ This guide gets a second developer productive without touching production.
 
 - `src/Services/MGF.Api` — internal Web API (DB entrypoint for apps)
 - `src/Services/MGF.Worker` — background jobs runner
-- `src/MGF.Tools.ProjectBootstrap` — CLI for bootstrap/archive/delivery/email/preview
+- `src/Operations/MGF.Tools.ProjectBootstrap` — CLI for bootstrap/archive/delivery/email/preview
 - `src/Data/MGF.Tools.Migrator` — migrations + lookup seeding
 - `src/Services/MGF.Worker/Email` — email subsystem (templates, senders, preview)
 - `docs/` — runbooks, workflow, templates, contracts
@@ -51,20 +51,20 @@ Common commands:
 
 ```powershell
 # mark ready_to_provision
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- ready --projectId <PROJECT_ID>
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- ready --projectId <PROJECT_ID>
 
 # bootstrap
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- enqueue --projectId <PROJECT_ID> --editors TE --verifyDomainRoots true --createDomainRoots true --provisionProjectContainers true
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- enqueue --projectId <PROJECT_ID> --editors TE --verifyDomainRoots true --createDomainRoots true --provisionProjectContainers true
 
 # deliver (see docs/05-runbooks/delivery.md for the full sequence)
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- deliver --projectId <PROJECT_ID> --editorInitials TE
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- deliver --projectId <PROJECT_ID> --editorInitials TE
 ```
 
 ### Email preview (no send)
 
 ```powershell
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- email-preview --fixture basic --out .\runtime\email_preview
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- email-preview --fixture basic --out .\runtime\email_preview
 ```
 
 ## Tests to run

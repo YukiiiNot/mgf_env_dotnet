@@ -19,7 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MGF.Tools.ProjectBootstrap\MGF.Tools.ProjectBootstrap.csproj" />
+    <ProjectReference Include="..\..\src\Operations\MGF.Tools.ProjectBootstrap\MGF.Tools.ProjectBootstrap.csproj" />
   </ItemGroup>
 
 </Project>
+

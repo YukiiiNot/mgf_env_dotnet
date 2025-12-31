@@ -15,25 +15,26 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
-    <ProjectReference Include="..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
-    <ProjectReference Include="..\Services\MGF.Worker\MGF.Worker.csproj" />
+    <ProjectReference Include="..\..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
+    <ProjectReference Include="..\..\Services\MGF.Worker\MGF.Worker.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Services\MGF.Worker\Email\Templates\**\*.*">
+    <Content Include="..\..\Services\MGF.Worker\Email\Templates\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>Email\Templates\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </Content>
-    <Content Include="..\..\artifacts\templates\**\*.*">
+    <Content Include="..\..\..\artifacts\templates\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>artifacts\templates\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </Content>
-    <Content Include="..\..\artifacts\schemas\**\*.*">
+    <Content Include="..\..\..\artifacts\schemas\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>artifacts\schemas\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </Content>
   </ItemGroup>
 
 </Project>
+
 

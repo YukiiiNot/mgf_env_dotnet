@@ -68,8 +68,8 @@ Project creation is **draft-first** and provisioning/delivery are **explicit** j
 
 ```powershell
 # Bootstrap (project + roots)
-dotnet run --project src/MGF.Tools.ProjectBootstrap -- ready --projectId <PROJECT_ID>
-dotnet run --project src/MGF.Tools.ProjectBootstrap -- enqueue `
+dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- ready --projectId <PROJECT_ID>
+dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- enqueue `
   --projectId <PROJECT_ID> `
   --editors TE `
   --verifyDomainRoots true `
@@ -77,8 +77,8 @@ dotnet run --project src/MGF.Tools.ProjectBootstrap -- enqueue `
   --provisionProjectContainers true
 
 # Delivery (see delivery.md for full flow)
-dotnet run --project src/MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
-dotnet run --project src/MGF.Tools.ProjectBootstrap -- deliver --projectId <PROJECT_ID> --editorInitials TE
+dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
+dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- deliver --projectId <PROJECT_ID> --editorInitials TE
 ```
 
 ## Editorial file naming + templates

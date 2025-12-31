@@ -4,5 +4,5 @@
 The ProjectBootstrap CLI manages provisioning, delivery, and related jobs.
 
 ## References
-- CLI: `src/MGF.Tools.ProjectBootstrap`
+- CLI: `src/Operations/MGF.Tools.ProjectBootstrap`
 - Delivery runbook: [../../05-runbooks/delivery.md](../../05-runbooks/delivery.md)

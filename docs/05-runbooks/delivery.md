@@ -1,6 +1,6 @@
 ﻿# Delivery Runbook (Dev/Test)
 
-Source of truth: `src/MGF.Tools.ProjectBootstrap`, `src/Services/MGF.Worker`, `src/Services/MGF.Worker/Email`
+Source of truth: `src/Operations/MGF.Tools.ProjectBootstrap`, `src/Services/MGF.Worker`, `src/Services/MGF.Worker/Email`
 Change control: Update when delivery CLI flags, job flow, or email behavior changes.
 Last verified: 2025-12-30
 
@@ -41,13 +41,13 @@ Pick a test project (must be `data_profile=real`). Use a known test project ID.
 ### 1) Mark ready_to_deliver (if needed)
 
 ```powershell
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- to-deliver --projectId <PROJECT_ID>
 ```
 
 ### 2) Seed a deliverable into LucidLink Final_Masters
 
 ```powershell
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- seed-deliverables `
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- seed-deliverables `
   --projectId <PROJECT_ID> `
   --file "C:\Users\dorme\Dropbox\MGFILMS.NET\06_DevTest\dropbox_root\99_Dump\deliverable_v1.mp4" `
   --target final-masters `
@@ -57,7 +57,7 @@ dotnet run --project src\MGF.Tools.ProjectBootstrap -- seed-deliverables `
 ### 3) Enqueue delivery (creates v1 + share link)
 
 ```powershell
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- deliver `
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- deliver `
   --projectId <PROJECT_ID> `
   --editorInitials TE `
   --testMode true `
@@ -74,7 +74,7 @@ dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 
 ### 4) Re-run delivery (should reuse share link + no v2)
 
 ```powershell
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- deliver `
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- deliver `
   --projectId <PROJECT_ID> `
   --editorInitials TE `
   --testMode true `
@@ -85,7 +85,7 @@ dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 
 ### 5) Send delivery email
 
 ```powershell
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- delivery-email `
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- delivery-email `
   --projectId <PROJECT_ID> `
   --to "info@mgfilms.pro" `
   --from "deliveries@mgfilms.pro" `
@@ -96,7 +96,7 @@ dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 
 ### 6) Verify
 
 ```powershell
-dotnet run --project src\MGF.Tools.ProjectBootstrap -- show --projectId <PROJECT_ID>
+dotnet run --project src\Operations\MGF.Tools.ProjectBootstrap -- show --projectId <PROJECT_ID>
 ```
 
 ## Expected outputs

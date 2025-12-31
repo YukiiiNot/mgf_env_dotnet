@@ -1,7 +1,7 @@
 ﻿MGF Email Contract (Internal)
 =============================
 
-Source of truth: `src/Services/MGF.Worker/Email/**`, `src/MGF.Tools.ProjectBootstrap`, `tests/MGF.Worker.Tests/EmailSnapshots`
+Source of truth: `src/Services/MGF.Worker/Email/**`, `src/Operations/MGF.Tools.ProjectBootstrap`, `tests/MGF.Worker.Tests/EmailSnapshots`
 Change control: Update when email metadata contract, allowlist, or template versions change.
 Last verified: 2025-12-30
 
@@ -104,10 +104,10 @@ Creating a new email template
 Preview (no sending)
 --------------------
 Use the ProjectBootstrap CLI to render HTML/text without sending:
-    dotnet run --project src/MGF.Tools.ProjectBootstrap -- email-preview --fixture basic --out .\runtime\email_preview\basic
-    dotnet run --project src/MGF.Tools.ProjectBootstrap -- email-preview --fixture large_files --out .\runtime\email_preview\large
-    dotnet run --project src/MGF.Tools.ProjectBootstrap -- email-preview --fixture no_logo --out .\runtime\email_preview\nologo
-    dotnet run --project src/MGF.Tools.ProjectBootstrap -- email-preview --fixture long_url --out .\runtime\email_preview\long_url
+    dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- email-preview --fixture basic --out .\runtime\email_preview\basic
+    dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- email-preview --fixture large_files --out .\runtime\email_preview\large
+    dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- email-preview --fixture no_logo --out .\runtime\email_preview\nologo
+    dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- email-preview --fixture long_url --out .\runtime\email_preview\long_url
 
 Fixtures live under Templates/fixtures/*.json.
 
@@ -122,7 +122,7 @@ Run tests:
 Updating snapshots
 ------------------
 To regenerate a fixture snapshot, run email-preview with --writeSnapshots:
-    dotnet run --project src/MGF.Tools.ProjectBootstrap -- email-preview --fixture basic --out .\runtime\email_preview\basic --writeSnapshots
-    dotnet run --project src/MGF.Tools.ProjectBootstrap -- email-preview --fixture large_files --out .\runtime\email_preview\large --writeSnapshots
-    dotnet run --project src/MGF.Tools.ProjectBootstrap -- email-preview --fixture no_logo --out .\runtime\email_preview\nologo --writeSnapshots
-    dotnet run --project src/MGF.Tools.ProjectBootstrap -- email-preview --fixture long_url --out .\runtime\email_preview\long_url --writeSnapshots
+    dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- email-preview --fixture basic --out .\runtime\email_preview\basic --writeSnapshots
+    dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- email-preview --fixture large_files --out .\runtime\email_preview\large --writeSnapshots
+    dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- email-preview --fixture no_logo --out .\runtime\email_preview\nologo --writeSnapshots
+    dotnet run --project src/Operations/MGF.Tools.ProjectBootstrap -- email-preview --fixture long_url --out .\runtime\email_preview\long_url --writeSnapshots

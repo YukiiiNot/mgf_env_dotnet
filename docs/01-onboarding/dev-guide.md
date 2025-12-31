@@ -34,6 +34,6 @@ Add new emails by:
 ## Where to add new workflows
 
 - Job handlers: `src/Services/MGF.Worker/<Workflow>`
-- CLI commands: `src/MGF.Tools.ProjectBootstrap/Program.cs`
+- CLI commands: `src/Operations/MGF.Tools.ProjectBootstrap/Program.cs`
 - Runbooks: `docs/05-runbooks/`
 - Templates/contracts: `docs/templates/` and `docs/03-contracts/storage/infra-contracts.md`
