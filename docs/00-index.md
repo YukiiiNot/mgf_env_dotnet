@@ -18,6 +18,7 @@ This is the entry point for repo documentation. Every doc should be reachable fr
 
 ## Architecture
 - System overview: [02-architecture/system-overview.md](02-architecture/system-overview.md)
+- Layer conventions: [02-architecture/application-layer-conventions.md](02-architecture/application-layer-conventions.md)
 - Workflows: [02-architecture/workflows.md](02-architecture/workflows.md)
 - Database phase 1: [02-architecture/database-phase1.md](02-architecture/database-phase1.md)
 - Roadmap: [02-architecture/roadmap.md](02-architecture/roadmap.md)
@@ -79,6 +80,6 @@ This is the entry point for repo documentation. Every doc should be reachable fr
 - Doc impact matrix: [99-reference/doc-impact-matrix.md](99-reference/doc-impact-matrix.md)
 
 ## Canonical artifacts (paths stay stable)
-- Templates: [templates/README.md](templates/README.md)
-- Schemas: [schemas/](schemas/)
+- Templates: [../artifacts/templates/](../artifacts/templates/)
+- Schemas: [../artifacts/schemas/](../artifacts/schemas/)
 - Schema CSVs: [db_design/schema_csv/README.md](db_design/schema_csv/README.md)
