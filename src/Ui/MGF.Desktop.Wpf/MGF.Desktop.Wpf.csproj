@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MGF.Application\MGF.Application.csproj" />
-    <ProjectReference Include="..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\Data\MGF.Infrastructure\MGF.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,8 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\config\appsettings.json" Link="config\appsettings.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\config\appsettings.Development.json" Link="config\appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\config\appsettings.json" Link="config\appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\config\appsettings.Development.json" Link="config\appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
+
