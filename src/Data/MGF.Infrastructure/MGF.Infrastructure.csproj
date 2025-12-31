@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\MGF.Application\MGF.Application.csproj" />
-    <ProjectReference Include="..\MGF.Domain\MGF.Domain.csproj" />
+    <ProjectReference Include="..\..\MGF.Application\MGF.Application.csproj" />
+    <ProjectReference Include="..\..\MGF.Domain\MGF.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

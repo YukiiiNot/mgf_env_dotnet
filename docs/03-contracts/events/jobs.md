@@ -1,6 +1,6 @@
 ﻿# Jobs Contract
 
-Source of truth: `src/MGF.Worker/**`, `src/MGF.Infrastructure/Migrations/*`, `src/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`
+Source of truth: `src/MGF.Worker/**`, `src/Data/MGF.Infrastructure/Migrations/*`, `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`
 Change control: Update when job schema, status transitions, or payload shape changes.
 Last verified: 2025-12-30
 
@@ -9,12 +9,12 @@ Last verified: 2025-12-30
 - Job types and payload shapes must remain compatible across releases.
 
 ## Job schema (public.jobs)
-- Source: `src/MGF.Infrastructure/Migrations/20251215075215_Phase1_02_Core.cs`, `src/MGF.Infrastructure/Migrations/AppDbContextModelSnapshot.cs`, `src/MGF.Infrastructure/Data/AppDbContextModelBuilder.cs`.
+- Source: `src/Data/MGF.Infrastructure/Migrations/20251215075215_Phase1_02_Core.cs`, `src/Data/MGF.Infrastructure/Migrations/AppDbContextModelSnapshot.cs`, `src/Data/MGF.Infrastructure/Data/AppDbContextModelBuilder.cs`.
 - Key columns: `job_id`, `job_type_key`, `status_key`, `priority_key`, `payload` (jsonb), `run_after`, `locked_by`, `locked_until`, `attempt_count`, `max_attempts`, `started_at`, `finished_at`.
-- Status values (seeded): `queued`, `running`, `succeeded`, `failed`, `cancelled` (`src/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`).
+- Status values (seeded): `queued`, `running`, `succeeded`, `failed`, `cancelled` (`src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`).
 
 ## Job types (seeded)
-Source: `src/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`
+Source: `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`
 
 - `dropbox.create_project_structure`
 - `project.bootstrap`
@@ -59,4 +59,4 @@ Source: `src/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 ## References
 - Worker dispatch: `src/MGF.Worker/JobWorker.cs`
 - Payload models: `src/MGF.Worker/ProjectBootstrap/ProjectBootstrapModels.cs`, `src/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`, `src/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`, `src/MGF.Worker/RootIntegrity/RootIntegrityModels.cs`
-- Job types seed: `src/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`
+- Job types seed: `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs`

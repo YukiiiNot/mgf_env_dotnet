@@ -1,6 +1,6 @@
 ﻿# Phase 1 Core Status
 
-Phase 1 Core is now implemented as **EF Core migrations** in `src/MGF.Infrastructure/Migrations/`, derived from the schema-doc CSVs in `docs/db_design/schema_csv/_core/` (including `_lookup` and `_join`).
+Phase 1 Core is now implemented as **EF Core migrations** in `src/Data/MGF.Infrastructure/Migrations/`, derived from the schema-doc CSVs in `docs/db_design/schema_csv/_core/` (including `_lookup` and `_join`).
 
 ## What's implemented
 
@@ -12,14 +12,14 @@ Phase 1 Core is now implemented as **EF Core migrations** in `src/MGF.Infrastruc
 
 ### EF model strategy
 
-- Runtime model is built in `src/MGF.Infrastructure/Data/AppDbContextModelBuilder.cs` and used by `src/MGF.Infrastructure/Data/AppDbContext.cs`.
-- Migration snapshot lives in `src/MGF.Infrastructure/Migrations/AppDbContextModelSnapshot.cs` and tracks the current model for EF.
-- Executable schema changes live in `src/MGF.Infrastructure/Migrations/*.cs`.
+- Runtime model is built in `src/Data/MGF.Infrastructure/Data/AppDbContextModelBuilder.cs` and used by `src/Data/MGF.Infrastructure/Data/AppDbContext.cs`.
+- Migration snapshot lives in `src/Data/MGF.Infrastructure/Migrations/AppDbContextModelSnapshot.cs` and tracks the current model for EF.
+- Executable schema changes live in `src/Data/MGF.Infrastructure/Migrations/*.cs`.
 - Schema CSVs in `docs/db_design/schema_csv/_core/` are design-time docs; they are not parsed at runtime.
 
 ### Lookup seeding
 
-- `src/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs` seeds stable lookup rows and counters idempotently (UPSERT).
+- `src/Data/MGF.Infrastructure/Data/Seeding/LookupSeeder.cs` seeds stable lookup rows and counters idempotently (UPSERT).
 - `MGF.Tools.Migrator` runs: migrations â†’ lookup seeding.
 
 ## Notes / intentional deferrals

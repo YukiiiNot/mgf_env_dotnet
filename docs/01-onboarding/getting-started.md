@@ -14,7 +14,7 @@ This guide gets a second developer productive without touching production.
 
 ## Local config + precedence
 
-Configuration is built by `AddMgfConfiguration` (see `src/MGF.Infrastructure/Configuration/MgfConfiguration.cs`):
+Configuration is built by `AddMgfConfiguration` (see `src/Data/MGF.Infrastructure/Configuration/MgfConfiguration.cs`):
 
 1. `MGF_CONFIG_DIR` (if set) -> `appsettings.json` and `appsettings.{ENV}.json`
 2. Local `appsettings.json` / `appsettings.{ENV}.json`
@@ -35,8 +35,8 @@ $env:MGF_CONFIG_DIR = 'C:\dev\mgf_env_dotnet\config'
 Store secrets in `MGF.Infrastructure` user-secrets (no secrets in git):
 
 ```powershell
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
-dotnet user-secrets set "Security:ApiKey" "<api key>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
+dotnet user-secrets set "Security:ApiKey" "<api key>" --project src/Data/MGF.Infrastructure
 ```
 
 ## Core workflows (Dev)

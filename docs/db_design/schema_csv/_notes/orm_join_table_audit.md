@@ -5,8 +5,8 @@ Generated: 2025-12-14 18:55:31Z
 - Summary: No ORM configured; EF Core appears planned (placeholder DbContext only).
 
 ## Evidence Paths
-- Placeholder DbContext: `C:\dev\mgf_env_dotnet\src\MGF.Infrastructure\Data\AppDbContext.cs`
-- No EF Core packages were found referenced in project files (e.g. `C:\dev\mgf_env_dotnet\src\MGF.Infrastructure\MGF.Infrastructure.csproj` contains no `PackageReference` entries).
+- Placeholder DbContext: `C:\dev\mgf_env_dotnet\src\Data\MGF.Infrastructure\Data\AppDbContext.cs`
+- No EF Core packages were found referenced in project files (e.g. `C:\dev\mgf_env_dotnet\src\Data\MGF.Infrastructure\MGF.Infrastructure.csproj` contains no `PackageReference` entries).
 
 ## Join Table Modeling in Code
 - No occurrences of the join-table names were found in `mgf_env_dotnet` source, so they do not appear to be modeled as entities (and there is no implicit many-to-many mapping configured).

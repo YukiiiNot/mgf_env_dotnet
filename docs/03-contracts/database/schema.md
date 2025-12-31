@@ -1,6 +1,6 @@
 ﻿# Database Schema Contract
 
-Source of truth: `src/MGF.Infrastructure/Migrations/*`, `src/MGF.Infrastructure/Data/AppDbContextModelBuilder.cs`, `docs/db_design/schema_csv/_core/**`
+Source of truth: `src/Data/MGF.Infrastructure/Migrations/*`, `src/Data/MGF.Infrastructure/Data/AppDbContextModelBuilder.cs`, `docs/db_design/schema_csv/_core/**`
 Change control: Update when migrations or schema CSVs change.
 Last verified: 2025-12-30
 

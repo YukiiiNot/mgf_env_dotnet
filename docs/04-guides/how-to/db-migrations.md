@@ -46,8 +46,8 @@ Legacy fallback (only used when the env-specific key is missing):
 1) Set a local connection string (Npgsql format):
 
 ```powershell
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
-dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
+dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Infrastructure
 ```
 
 Example formats (do not commit real secrets; see `config/appsettings.Development.sample.json`):
@@ -62,7 +62,7 @@ Note: for proper certificate validation use `Ssl Mode=VerifyFull` plus `Root Cer
 2) Create/run migrations:
 
 ```powershell
-dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 $env:MGF_DB_MODE = "direct"
 dotnet run --project src/Data/MGF.Tools.Migrator
 ```
@@ -93,7 +93,7 @@ dotnet test .\MGF.sln
 
 ## Where migrations live
 
-- Folder: `src/MGF.Infrastructure/Migrations/`
+- Folder: `src/Data/MGF.Infrastructure/Migrations/`
 - Files: `*_<Name>.cs`, `*_<Name>.Designer.cs`, and `AppDbContextModelSnapshot.cs`
 
 ## Preflight: project_storage_roots unique index
@@ -114,15 +114,15 @@ HAVING COUNT(*) > 1;
 Shows migrations known to EF in `MGF.Infrastructure`:
 
 ```powershell
-dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 ### Add a migration
 
-Creates new migration files under `src/MGF.Infrastructure/Migrations/`:
+Creates new migration files under `src/Data/MGF.Infrastructure/Migrations/`:
 
 ```powershell
-dotnet ef migrations add <Name> --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations add <Name> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 ### Apply migrations (update the database)
@@ -136,7 +136,7 @@ dotnet run --project src/Data/MGF.Tools.Migrator
 EF CLI alternative (updates DB only; does not run custom seeding):
 
 ```powershell
-dotnet ef database update --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef database update --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 ### Remove the latest migration
@@ -144,7 +144,7 @@ dotnet ef database update --project src/MGF.Infrastructure --startup-project src
 Removes the most recent migration files (use with care):
 
 ```powershell
-dotnet ef migrations remove --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations remove --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 Notes:
@@ -153,7 +153,7 @@ Notes:
 ### Roll back to a previous migration
 
 ```powershell
-dotnet ef database update <PreviousMigrationName> --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef database update <PreviousMigrationName> --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
 
 ## Alternative: session env var (ad-hoc)
@@ -183,5 +183,5 @@ These are read-only / local-safe:
 
 ```powershell
 dotnet build .\MGF.sln
-dotnet ef migrations list --project src/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
+dotnet ef migrations list --project src/Data/MGF.Infrastructure --startup-project src/Data/MGF.Tools.Migrator
 ```
