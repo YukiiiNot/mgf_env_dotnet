@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
-    <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
   </ItemGroup>
 

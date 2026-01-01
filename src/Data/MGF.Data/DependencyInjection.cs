@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MGF.Contracts.Abstractions;
+using MGF.Contracts.Abstractions.ProjectBootstrap;
 using MGF.Data.Abstractions;
 using MGF.Data.Configuration;
 using MGF.Data.Data;

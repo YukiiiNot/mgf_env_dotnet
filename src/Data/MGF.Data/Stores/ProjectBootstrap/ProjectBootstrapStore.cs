@@ -3,6 +3,7 @@ namespace MGF.Data.Stores.ProjectBootstrap;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
+using MGF.Contracts.Abstractions.ProjectBootstrap;
 using Npgsql;
 using MGF.Data.Data;
 using MGF.Domain.Entities;
