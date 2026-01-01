@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
+    <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectRepository, EfProjectRepository>();
         services.AddScoped<IClientRepository, EfClientRepository>();
         services.AddScoped<IPersonRepository, EfPersonRepository>();
+        services.AddScoped<IDeliveryEmailData, DeliveryEmailData>();
 
         return services;
     }
