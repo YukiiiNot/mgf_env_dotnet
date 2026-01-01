@@ -10,7 +10,7 @@ This document is the canonical source for repo structure conventions. If structu
 - Data: persistence, EF model/config, migrations, and stores.
 - Integrations: external adapters and API clients.
 - Platform: shared runtime infrastructure and reusable engines.
-- Operations: operational CLIs (migration, bootstrap, delivery).
+- Operations: operational CLIs (migration, bootstrap, delivery); CLI workflows call UseCases, not service hosts.
 - DevTools: dev-only utilities and audits.
 - Ui: desktop/web UI hosts.
 
@@ -24,6 +24,12 @@ This document is the canonical source for repo structure conventions. If structu
 ## Use-case layout (MGF.UseCases)
 - Use-cases live under `src/Application/MGF.UseCases/UseCases/<Area>/<UseCaseName>/`.
 - Each use-case folder includes `I<UseCaseName>UseCase.cs`, `<UseCaseName>UseCase.cs`, `Models.cs`, and optional `Errors.cs`.
+
+## Email capability layout
+- Platform composition/registry: `src/Platform/MGF.Email`.
+- Provider abstractions/models/policies: `src/Core/MGF.Contracts/Abstractions/Email`.
+- Provider implementations: `src/Integrations/MGF.Integrations.Email.*` (Gmail, SMTP).
+- Hosts wire selection; do not implement provider logic in services.
 
 ## When to create a new project?
 Create a new project when you need at least one of:

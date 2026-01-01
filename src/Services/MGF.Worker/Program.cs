@@ -3,11 +3,15 @@ using MGF.Data.Configuration;
 using MGF.Data.Data;
 using Microsoft.Extensions.Logging;
 using MGF.Contracts.Abstractions.Dropbox;
+using MGF.Contracts.Abstractions.Email;
 using MGF.Integrations.Dropbox;
+using MGF.Integrations.Email.Gmail;
+using MGF.Integrations.Email.Smtp;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 using MGF.Worker;
 using MGF.Worker.Email;
+using MGF.Worker.Email.Sending;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.Square;
 
@@ -27,6 +31,15 @@ if (workerSettings.Count > 0)
 }
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddTransient<GmailApiEmailSender>();
+builder.Services.AddTransient<SmtpEmailSender>();
+builder.Services.AddTransient<IEmailSender>(services =>
+{
+    var configuration = services.GetRequiredService<IConfiguration>();
+    var gmailSender = services.GetRequiredService<GmailApiEmailSender>();
+    var smtpSender = services.GetRequiredService<SmtpEmailSender>();
+    return EmailSenderFactory.Create(configuration, gmailSender, smtpSender);
+});
 builder.Services.AddTransient<IDropboxShareLinkClient>(services =>
 {
     var httpClient = services.GetRequiredService<IHttpClientFactory>().CreateClient();

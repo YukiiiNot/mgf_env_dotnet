@@ -1,6 +1,6 @@
 using MGF.Provisioning;
-using MGF.Worker.Email.Composition;
-using MGF.Worker.ProjectDelivery;
+using MGF.Email.Composition;
+using MGF.Email.Models;
 
 namespace MGF.Worker.Tests;
 
@@ -13,7 +13,7 @@ public sealed class EmailTemplateRendererTests
         var tokens = ProvisioningTokens.Create("MGF25-TEST", "<script>alert(1)</script>", "Client", new[] { "TE" });
         var files = new[]
         {
-            new DeliveryFileSummary("<b>final.mp4</b>", 10, DateTimeOffset.UtcNow)
+            new DeliveryEmailFileSummary("<b>final.mp4</b>", 10, DateTimeOffset.UtcNow)
         };
 
         var context = new DeliveryReadyEmailContext(
@@ -45,7 +45,7 @@ public sealed class EmailTemplateRendererTests
             "https://dropbox.test/final",
             "v1",
             new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),
-            Array.Empty<DeliveryFileSummary>(),
+            Array.Empty<DeliveryEmailFileSummary>(),
             new[] { "client@example.com" },
             "info@mgfilms.pro",
             null,
@@ -64,7 +64,7 @@ public sealed class EmailTemplateRendererTests
         var renderer = EmailTemplateRenderer.CreateDefault();
         var tokens = ProvisioningTokens.Create("MGF25-TEST", "Sample Project", "Client", new[] { "TE" });
         var files = Enumerable.Range(1, 55)
-            .Select(index => new DeliveryFileSummary($"file_{index}.mp4", 10, DateTimeOffset.UtcNow))
+            .Select(index => new DeliveryEmailFileSummary($"file_{index}.mp4", 10, DateTimeOffset.UtcNow))
             .ToArray();
 
         var context = new DeliveryReadyEmailContext(

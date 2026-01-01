@@ -1,11 +1,14 @@
 namespace MGF.Worker.Email.Sending;
 
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using MGF.Contracts.Abstractions.Email;
 
 internal static class EmailSenderFactory
 {
-    public static IEmailSender Create(IConfiguration configuration, ILogger? logger = null)
+    public static IEmailSender Create(
+        IConfiguration configuration,
+        IEmailSender gmailSender,
+        IEmailSender smtpSender)
     {
         var provider = configuration["Integrations:Email:Provider"]
             ?? configuration["Email:Provider"]
@@ -14,9 +17,9 @@ internal static class EmailSenderFactory
         if (provider.Equals("gmail", StringComparison.OrdinalIgnoreCase)
             || provider.Equals("gmail_api", StringComparison.OrdinalIgnoreCase))
         {
-            return new GmailApiEmailSender(configuration, logger);
+            return gmailSender;
         }
 
-        return new SmtpEmailSender(configuration);
+        return smtpSender;
     }
 }

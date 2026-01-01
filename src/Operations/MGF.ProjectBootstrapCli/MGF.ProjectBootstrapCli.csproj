@@ -18,8 +18,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
+    <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.Email\MGF.Email.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
-    <ProjectReference Include="..\..\Services\MGF.Worker\MGF.Worker.csproj" />
   </ItemGroup>
 
   <ItemGroup>

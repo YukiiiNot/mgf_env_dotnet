@@ -1,4 +1,4 @@
-namespace MGF.Worker.Email.Models;
+namespace MGF.Contracts.Abstractions.Email;
 
 public static class EmailProfiles
 {

@@ -1,6 +1,7 @@
 namespace MGF.Worker.ProjectDelivery;
 
-using MGF.Worker.Email.Models;
+using MGF.Contracts.Abstractions.Email;
+using MGF.Email.Models;
 
 public sealed record ProjectDeliveryPayload(
     string ProjectId,
@@ -44,7 +45,7 @@ public sealed record ProjectDeliveryRunResult(
     string? ShareUrl,
     string? ShareId,
     string? ShareError,
-    DeliveryEmailResult? Email
+    EmailSendResult? Email
 );
 
 public sealed record ProjectDeliveryDomainResult(

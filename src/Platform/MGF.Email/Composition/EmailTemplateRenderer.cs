@@ -1,4 +1,4 @@
-namespace MGF.Worker.Email.Composition;
+namespace MGF.Email.Composition;
 
 using System.Net;
 using System.Text.Json;
@@ -6,7 +6,7 @@ using Scriban;
 using Scriban.Parsing;
 using Scriban.Runtime;
 
-internal sealed class EmailTemplateRenderer
+public sealed class EmailTemplateRenderer
 {
     private readonly EmailTheme theme;
     private readonly EmailTemplatePaths.EmailTemplateSet templates;

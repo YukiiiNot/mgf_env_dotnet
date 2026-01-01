@@ -1,4 +1,4 @@
-namespace MGF.Worker.Email.Models;
+namespace MGF.Email.Models;
 
 public enum EmailKind
 {

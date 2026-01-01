@@ -11,10 +11,9 @@ using MGF.Data.Configuration;
 using MGF.Data.Data;
 using MGF.Provisioning;
 using MGF.ProjectBootstrapCli;
-using MGF.Worker.Email.Composition;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Registry;
-using MGF.Worker.ProjectDelivery;
+using MGF.Contracts.Abstractions.Email;
+using MGF.Email.Models;
+using MGF.UseCases.DeliveryEmail.RenderDeliveryEmailPreview;
 using Npgsql;
 
 var root = new RootCommand("MGF Project Bootstrap Job Tool");
@@ -2659,7 +2658,8 @@ static async Task<int> RenderDeliveryPreviewAsync(
         var replyTo = profile.DefaultReplyTo ?? "info@mgfilms.pro";
         var fromName = profile.DefaultFromName ?? "MG Films";
 
-        var emailContext = new DeliveryReadyEmailContext(
+        var useCase = new RenderDeliveryEmailPreviewUseCase();
+        var previewResult = await useCase.ExecuteAsync(new RenderDeliveryEmailPreviewRequest(
             tokens,
             current.ShareUrl,
             context.VersionLabel,
@@ -2668,10 +2668,8 @@ static async Task<int> RenderDeliveryPreviewAsync(
             toEmails,
             replyTo,
             profile.LogoUrl,
-            fromName);
-
-        var composer = EmailComposerRegistry.CreateDefault().Get(EmailKind.DeliveryReady);
-        var message = composer.Build(emailContext);
+            fromName));
+        var message = previewResult.Message;
 
         Directory.CreateDirectory(outDir);
         var previewTextPath = Path.Combine(outDir, "preview.txt");
@@ -2757,11 +2755,11 @@ static async Task<int> RenderDeliveryPreviewFromFixtureAsync(
             Array.Empty<string>());
 
         var files = fixtureModel.Files?.Select(file =>
-            new DeliveryFileSummary(
+            new DeliveryEmailFileSummary(
                 file.RelativePath ?? "deliverable.mp4",
                 file.SizeBytes ?? 0,
                 file.LastWriteTimeUtc ?? DateTimeOffset.UtcNow))
-            .ToArray() ?? Array.Empty<DeliveryFileSummary>();
+            .ToArray() ?? Array.Empty<DeliveryEmailFileSummary>();
 
         var config = BuildConfiguration();
         var profile = EmailProfileResolver.Resolve(config, EmailProfiles.Deliveries);
@@ -2778,7 +2776,8 @@ static async Task<int> RenderDeliveryPreviewFromFixtureAsync(
 
         var logoUrl = string.IsNullOrWhiteSpace(fixtureModel.LogoUrl) ? null : fixtureModel.LogoUrl;
 
-        var emailContext = new DeliveryReadyEmailContext(
+        var useCase = new RenderDeliveryEmailPreviewUseCase();
+        var previewResult = await useCase.ExecuteAsync(new RenderDeliveryEmailPreviewRequest(
             tokens,
             fixtureModel.ShareUrl ?? "https://dropbox.test/final",
             fixtureModel.VersionLabel ?? "v1",
@@ -2787,10 +2786,8 @@ static async Task<int> RenderDeliveryPreviewFromFixtureAsync(
             recipients,
             replyTo,
             logoUrl,
-            fromName);
-
-        var composer = EmailComposerRegistry.CreateDefault().Get(EmailKind.DeliveryReady);
-        var message = composer.Build(emailContext);
+            fromName));
+        var message = previewResult.Message;
 
         Directory.CreateDirectory(outDir);
         var previewTextPath = Path.Combine(outDir, "preview.txt");
@@ -3003,7 +3000,7 @@ static async Task<DeliveryPreviewContext?> TryReadManifestContextAsync(string ma
 
         var files = root.TryGetProperty("files", out var filesElement) && filesElement.ValueKind == JsonValueKind.Array
             ? ReadDeliveryFiles(filesElement)
-            : new List<DeliveryFileSummary>();
+            : new List<DeliveryEmailFileSummary>();
 
         var versionLabel = TryGetString(root, "currentVersion") ?? TryGetString(root, "versionLabel") ?? "v1";
         var retentionUntil = TryGetDateTimeOffset(root, "retentionUntilUtc") ?? DateTimeOffset.UtcNow.AddMonths(3);
@@ -3116,9 +3113,9 @@ static bool TryResolveContainerRoot(string stablePath, out string containerRoot,
     return true;
 }
 
-static List<DeliveryFileSummary> ReadDeliveryFiles(JsonElement filesElement)
+static List<DeliveryEmailFileSummary> ReadDeliveryFiles(JsonElement filesElement)
 {
-    var list = new List<DeliveryFileSummary>();
+    var list = new List<DeliveryEmailFileSummary>();
     foreach (var element in filesElement.EnumerateArray())
     {
         if (element.ValueKind != JsonValueKind.Object)
@@ -3139,7 +3136,7 @@ static List<DeliveryFileSummary> ReadDeliveryFiles(JsonElement filesElement)
         }
 
         var lastWrite = TryGetDateTimeOffset(element, "lastWriteTimeUtc") ?? DateTimeOffset.MinValue;
-        list.Add(new DeliveryFileSummary(relative, sizeBytes, lastWrite));
+        list.Add(new DeliveryEmailFileSummary(relative, sizeBytes, lastWrite));
     }
 
     return list;
@@ -3293,7 +3290,7 @@ sealed record DeliveryPreviewProject(
     string MetadataJson);
 
 sealed record DeliveryPreviewContext(
-    IReadOnlyList<DeliveryFileSummary> Files,
+    IReadOnlyList<DeliveryEmailFileSummary> Files,
     string VersionLabel,
     DateTimeOffset RetentionUntilUtc);
 

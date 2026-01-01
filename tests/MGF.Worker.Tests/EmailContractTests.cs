@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Registry;
-using MGF.Worker.Email.Sending;
+using MGF.Contracts.Abstractions.Email;
+using MGF.Integrations.Email.Smtp;
 using System.Net.Mime;
 
 namespace MGF.Worker.Tests;
@@ -11,7 +10,7 @@ public sealed class EmailContractTests
     [Fact]
     public void BuildMessage_IncludesTextAndHtmlBodies()
     {
-        var request = new DeliveryEmailRequest(
+        var request = new EmailMessage(
             FromAddress: "deliveries@mgfilms.pro",
             FromName: "MG Films",
             To: new[] { "client@example.com" },
@@ -39,7 +38,7 @@ public sealed class EmailContractTests
             .Build();
 
         var sender = new SmtpEmailSender(config);
-        var request = new DeliveryEmailRequest(
+        var request = new EmailMessage(
             FromAddress: "noreply@example.com",
             FromName: "Bad Sender",
             To: new[] { "client@example.com" },

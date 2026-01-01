@@ -9,11 +9,10 @@ using Microsoft.Extensions.Logging;
 using MGF.Domain.Entities;
 using MGF.Data.Data;
 using MGF.Data.Stores.Delivery;
+using MGF.Contracts.Abstractions.Email;
 using MGF.Worker.Email;
-using MGF.Worker.Email.Composition;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Registry;
-using MGF.Worker.Email.Sending;
+using MGF.Email.Composition;
+using MGF.Email.Models;
 using MGF.Provisioning;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Contracts.Abstractions.Dropbox;
@@ -49,7 +48,7 @@ public sealed class ProjectDeliverer
         IDropboxShareLinkClient shareLinkClient,
         IDropboxAccessTokenProvider accessTokenProvider,
         IDropboxFilesClient dropboxFilesClient,
-        IEmailSender? emailSender = null,
+        IEmailSender emailSender,
         ILogger? logger = null)
     {
         this.configuration = configuration;
@@ -57,7 +56,7 @@ public sealed class ProjectDeliverer
         this.shareLinkClient = shareLinkClient;
         this.accessTokenProvider = accessTokenProvider;
         this.dropboxFilesClient = dropboxFilesClient;
-        emailService = new EmailService(configuration, sender: emailSender, logger: logger);
+        emailService = new EmailService(configuration, emailSender, logger: logger);
         this.logger = logger;
     }
 
@@ -221,7 +220,7 @@ public sealed class ProjectDeliverer
 
         var hasErrors = results.Any(IsDomainError);
         var lastError = hasErrors ? BuildLastError(results) : null;
-        DeliveryEmailResult? emailResult = null;
+        EmailSendResult? emailResult = null;
         if (!hasErrors)
         {
             emailResult = await TrySendDeliveryEmailAsync(
@@ -363,7 +362,7 @@ public sealed class ProjectDeliverer
         return $"Your deliverables are ready \u2014 {code} {name}";
     }
 
-    internal static DeliveryEmailRequest BuildDeliveryEmailRequest(
+    internal static EmailMessage BuildDeliveryEmailRequest(
         string subject,
         string shareUrl,
         string versionLabel,
@@ -377,7 +376,7 @@ public sealed class ProjectDeliverer
     {
         var body = BuildDeliveryEmailBody(shareUrl, versionLabel, retentionUntilUtc, files);
         var htmlBody = BuildDeliveryEmailBodyHtml(shareUrl, versionLabel, retentionUntilUtc, files, tokens, logoUrl);
-        return new DeliveryEmailRequest(
+        return new EmailMessage(
             FromAddress: DeliveryFromAddress,
             FromName: fromName,
             To: recipients,
@@ -432,7 +431,7 @@ public sealed class ProjectDeliverer
             shareUrl,
             versionLabel,
             retentionUntilUtc,
-            files,
+            files.Select(ToEmailSummary).ToArray(),
             Array.Empty<string>(),
             null,
             logoUrl,
@@ -1046,7 +1045,7 @@ public sealed class ProjectDeliverer
         }
     }
 
-    private async Task<DeliveryEmailResult> TrySendDeliveryEmailAsync(
+    private async Task<EmailSendResult> TrySendDeliveryEmailAsync(
         ProjectDeliveryPayload payload,
         Project project,
         ProvisioningTokens tokens,
@@ -1097,7 +1096,7 @@ public sealed class ProjectDeliverer
             shareUrl,
             versionLabel,
             retentionUntil,
-            source.Files.Select(ToSummary).ToArray(),
+            source.Files.Select(ToEmailSummary).ToArray(),
             recipients,
             replyTo,
             logoUrl,
@@ -1940,6 +1939,12 @@ public sealed class ProjectDeliverer
     private static DeliveryFileSummary ToSummary(DeliveryFileSummary file)
         => file;
 
+    private static DeliveryEmailFileSummary ToEmailSummary(DeliveryFile file)
+        => new(file.RelativePath, file.SizeBytes, file.LastWriteTimeUtc);
+
+    private static DeliveryEmailFileSummary ToEmailSummary(DeliveryFileSummary file)
+        => new(file.RelativePath, file.SizeBytes, file.LastWriteTimeUtc);
+
     private static async Task<string> LoadPathTemplatesAsync(
         AppDbContext db,
         CancellationToken cancellationToken)
@@ -2023,7 +2028,7 @@ public sealed class ProjectDeliverer
         IProjectDeliveryStore deliveryStore,
         string projectId,
         JsonElement metadata,
-        DeliveryEmailResult emailResult,
+        EmailSendResult emailResult,
         CancellationToken cancellationToken)
     {
         var emailResultJson = JsonSerializer.SerializeToElement(emailResult, DeliveryJsonOptions);
@@ -2191,13 +2196,13 @@ public sealed class ProjectDeliverer
             .ToArray();
     }
 
-    private static DeliveryEmailResult FailedEmailResult(
+    private static EmailSendResult FailedEmailResult(
         IReadOnlyList<string> recipients,
         string subject,
         string error,
         string? replyTo)
     {
-        return new DeliveryEmailResult(
+        return new EmailSendResult(
             Status: "failed",
             Provider: "email",
             FromAddress: DeliveryFromAddress,
@@ -2211,13 +2216,13 @@ public sealed class ProjectDeliverer
         );
     }
 
-    private static DeliveryEmailResult SkippedEmailResult(
+    private static EmailSendResult SkippedEmailResult(
         IReadOnlyList<string> recipients,
         string subject,
         string reason,
         string? replyTo)
     {
-        return new DeliveryEmailResult(
+        return new EmailSendResult(
             Status: "skipped",
             Provider: "email",
             FromAddress: DeliveryFromAddress,

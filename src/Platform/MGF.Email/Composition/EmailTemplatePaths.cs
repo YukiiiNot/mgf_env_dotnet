@@ -1,4 +1,4 @@
-namespace MGF.Worker.Email.Composition;
+namespace MGF.Email.Composition;
 
 using System.Text.Json;
 using Scriban;

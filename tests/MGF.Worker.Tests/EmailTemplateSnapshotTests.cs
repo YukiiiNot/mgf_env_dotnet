@@ -1,7 +1,7 @@
 using System.Text.Json;
 using MGF.Provisioning;
-using MGF.Worker.Email.Composition;
-using MGF.Worker.ProjectDelivery;
+using MGF.Email.Composition;
+using MGF.Email.Models;
 
 namespace MGF.Worker.Tests;
 
@@ -43,11 +43,11 @@ public sealed class EmailTemplateSnapshotTests
             Array.Empty<string>());
 
         var files = fixture.Files?.Select(file =>
-            new DeliveryFileSummary(
+            new DeliveryEmailFileSummary(
                 file.RelativePath ?? "deliverable.mp4",
                 file.SizeBytes ?? 0,
                 file.LastWriteTimeUtc ?? DateTimeOffset.UtcNow))
-            .ToArray() ?? Array.Empty<DeliveryFileSummary>();
+            .ToArray() ?? Array.Empty<DeliveryEmailFileSummary>();
 
         var recipients = fixture.Recipients?.Where(email => !string.IsNullOrWhiteSpace(email)).ToArray()
             ?? new[] { "client@example.com" };

@@ -25,10 +25,12 @@ MGF.Provisioning is the reusable provisioning engine; MGF-specific rules live in
 
 ## Email subsystem
 
-All email work lives under `src/Services/MGF.Worker/Email/`.
+Email composition/registry lives under `src/Platform/MGF.Email/`. Provider senders live under
+`src/Integrations/MGF.Integrations.Email.*` and implement abstractions in
+`src/Core/MGF.Contracts/Abstractions/Email/`. Worker wires selection at runtime.
 Add new emails by:
 1. Create context model + composer
-2. Add templates (.html/.txt)
+2. Add templates (.html/.txt) under `src/Services/MGF.Worker/Email/Templates/`
 3. Register composer in the registry
 4. Add/extend tests and preview fixtures
 
@@ -47,6 +49,6 @@ project placement and ownership rules.
 
 - Use-cases: `src/Application/MGF.UseCases`
 - Job handlers: `src/Services/MGF.Worker/<Workflow>`
-- CLI commands: `src/Operations/MGF.ProjectBootstrapCli/Program.cs`
+- CLI commands: `src/Operations/MGF.ProjectBootstrapCli/Program.cs` (call UseCases, not hosts)
 - Runbooks: `docs/05-runbooks/`
 - Templates/contracts: `artifacts/templates/` and `docs/03-contracts/storage/infra-contracts.md`

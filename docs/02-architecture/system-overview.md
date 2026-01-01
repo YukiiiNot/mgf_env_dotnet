@@ -7,13 +7,15 @@ This repo hosts MGF's internal API, worker, desktop app, and supporting tools fo
 - `src/Services/MGF.Worker` - background job processor for provisioning, delivery, and integrations.
 - `src/Ui/MGF.Desktop.Wpf` - desktop ops console (early stage).
 - `src/DevTools/*` and `src/Operations/*` - CLIs for migrations, provisioning, delivery, and audits.
+- `src/Platform/MGF.Email` - email composition/registry used by Worker and ops tools (templates copied by hosts).
 - `src/Platform/MGF.Provisioning` - provisioning engine (template planning/execution) with replaceable policy rules.
 - `src/Data/MGF.Data` - shared data access, configuration, and EF model.
+- `src/Integrations/MGF.Integrations.Email.*` - provider-specific email senders (Gmail, SMTP).
 - `src/Integrations/MGF.Integrations.*` - external API adapters (Dropbox, etc.).
 - `src/Application/MGF.UseCases` - use-case boundary for business workflows.
 
 ## Runtime flow
-Worker/API/CLI -> UseCases -> Data/Integrations.
+Worker/API/CLI -> UseCases -> Data/Integrations (CLIs call UseCases; do not reference service hosts).
 Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Data stores + `IProjectBootstrapProvisioningGateway` (provisioning IO).
 
 ## Use-case boundary (MGF.UseCases)

@@ -1,4 +1,4 @@
-namespace MGF.Worker.Email.Composition;
+namespace MGF.Email.Composition;
 
 internal sealed record EmailTheme(
     string FontStack,

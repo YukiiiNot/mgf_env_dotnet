@@ -3,12 +3,10 @@ namespace MGF.Worker.Email;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Contracts.Abstractions;
+using MGF.Contracts.Abstractions.Email;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
-using MGF.Worker.Email.Composition;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Registry;
-using MGF.Worker.Email.Sending;
-using MGF.Worker.ProjectDelivery;
+using MGF.Email.Composition;
+using MGF.Email.Models;
 
 public sealed class WorkerEmailGateway : IWorkerEmailGateway
 {
@@ -21,11 +19,14 @@ public sealed class WorkerEmailGateway : IWorkerEmailGateway
     private readonly ILogger<WorkerEmailGateway> logger;
     private readonly EmailService emailService;
 
-    public WorkerEmailGateway(IConfiguration configuration, ILogger<WorkerEmailGateway> logger)
+    public WorkerEmailGateway(
+        IConfiguration configuration,
+        IEmailSender emailSender,
+        ILogger<WorkerEmailGateway> logger)
     {
         this.configuration = configuration;
         this.logger = logger;
-        emailService = new EmailService(configuration, logger: logger);
+        emailService = new EmailService(configuration, emailSender, logger: logger);
     }
 
     public async Task<DeliveryEmailAudit> SendDeliveryReadyAsync(
@@ -56,10 +57,10 @@ public sealed class WorkerEmailGateway : IWorkerEmailGateway
             logoUrl,
             fromName);
 
-        DeliveryEmailResult result;
+        EmailSendResult result;
         if (request.Mode == DeliveryEmailMode.PreviewOnly)
         {
-            var previewService = new EmailService(configuration, sender: new PreviewEmailSender(), logger: logger);
+            var previewService = new EmailService(configuration, new PreviewEmailSender(), logger: logger);
             result = await previewService.SendAsync(EmailKind.DeliveryReady, context, cancellationToken);
         }
         else
@@ -85,7 +86,7 @@ public sealed class WorkerEmailGateway : IWorkerEmailGateway
             ReplyTo: null);
     }
 
-    private static DeliveryEmailAudit ToAudit(DeliveryEmailResult result)
+    private static DeliveryEmailAudit ToAudit(EmailSendResult result)
     {
         return new DeliveryEmailAudit(
             result.Status,
@@ -100,18 +101,18 @@ public sealed class WorkerEmailGateway : IWorkerEmailGateway
             result.ReplyTo);
     }
 
-    private static DeliveryFileSummary ToSummary(DeliveryEmailFile file)
+    private static DeliveryEmailFileSummary ToSummary(DeliveryEmailFile file)
     {
-        return new DeliveryFileSummary(file.RelativePath, file.SizeBytes, file.LastWriteTimeUtc);
+        return new DeliveryEmailFileSummary(file.RelativePath, file.SizeBytes, file.LastWriteTimeUtc);
     }
 
     private sealed class PreviewEmailSender : IEmailSender
     {
-        public Task<DeliveryEmailResult> SendAsync(
-            DeliveryEmailRequest request,
+        public Task<EmailSendResult> SendAsync(
+            EmailMessage request,
             CancellationToken cancellationToken)
         {
-            var result = new DeliveryEmailResult(
+            var result = new EmailSendResult(
                 Status: "preview",
                 Provider: "preview",
                 FromAddress: request.FromAddress,

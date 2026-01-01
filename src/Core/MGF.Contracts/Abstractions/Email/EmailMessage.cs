@@ -1,6 +1,6 @@
-namespace MGF.Worker.Email.Models;
+namespace MGF.Contracts.Abstractions.Email;
 
-public sealed record DeliveryEmailRequest(
+public sealed record EmailMessage(
     string FromAddress,
     string? FromName,
     IReadOnlyList<string> To,
@@ -11,7 +11,7 @@ public sealed record DeliveryEmailRequest(
     string? ReplyTo,
     string ProfileKey = EmailProfiles.Deliveries);
 
-public sealed record DeliveryEmailResult(
+public sealed record EmailSendResult(
     string Status,
     string Provider,
     string FromAddress,

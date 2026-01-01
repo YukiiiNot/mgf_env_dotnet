@@ -1,9 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using MGF.Data.Stores.Delivery;
+using MGF.Contracts.Abstractions.Email;
 using MGF.Provisioning;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Composition;
+using MGF.Email.Models;
+using MGF.Email.Composition;
 using MGF.Worker.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
@@ -68,8 +69,8 @@ public sealed class ProjectDeliveryEmailTests
         var tokens = ProvisioningTokens.Create("MGF25-TEST", "Sample Project", "Client", new[] { "TE" });
         var files = new[]
         {
-            new DeliveryFileSummary("final.mp4", 10, DateTimeOffset.UtcNow),
-            new DeliveryFileSummary("notes.pdf", 20, DateTimeOffset.UtcNow)
+            new DeliveryEmailFileSummary("final.mp4", 10, DateTimeOffset.UtcNow),
+            new DeliveryEmailFileSummary("notes.pdf", 20, DateTimeOffset.UtcNow)
         };
 
         var context = new DeliveryReadyEmailContext(
@@ -96,7 +97,7 @@ public sealed class ProjectDeliveryEmailTests
     public void UpdateDeliveryCurrent_WritesLastEmail()
     {
         var metadata = JsonDocument.Parse("{}").RootElement;
-        var email = new DeliveryEmailResult(
+        var email = new EmailSendResult(
             Status: "sent",
             Provider: "smtp",
             FromAddress: "deliveries@mgfilms.pro",
@@ -162,7 +163,7 @@ public sealed class ProjectDeliveryEmailTests
         };
         var metadata = JsonDocument.Parse(metadataNode.ToJsonString()).RootElement;
 
-        var email = new DeliveryEmailResult(
+        var email = new EmailSendResult(
             Status: "failed",
             Provider: "smtp",
             FromAddress: "deliveries@mgfilms.pro",

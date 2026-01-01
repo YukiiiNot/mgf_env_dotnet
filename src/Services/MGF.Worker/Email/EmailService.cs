@@ -2,9 +2,9 @@ namespace MGF.Worker.Email;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Registry;
-using MGF.Worker.Email.Sending;
+using MGF.Contracts.Abstractions.Email;
+using MGF.Email.Models;
+using MGF.Email.Registry;
 
 public sealed class EmailService
 {
@@ -15,17 +15,17 @@ public sealed class EmailService
 
     public EmailService(
         IConfiguration configuration,
+        IEmailSender sender,
         EmailComposerRegistry? registry = null,
-        IEmailSender? sender = null,
         ILogger? logger = null)
     {
         this.configuration = configuration;
         this.registry = registry ?? EmailComposerRegistry.CreateDefault();
-        this.sender = sender ?? EmailSenderFactory.Create(configuration, logger);
+        this.sender = sender;
         this.logger = logger;
     }
 
-    public Task<DeliveryEmailResult> SendAsync(
+    public Task<EmailSendResult> SendAsync(
         EmailKind kind,
         object context,
         CancellationToken cancellationToken)

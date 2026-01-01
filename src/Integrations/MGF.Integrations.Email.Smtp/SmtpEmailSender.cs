@@ -1,14 +1,13 @@
-namespace MGF.Worker.Email.Sending;
+namespace MGF.Integrations.Email.Smtp;
 
 using System.Text;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;
 using Microsoft.Extensions.Configuration;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Registry;
+using MGF.Contracts.Abstractions.Email;
 
-internal sealed class SmtpEmailSender : IEmailSender
+public sealed class SmtpEmailSender : IEmailSender
 {
     private readonly IConfiguration configuration;
 
@@ -17,8 +16,8 @@ internal sealed class SmtpEmailSender : IEmailSender
         this.configuration = configuration;
     }
 
-    public async Task<DeliveryEmailResult> SendAsync(
-        DeliveryEmailRequest request,
+    public async Task<EmailSendResult> SendAsync(
+        EmailMessage request,
         CancellationToken cancellationToken)
     {
         var enabled = configuration.GetValue("Integrations:Email:Enabled", false);
@@ -63,7 +62,7 @@ internal sealed class SmtpEmailSender : IEmailSender
         try
         {
             await client.SendMailAsync(message);
-            return new DeliveryEmailResult(
+            return new EmailSendResult(
                 Status: "sent",
                 Provider: "smtp",
                 FromAddress: request.FromAddress,
@@ -82,9 +81,9 @@ internal sealed class SmtpEmailSender : IEmailSender
         }
     }
 
-    private static DeliveryEmailResult Failed(DeliveryEmailRequest request, string error)
+    private static EmailSendResult Failed(EmailMessage request, string error)
     {
-        return new DeliveryEmailResult(
+        return new EmailSendResult(
             Status: "failed",
             Provider: "smtp",
             FromAddress: request.FromAddress,
@@ -98,7 +97,7 @@ internal sealed class SmtpEmailSender : IEmailSender
         );
     }
 
-    internal static MailMessage BuildMessage(DeliveryEmailRequest request)
+    public static MailMessage BuildMessage(EmailMessage request)
     {
         var message = new MailMessage
         {

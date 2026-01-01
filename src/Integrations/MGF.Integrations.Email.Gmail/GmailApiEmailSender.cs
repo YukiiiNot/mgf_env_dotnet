@@ -1,4 +1,4 @@
-namespace MGF.Worker.Email.Sending;
+namespace MGF.Integrations.Email.Gmail;
 
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -6,10 +6,9 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Registry;
+using MGF.Contracts.Abstractions.Email;
 
-internal sealed class GmailApiEmailSender : IEmailSender
+public sealed class GmailApiEmailSender : IEmailSender
 {
     private const string GmailScope = "https://www.googleapis.com/auth/gmail.send";
 
@@ -28,8 +27,8 @@ internal sealed class GmailApiEmailSender : IEmailSender
         httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
 
-    public async Task<DeliveryEmailResult> SendAsync(
-        DeliveryEmailRequest request,
+    public async Task<EmailSendResult> SendAsync(
+        EmailMessage request,
         CancellationToken cancellationToken)
     {
         var enabled = configuration.GetValue("Integrations:Email:Enabled", false);
@@ -111,7 +110,7 @@ internal sealed class GmailApiEmailSender : IEmailSender
                 // ignore parse errors
             }
 
-            return new DeliveryEmailResult(
+            return new EmailSendResult(
                 Status: "sent",
                 Provider: "gmail",
                 FromAddress: request.FromAddress,
@@ -232,7 +231,7 @@ internal sealed class GmailApiEmailSender : IEmailSender
         return pem;
     }
 
-    private static string BuildRawMessage(DeliveryEmailRequest request)
+    private static string BuildRawMessage(EmailMessage request)
     {
         var boundary = "alt_" + Guid.NewGuid().ToString("N");
         var builder = new StringBuilder();
@@ -270,7 +269,7 @@ internal sealed class GmailApiEmailSender : IEmailSender
         return builder.ToString();
     }
 
-    private static string FormatFromHeader(DeliveryEmailRequest request)
+    private static string FormatFromHeader(EmailMessage request)
     {
         if (string.IsNullOrWhiteSpace(request.FromName))
         {
@@ -289,9 +288,9 @@ internal sealed class GmailApiEmailSender : IEmailSender
             .Replace('/', '_');
     }
 
-    private static DeliveryEmailResult Failed(DeliveryEmailRequest request, string error)
+    private static EmailSendResult Failed(EmailMessage request, string error)
     {
-        return new DeliveryEmailResult(
+        return new EmailSendResult(
             Status: "failed",
             Provider: "gmail",
             FromAddress: request.FromAddress,

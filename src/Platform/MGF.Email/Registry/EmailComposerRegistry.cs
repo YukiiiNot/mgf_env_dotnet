@@ -1,7 +1,7 @@
-namespace MGF.Worker.Email.Registry;
+namespace MGF.Email.Registry;
 
-using MGF.Worker.Email.Composition;
-using MGF.Worker.Email.Models;
+using MGF.Email.Composition;
+using MGF.Email.Models;
 
 public sealed class EmailComposerRegistry
 {

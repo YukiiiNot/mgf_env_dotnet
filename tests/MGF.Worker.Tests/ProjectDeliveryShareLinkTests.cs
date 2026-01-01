@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using MGF.Contracts.Abstractions.Dropbox;
+using MGF.Contracts.Abstractions.Email;
 using MGF.Worker.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
@@ -118,7 +119,8 @@ public sealed class ProjectDeliveryShareLinkTests
             config,
             shareLinkClient: capture,
             accessTokenProvider: new FakeTokenProvider(),
-            dropboxFilesClient: new FakeFilesClient());
+            dropboxFilesClient: new FakeFilesClient(),
+            emailSender: new FakeEmailSender());
 
         var dropboxRoot = @"C:\dropbox_root\99_TestRuns";
         var stablePath = Path.Combine(dropboxRoot, "04_Client_Deliveries", "Client", "MGF25-TEST_Project", "01_Deliverables", "Final");
@@ -154,7 +156,8 @@ public sealed class ProjectDeliveryShareLinkTests
             config,
             shareLinkClient: capture,
             accessTokenProvider: new FakeTokenProvider(),
-            dropboxFilesClient: new FakeFilesClient());
+            dropboxFilesClient: new FakeFilesClient(),
+            emailSender: new FakeEmailSender());
 
         var dropboxRoot = @"C:\dropbox_root\99_TestRuns";
         var stablePath = Path.Combine(dropboxRoot, "04_Client_Deliveries", "Client", "MGF25-TEST_Project", "01_Deliverables", "Final");
@@ -209,5 +212,23 @@ public sealed class ProjectDeliveryShareLinkTests
 
         public Task UploadBytesAsync(string accessToken, string dropboxPath, byte[] content, CancellationToken cancellationToken)
             => Task.CompletedTask;
+    }
+
+    private sealed class FakeEmailSender : IEmailSender
+    {
+        public Task<EmailSendResult> SendAsync(EmailMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new EmailSendResult(
+                Status: "skipped",
+                Provider: "email",
+                FromAddress: request.FromAddress,
+                To: request.To,
+                Subject: request.Subject,
+                SentAtUtc: null,
+                ProviderMessageId: null,
+                Error: "Fake sender",
+                TemplateVersion: request.TemplateVersion,
+                ReplyTo: request.ReplyTo));
+        }
     }
 }

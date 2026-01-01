@@ -1,7 +1,6 @@
-namespace MGF.Worker.Email.Registry;
+namespace MGF.Contracts.Abstractions.Email;
 
 using Microsoft.Extensions.Configuration;
-using MGF.Worker.Email.Models;
 
 public static class EmailProfileResolver
 {

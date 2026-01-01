@@ -6,11 +6,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Data.Data;
 using MGF.Data.Stores.Delivery;
+using MGF.Contracts.Abstractions.Email;
 using MGF.Worker.Email;
-using MGF.Worker.Email.Composition;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Registry;
-using MGF.Worker.Email.Sending;
+using MGF.Email.Composition;
+using MGF.Email.Models;
 using MGF.Provisioning;
 
 public sealed class ProjectDeliveryEmailer
@@ -24,15 +23,15 @@ public sealed class ProjectDeliveryEmailer
 
     public ProjectDeliveryEmailer(
         IConfiguration configuration,
-        IEmailSender? emailSender = null,
+        IEmailSender emailSender,
         ILogger? logger = null)
     {
         this.configuration = configuration;
-        emailService = new EmailService(configuration, sender: emailSender, logger: logger);
+        emailService = new EmailService(configuration, emailSender, logger: logger);
         this.logger = logger;
     }
 
-    public async Task<DeliveryEmailResult> RunAsync(
+    public async Task<EmailSendResult> RunAsync(
         AppDbContext db,
         IProjectDeliveryStore deliveryStore,
         ProjectDeliveryEmailPayload payload,
@@ -116,7 +115,7 @@ public sealed class ProjectDeliveryEmailer
         var retentionUntil = context.RetentionUntilUtc;
         var logoUrl = profile.LogoUrl;
         var fromName = profile.DefaultFromName ?? "MG Films";
-        DeliveryEmailResult result;
+        EmailSendResult result;
         try
         {
             var emailContext = new DeliveryReadyEmailContext(
@@ -124,7 +123,7 @@ public sealed class ProjectDeliveryEmailer
                 current.ShareUrl,
                 versionLabel,
                 retentionUntil,
-                files,
+                files.Select(ToEmailSummary).ToArray(),
                 recipients,
                 replyTo,
                 logoUrl,
@@ -250,9 +249,9 @@ public sealed class ProjectDeliveryEmailer
             .ToArray();
     }
 
-    private static DeliveryEmailResult BuildFailure(IReadOnlyList<string> recipients, string error)
+    private static EmailSendResult BuildFailure(IReadOnlyList<string> recipients, string error)
     {
-        return new DeliveryEmailResult(
+        return new EmailSendResult(
             Status: "failed",
             Provider: "email",
             FromAddress: "deliveries@mgfilms.pro",
@@ -483,6 +482,9 @@ public sealed class ProjectDeliveryEmailer
 
         return list;
     }
+
+    private static DeliveryEmailFileSummary ToEmailSummary(DeliveryFileSummary file)
+        => new(file.RelativePath, file.SizeBytes, file.LastWriteTimeUtc);
 }
 
 

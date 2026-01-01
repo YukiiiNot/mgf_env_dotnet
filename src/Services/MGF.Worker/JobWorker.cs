@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MGF.Contracts.Abstractions.Dropbox;
+using MGF.Contracts.Abstractions.Email;
 using MGF.Domain.Entities;
 using MGF.Data.Abstractions;
 using MGF.Data.Data;
@@ -492,11 +493,13 @@ public sealed class JobWorker : BackgroundService
             var shareLinkClient = services.GetRequiredService<IDropboxShareLinkClient>();
             var accessTokenProvider = services.GetRequiredService<IDropboxAccessTokenProvider>();
             var dropboxFilesClient = services.GetRequiredService<IDropboxFilesClient>();
+            var emailSender = services.GetRequiredService<IEmailSender>();
             var deliverer = new ProjectDeliverer(
                 configuration,
                 shareLinkClient,
                 accessTokenProvider,
                 dropboxFilesClient,
+                emailSender,
                 logger: logger);
             var result = await deliverer.RunAsync(db, deliveryStore, payload, job.JobId, cancellationToken);
 
