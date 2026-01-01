@@ -4,17 +4,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-
-public interface IDropboxAccessTokenProvider
-{
-    Task<DropboxAccessTokenResult> GetAccessTokenAsync(CancellationToken cancellationToken);
-}
-
-public sealed record DropboxAccessTokenResult(
-    string? AccessToken,
-    string AuthMode,
-    string Source,
-    string? Error);
+using MGF.Contracts.Abstractions.Dropbox;
 
 public sealed class DropboxAccessTokenProvider : IDropboxAccessTokenProvider
 {

@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using MGF.Integrations.Dropbox;
+using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Domain.Entities;
 using MGF.Data.Abstractions;
 using MGF.Data.Data;

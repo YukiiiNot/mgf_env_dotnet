@@ -4,18 +4,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-
-public interface IDropboxShareLinkClient
-{
-    Task ValidateAccessTokenAsync(string accessToken, CancellationToken cancellationToken);
-
-    Task<DropboxShareLinkResult> GetOrCreateSharedLinkAsync(
-        string accessToken,
-        string dropboxPath,
-        CancellationToken cancellationToken);
-}
-
-public sealed record DropboxShareLinkResult(string Url, string? Id, bool IsNew);
+using MGF.Contracts.Abstractions.Dropbox;
 
 public sealed class DropboxShareLinkClient : IDropboxShareLinkClient
 {

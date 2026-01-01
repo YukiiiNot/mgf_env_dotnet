@@ -2,6 +2,7 @@ using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
 using Microsoft.Extensions.Logging;
+using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Integrations.Dropbox;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.UseCases.ProjectBootstrap.BootstrapProject;

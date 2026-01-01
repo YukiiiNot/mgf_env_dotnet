@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
-using MGF.Integrations.Dropbox;
+using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Worker.ProjectDelivery;
 
 namespace MGF.Worker.Tests;

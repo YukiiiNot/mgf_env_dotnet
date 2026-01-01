@@ -5,13 +5,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-
-public interface IDropboxFilesClient
-{
-    Task EnsureFolderAsync(string accessToken, string dropboxPath, CancellationToken cancellationToken);
-    Task UploadFileAsync(string accessToken, string dropboxPath, string localFilePath, CancellationToken cancellationToken);
-    Task UploadBytesAsync(string accessToken, string dropboxPath, byte[] content, CancellationToken cancellationToken);
-}
+using MGF.Contracts.Abstractions.Dropbox;
 
 public sealed class DropboxFilesClient : IDropboxFilesClient
 {
