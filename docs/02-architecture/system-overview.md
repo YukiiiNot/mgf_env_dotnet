@@ -28,6 +28,8 @@ Does not belong here: DbContext, Dropbox SDK, SMTP client.
 ## Related docs
 - Workflow overview: [workflows.md](workflows.md)
 - Provisioning engine: [provisioning.md](provisioning.md)
+- Project shapes: [../project-shapes.md](../project-shapes.md)
+- Persistence patterns: [../persistence-patterns.md](../persistence-patterns.md)
 - Runbooks: [../05-runbooks/repo-workflow.md](../05-runbooks/repo-workflow.md)
 - Contracts index: [../03-contracts/](../03-contracts/)
 

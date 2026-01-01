@@ -19,6 +19,8 @@ This is the entry point for repo documentation. Every doc should be reachable fr
 ## Architecture
 - System overview: [02-architecture/system-overview.md](02-architecture/system-overview.md)
 - Layer conventions: [02-architecture/application-layer-conventions.md](02-architecture/application-layer-conventions.md)
+- Project shapes: [project-shapes.md](project-shapes.md)
+- Persistence patterns: [persistence-patterns.md](persistence-patterns.md)
 - Workflows: [02-architecture/workflows.md](02-architecture/workflows.md)
 - Database phase 1: [02-architecture/database-phase1.md](02-architecture/database-phase1.md)
 - Roadmap: [02-architecture/roadmap.md](02-architecture/roadmap.md)

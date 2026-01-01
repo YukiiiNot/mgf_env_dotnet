@@ -10,12 +10,8 @@ This repo favors guardrails, contracts, and runbooks over cleverness.
   - idempotent behavior
   - contract tests
   - a runbook (docs/)
-- Raw SQL belongs in `src/Data/` (or migrator projects), never in Services or Operations.
-  Job queue SQL lives in `src/Data/MGF.Data/Stores/Jobs`, counters live in `src/Data/MGF.Data/Stores/Counters`,
-  delivery persistence lives in `src/Data/MGF.Data/Stores/Delivery`, and project bootstrap persistence lives in
-  `src/Data/MGF.Data/Stores/ProjectBootstrap` (Worker bootstrapper must not run SQL directly).
-- Pattern: define a Data interface (e.g., `ISquareWebhookStore`, `IJobQueueStore`, `ICounterAllocator`, `IProjectDeliveryStore`,
-  `IProjectBootstrapStore`) and inject it into hosts.
+- Persistence patterns (repos vs stores) live in [../persistence-patterns.md](../persistence-patterns.md).
+- Structure and naming conventions live in [../project-shapes.md](../project-shapes.md).
 
 ## Integrations
 
@@ -44,16 +40,8 @@ Add new emails by:
 
 ## Use-case boundary (MGF.UseCases)
 
-MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
-Delivery email send now flows through `ISendDeliveryEmailUseCase` from `MGF.Worker`.
-Project bootstrap flows through `IBootstrapProjectUseCase`; provisioning IO is behind `IProjectBootstrapProvisioningGateway` (Worker).
-
-Examples that belong here:
-- CreateProject
-- CreateDeliveryVersion
-- SendDeliveryEmail
-
-Does not belong here: DbContext, Dropbox SDK, SMTP client.
+MGF.UseCases is the boundary project for business workflows. See [../project-shapes.md](../project-shapes.md) for
+project placement and ownership rules.
 
 ## Where to add new workflows
 
