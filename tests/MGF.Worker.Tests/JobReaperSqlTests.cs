@@ -1,4 +1,4 @@
-using MGF.Worker;
+using MGF.Data.Stores.Jobs;
 using Xunit;
 
 namespace MGF.Worker.Tests;
@@ -8,7 +8,7 @@ public sealed class JobReaperSqlTests
     [Fact]
     public void ReaperSqlTargetsRunningWithExpiredLocks()
     {
-        var sql = JobReaperSql.ReapStaleRunningJobs;
+        var sql = JobQueueSql.ReapStaleRunningJobs;
 
         Assert.Contains("status_key = 'running'", sql);
         Assert.Contains("locked_until IS NOT NULL", sql);

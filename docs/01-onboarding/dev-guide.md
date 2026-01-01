@@ -10,6 +10,11 @@ This repo favors guardrails, contracts, and runbooks over cleverness.
   - idempotent behavior
   - contract tests
   - a runbook (docs/)
+- Raw SQL belongs in `src/Data/` (or migrator projects), never in Services or Operations.
+  Job queue SQL lives in `src/Data/MGF.Data/Stores/Jobs`, counters live in `src/Data/MGF.Data/Stores/Counters`,
+  delivery persistence lives in `src/Data/MGF.Data/Stores/Delivery`.
+- Pattern: define a Data interface (e.g., `ISquareWebhookStore`, `IJobQueueStore`, `ICounterAllocator`, `IProjectDeliveryStore`)
+  and inject it into hosts.
 
 ## Integrations
 

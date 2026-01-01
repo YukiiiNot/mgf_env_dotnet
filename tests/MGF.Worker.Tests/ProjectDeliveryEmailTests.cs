@@ -1,4 +1,6 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using MGF.Data.Stores.Delivery;
 using MGF.Provisioning;
 using MGF.Worker.Email.Models;
 using MGF.Worker.Email.Composition;
@@ -8,6 +10,11 @@ namespace MGF.Worker.Tests;
 
 public sealed class ProjectDeliveryEmailTests
 {
+    private static readonly JsonSerializerOptions CamelCaseOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     [Fact]
     public void BuildDeliveryEmailBody_IncludesLinkVersionAndFiles()
     {
@@ -88,7 +95,7 @@ public sealed class ProjectDeliveryEmailTests
     [Fact]
     public void UpdateDeliveryCurrent_WritesLastEmail()
     {
-        var delivery = new JsonObject();
+        var metadata = JsonDocument.Parse("{}").RootElement;
         var email = new DeliveryEmailResult(
             Status: "sent",
             Provider: "smtp",
@@ -127,23 +134,33 @@ public sealed class ProjectDeliveryEmailTests
             Email: email
         );
 
-        ProjectDeliverer.UpdateDeliveryCurrent(delivery, run);
+        var runResultJson = JsonSerializer.SerializeToElement(run, CamelCaseOptions);
+        var updatedJson = DeliveryMetadataUpdater.AppendDeliveryRun(metadata, runResultJson);
 
-        var current = delivery["current"] as JsonObject;
-        Assert.NotNull(current);
-        var lastEmail = current?["lastEmail"] as JsonObject;
-        Assert.NotNull(lastEmail);
-        Assert.Equal("sent", lastEmail?["status"]?.GetValue<string>());
+        using var updatedDoc = JsonDocument.Parse(updatedJson);
+        var lastEmail = updatedDoc.RootElement
+            .GetProperty("delivery")
+            .GetProperty("current")
+            .GetProperty("lastEmail");
+
+        Assert.Equal("sent", lastEmail.GetProperty("status").GetString());
     }
 
     [Fact]
     public void ApplyLastEmail_PreservesCurrentVersion()
     {
-        var current = new JsonObject
+        var metadataNode = new JsonObject
         {
-            ["currentVersion"] = "v1",
-            ["stablePath"] = @"C:\dropbox\Final"
+            ["delivery"] = new JsonObject
+            {
+                ["current"] = new JsonObject
+                {
+                    ["currentVersion"] = "v1",
+                    ["stablePath"] = @"C:\dropbox\Final"
+                }
+            }
         };
+        var metadata = JsonDocument.Parse(metadataNode.ToJsonString()).RootElement;
 
         var email = new DeliveryEmailResult(
             Status: "failed",
@@ -157,12 +174,14 @@ public sealed class ProjectDeliveryEmailTests
             TemplateVersion: "v1-html",
             ReplyTo: null);
 
-        ProjectDeliverer.ApplyLastEmail(current, email);
+        var emailResultJson = JsonSerializer.SerializeToElement(email, CamelCaseOptions);
+        var updatedJson = DeliveryMetadataUpdater.AppendDeliveryEmail(metadata, emailResultJson);
 
-        Assert.Equal("v1", current["currentVersion"]?.GetValue<string>());
-        var lastEmail = current["lastEmail"] as JsonObject;
-        Assert.NotNull(lastEmail);
-        Assert.Equal("failed", lastEmail?["status"]?.GetValue<string>());
+        using var updatedDoc = JsonDocument.Parse(updatedJson);
+        var current = updatedDoc.RootElement.GetProperty("delivery").GetProperty("current");
+
+        Assert.Equal("v1", current.GetProperty("currentVersion").GetString());
+        Assert.Equal("failed", current.GetProperty("lastEmail").GetProperty("status").GetString());
     }
 
     // no extra helpers

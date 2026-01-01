@@ -4,6 +4,9 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 
 ## Rule of ownership
 - Services host workflows; Application owns the workflows; Data owns persistence; Integrations own external adapters.
+- Raw SQL lives in `src/Data/` (or the migrator); job queue SQL lives in `src/Data/MGF.Data/Stores/Jobs`,
+  counters live in `src/Data/MGF.Data/Stores/Counters`, delivery persistence lives in `src/Data/MGF.Data/Stores/Delivery`.
+  Services/Operations should call Data interfaces instead.
 
 ## Scope definitions
 - Core (`src/Core/`): domain types, contracts, IDs, and shared rules that have no IO.
