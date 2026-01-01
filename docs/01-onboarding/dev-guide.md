@@ -31,8 +31,20 @@ Add new emails by:
 - Contract tests for policies (e.g., allowlist, stable share path)
 - Avoid destructive DB tests unless explicitly opt-in
 
+## Use-case boundary (MGF.UseCases)
+
+MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
+
+Examples that belong here:
+- CreateProject
+- CreateDeliveryVersion
+- SendDeliveryEmail
+
+Does not belong here: DbContext, Dropbox SDK, SMTP client.
+
 ## Where to add new workflows
 
+- Use-cases: `src/Application/MGF.UseCases`
 - Job handlers: `src/Services/MGF.Worker/<Workflow>`
 - CLI commands: `src/Operations/MGF.ProjectBootstrapCli/Program.cs`
 - Runbooks: `docs/05-runbooks/`

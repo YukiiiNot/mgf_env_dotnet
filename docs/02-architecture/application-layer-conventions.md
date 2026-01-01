@@ -7,7 +7,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 
 ## Scope definitions
 - Core (`src/Core/`): domain types, contracts, IDs, and shared rules that have no IO.
-- Application (`src/Application/`): use-cases and workflow implementations that orchestrate domain logic.
+- Application (`src/Application/`): use-cases and workflow implementations that orchestrate domain logic. Primary boundary project: `src/Application/MGF.UseCases`.
 - Services (`src/Services/`): runtime hosts (API, Worker) that call Application and wire dependencies.
 - Data (`src/Data/`): persistence, EF model/config, migrations, and seeding.
 - Integrations (`src/Integrations/`): external adapters (Square, Dropbox, email providers).
@@ -18,16 +18,27 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 - `src/Operations/MGF.ProjectBootstrapCli`: CLI orchestrator for provisioning/delivery flows.
 - `src/Core/MGF.Contracts`: current home for application abstractions and shared workflow helpers.
 - `src/Core/MGF.Domain`: domain entities and IDs.
+- `src/Application/MGF.UseCases`: workflow/use-case boundary (scaffold; logic moves here over time).
 
 ## Future direction
-- New workflows and orchestration logic go in `src/Application/`; Services and Operations call into it.
+- New workflows and orchestration logic go in `src/Application/MGF.UseCases`; Services and Operations call into it.
 - Services stay thin: hosting, composition root, and transport concerns only.
 - Data stays the single owner of persistence and migrations.
 - Integrations isolate external APIs and adapters behind interfaces.
 
+## Use-case boundary (MGF.UseCases)
+MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
+
+Examples that belong here:
+- CreateProject
+- CreateDeliveryVersion
+- SendDeliveryEmail
+
+Does not belong here: DbContext, Dropbox SDK, SMTP client.
+
 ## Checklist: When adding a new feature, place code in
 - If it defines domain types or contracts, put it in `src/Core/`.
-- If it implements a workflow or use-case, put it in `src/Application/`.
+- If it implements a workflow or use-case, put it in `src/Application/MGF.UseCases`.
 - If it hosts HTTP endpoints or background loops, put it in `src/Services/`.
 - If it is a CLI or ops runner, put it in `src/Operations/`.
 - If it persists data or defines schema, put it in `src/Data/`.

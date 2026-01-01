@@ -8,9 +8,23 @@ This guide gets a second developer productive without touching production.
 - `src/Services/MGF.Worker` — background jobs runner
 - `src/Operations/MGF.ProjectBootstrapCli` — CLI for bootstrap/archive/delivery/email/preview
 - `src/Data/MGF.DataMigrator` — migrations + lookup seeding
+- `src/Application/MGF.UseCases` ? use-case boundary for business workflows
 - `src/Services/MGF.Worker/Email` — email subsystem (templates, senders, preview)
 - `docs/` — runbooks, workflow, templates, contracts
 - `tests/` — unit + contract tests
+
+
+## Use-case boundary (MGF.UseCases)
+
+MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
+
+Examples that belong here:
+- CreateProject
+- CreateDeliveryVersion
+- SendDeliveryEmail
+
+Does not belong here: DbContext, Dropbox SDK, SMTP client.
+
 
 ## Local config + precedence
 
