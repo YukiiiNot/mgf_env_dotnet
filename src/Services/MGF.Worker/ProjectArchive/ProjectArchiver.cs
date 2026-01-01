@@ -101,11 +101,11 @@ public sealed class ProjectArchiver
             .SingleOrDefaultAsync(cancellationToken);
 
         var tokens = ProvisioningTokens.Create(project.ProjectCode, project.Name, clientName, payload.EditorInitials);
-        var repoRoot = FindRepoRoot();
+        var templatesRoot = ResolveTemplatesRoot();
         var pathTemplates = await LoadPathTemplatesAsync(db, cancellationToken);
 
         var projectFolderName = await ResolveProjectFolderNameAsync(
-            Path.Combine(repoRoot, "docs", "templates", "dropbox_project_container.json"),
+            Path.Combine(templatesRoot, "dropbox_project_container.json"),
             tokens,
             cancellationToken
         );
@@ -114,7 +114,7 @@ public sealed class ProjectArchiver
         var lucidlinkResult = await ProcessLucidlinkAsync(payload, projectFolderName);
         var nasResult = await ProcessNasAsync(
             payload,
-            repoRoot,
+            templatesRoot,
             projectFolderName,
             lucidlinkResult,
             tokens,
@@ -461,7 +461,7 @@ public sealed class ProjectArchiver
 
     private async Task<ProjectArchiveDomainResult> ProcessNasAsync(
         ProjectArchivePayload payload,
-        string repoRoot,
+        string templatesRoot,
         string projectFolderName,
         ProjectArchiveDomainResult lucidlinkResult,
         ProvisioningTokens tokens,
@@ -541,7 +541,7 @@ public sealed class ProjectArchiver
         try
         {
             _ = await ExecuteTemplateAsync(
-                templatePath: Path.Combine(repoRoot, "docs", "templates", "nas_archive_container.json"),
+                templatePath: Path.Combine(templatesRoot, "nas_archive_container.json"),
                 basePath: baseRoot,
                 tokens: tokens,
                 mode: ProvisioningMode.Apply,
@@ -551,7 +551,7 @@ public sealed class ProjectArchiver
             );
 
             verified = await ExecuteTemplateAsync(
-                templatePath: Path.Combine(repoRoot, "docs", "templates", "nas_archive_container.json"),
+                templatePath: Path.Combine(templatesRoot, "nas_archive_container.json"),
                 basePath: baseRoot,
                 tokens: tokens,
                 mode: ProvisioningMode.Verify,
@@ -1065,24 +1065,16 @@ public sealed class ProjectArchiver
         return Path.GetFullPath(raw.Trim());
     }
 
-    private static string FindRepoRoot()
+    private static string ResolveTemplatesRoot()
     {
-        var startPaths = new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory };
-        foreach (var start in startPaths)
+        var baseDir = AppContext.BaseDirectory;
+        var templatesRoot = Path.Combine(baseDir, "artifacts", "templates");
+        if (Directory.Exists(templatesRoot))
         {
-            var current = new DirectoryInfo(start);
-            while (current is not null)
-            {
-                if (File.Exists(Path.Combine(current.FullName, "MGF.sln")))
-                {
-                    return current.FullName;
-                }
-
-                current = current.Parent;
-            }
+            return templatesRoot;
         }
 
-        throw new InvalidOperationException($"Could not locate repo root (MGF.sln) from {Directory.GetCurrentDirectory()}.");
+        throw new DirectoryNotFoundException($"Templates folder not found at {templatesRoot}.");
     }
 
     private static async Task<string> ResolveProjectFolderNameAsync(
@@ -1124,3 +1116,5 @@ public sealed class ProjectArchiver
 }
 
 internal sealed record DropboxMovePlan(string RootState, bool ShouldMoveToArchive);
+
+

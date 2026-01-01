@@ -16,17 +16,7 @@ internal static class EmailTemplatePaths
             return runtimePath;
         }
 
-        var repoRoot = FindRepoRoot(baseDir);
-        if (!string.IsNullOrWhiteSpace(repoRoot))
-        {
-            var repoPath = Path.Combine(repoRoot, "src", "MGF.Worker", "Email", TemplatesFolderName);
-            if (Directory.Exists(repoPath) && HasTemplates(repoPath))
-            {
-                return repoPath;
-            }
-        }
-
-        throw new DirectoryNotFoundException("Email templates folder not found.");
+        throw new DirectoryNotFoundException($"Email templates folder not found at {runtimePath}.");
     }
 
     private static bool HasTemplates(string templatesRoot)
@@ -78,22 +68,6 @@ internal static class EmailTemplatePaths
         }
 
         return new EmailTemplateSet(sources, templates);
-    }
-
-    private static string? FindRepoRoot(string start)
-    {
-        var dir = new DirectoryInfo(start);
-        while (dir is not null)
-        {
-            if (dir.EnumerateFiles("MGF.sln").Any())
-            {
-                return dir.FullName;
-            }
-
-            dir = dir.Parent;
-        }
-
-        return null;
     }
 
     internal sealed record EmailTemplateSet(

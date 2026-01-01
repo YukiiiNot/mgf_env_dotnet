@@ -1,4 +1,4 @@
-﻿namespace MGF.Worker.ProjectDelivery;
+namespace MGF.Worker.ProjectDelivery;
 
 using System.Net;
 using System.Text;
@@ -156,7 +156,8 @@ public sealed class ProjectDeliverer
 
         var tokens = ProvisioningTokens.Create(project.ProjectCode, project.Name, clientName, payload.EditorInitials);
         var repoRoot = FindRepoRoot();
-        var deliveryTemplatePath = Path.Combine(repoRoot, "docs", "templates", "dropbox_delivery_container.json");
+        var templatesRoot = ResolveTemplatesRoot();
+        var deliveryTemplatePath = Path.Combine(templatesRoot, "dropbox_delivery_container.json");
         var projectFolderName = await ResolveProjectFolderNameAsync(deliveryTemplatePath, tokens, cancellationToken);
         var dropboxDeliveryRelpath = await LoadPathTemplatesAsync(db, cancellationToken);
 
@@ -2499,4 +2500,18 @@ public sealed class ProjectDeliverer
 
         throw new InvalidOperationException($"Could not locate repo root (MGF.sln) from {Directory.GetCurrentDirectory()}.");
     }
+
+    private static string ResolveTemplatesRoot()
+    {
+        var baseDir = AppContext.BaseDirectory;
+        var templatesRoot = Path.Combine(baseDir, "artifacts", "templates");
+        if (Directory.Exists(templatesRoot))
+        {
+            return templatesRoot;
+        }
+
+        throw new DirectoryNotFoundException($"Templates folder not found at {templatesRoot}.");
+    }
 }
+
+

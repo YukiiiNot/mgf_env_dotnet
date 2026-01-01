@@ -68,9 +68,14 @@ public sealed class EmailTemplateSnapshotTests
 
     private static string GetFixturePath(string fixtureName)
     {
-        var repoRoot = FindRepoRoot(AppContext.BaseDirectory)
-            ?? throw new DirectoryNotFoundException("Repo root not found.");
-        return Path.Combine(repoRoot, "src", "MGF.Worker", "Email", "Templates", "fixtures", $"{fixtureName}.json");
+        var baseDir = AppContext.BaseDirectory;
+        var fixturePath = Path.Combine(baseDir, "Email", "Templates", "fixtures", $"{fixtureName}.json");
+        if (!File.Exists(fixturePath))
+        {
+            throw new FileNotFoundException("Fixture not found.", fixturePath);
+        }
+
+        return fixturePath;
     }
 
     private static string GetSnapshotPath(string fileName)
@@ -115,3 +120,4 @@ public sealed class EmailTemplateSnapshotTests
         long? SizeBytes,
         DateTimeOffset? LastWriteTimeUtc);
 }
+

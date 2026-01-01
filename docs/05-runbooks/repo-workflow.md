@@ -1,4 +1,4 @@
-# Repo workflow runbook (MGF)
+﻿# Repo workflow runbook (MGF)
 
 Source of truth: `.github/workflows/ci.yml`, `.github/workflows/migrate-staging.yml`, `.github/workflows/migrate-prod.yml`, `src/Data/MGF.Data/Migrations`, `src/Data/MGF.DataMigrator`
 Change control: Update when branch model, CI gates, or migration automation changes.

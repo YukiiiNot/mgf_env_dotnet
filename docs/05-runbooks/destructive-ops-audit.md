@@ -134,6 +134,7 @@ WHERE status_key = 'running'
 
 - All known reset scripts were removed.  
 - Remaining destructive operations are limited to:
-  - Dev integration tests (TRUNCATE) â€” explicitly gated.
-  - Square-import customer reset â€” explicitly gated with a destructive flag + prompt + Dev-only checks.  
+  - Dev integration tests (TRUNCATE) — explicitly gated.
+  - Square-import customer reset — explicitly gated with a destructive flag + prompt + Dev-only checks.  
 - No destructive actions run by default on build/test/runtime.
+

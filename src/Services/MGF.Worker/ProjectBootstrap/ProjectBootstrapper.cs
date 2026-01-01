@@ -44,7 +44,8 @@ public sealed class ProjectBootstrapper
         }
 
         var repoRoot = FindRepoRoot();
-        var domains = BuildDomainDefinitions(repoRoot);
+        var templatesRoot = ResolveTemplatesRoot();
+        var domains = BuildDomainDefinitions(templatesRoot);
 
         var startedAt = DateTimeOffset.UtcNow;
         var results = new List<ProjectBootstrapDomainResult>();
@@ -930,32 +931,44 @@ public sealed class ProjectBootstrapper
         return false;
     }
 
-    private static IReadOnlyList<DomainDefinition> BuildDomainDefinitions(string repoRoot)
+    private static IReadOnlyList<DomainDefinition> BuildDomainDefinitions(string templatesRoot)
     {
         return new[]
         {
             new DomainDefinition(
                 DomainKey: "dropbox",
                 StorageProviderKey: "dropbox",
-                DomainRootTemplatePath: Path.Combine(repoRoot, "docs", "templates", "domain_dropbox_root.json"),
-                ProjectContainerTemplatePath: Path.Combine(repoRoot, "docs", "templates", "dropbox_project_container.json"),
+                DomainRootTemplatePath: Path.Combine(templatesRoot, "domain_dropbox_root.json"),
+                ProjectContainerTemplatePath: Path.Combine(templatesRoot, "dropbox_project_container.json"),
                 ProjectContainerSubfolder: "02_Projects_Active"
             ),
             new DomainDefinition(
                 DomainKey: "lucidlink",
                 StorageProviderKey: "lucidlink",
-                DomainRootTemplatePath: Path.Combine(repoRoot, "docs", "templates", "domain_lucidlink_root.json"),
-                ProjectContainerTemplatePath: Path.Combine(repoRoot, "docs", "templates", "lucidlink_production_container.json"),
+                DomainRootTemplatePath: Path.Combine(templatesRoot, "domain_lucidlink_root.json"),
+                ProjectContainerTemplatePath: Path.Combine(templatesRoot, "lucidlink_production_container.json"),
                 ProjectContainerSubfolder: "01_Productions_Active"
             ),
             new DomainDefinition(
                 DomainKey: "nas",
                 StorageProviderKey: "nas",
-                DomainRootTemplatePath: Path.Combine(repoRoot, "docs", "templates", "domain_nas_root.json"),
-                ProjectContainerTemplatePath: Path.Combine(repoRoot, "docs", "templates", "nas_archive_container.json"),
+                DomainRootTemplatePath: Path.Combine(templatesRoot, "domain_nas_root.json"),
+                ProjectContainerTemplatePath: Path.Combine(templatesRoot, "nas_archive_container.json"),
                 ProjectContainerSubfolder: "01_Projects_Archive"
             )
         };
+    }
+
+    private static string ResolveTemplatesRoot()
+    {
+        var baseDir = AppContext.BaseDirectory;
+        var templatesRoot = Path.Combine(baseDir, "artifacts", "templates");
+        if (Directory.Exists(templatesRoot))
+        {
+            return templatesRoot;
+        }
+
+        throw new DirectoryNotFoundException($"Templates folder not found at {templatesRoot}.");
     }
 
     private static string FindRepoRoot()
@@ -986,3 +999,5 @@ public sealed class ProjectBootstrapper
         string ProjectContainerSubfolder
     );
 }
+
+

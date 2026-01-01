@@ -1,4 +1,4 @@
-﻿# API Contract Overview
+# API Contract Overview
 
 Source of truth: `src/Services/MGF.Api/Controllers`, `src/Services/MGF.Api/Program.cs`
 Change control: Update when endpoints, auth headers, or request/response models change.
@@ -14,3 +14,4 @@ Last verified: 2025-12-30
 
 ## References
 - HTTP examples: [http-examples.http](http-examples.http)
+
