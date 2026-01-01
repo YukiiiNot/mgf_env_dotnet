@@ -1,3 +1,1 @@
-# Stores (MGF.Data)
-
-Store conventions live in `docs/persistence-patterns.md`.
+docs/persistence-patterns.md

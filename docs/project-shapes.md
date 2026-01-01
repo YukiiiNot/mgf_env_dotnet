@@ -46,3 +46,9 @@ Do not create a new project just to group files; use folders and namespaces firs
 - Add or update signpost README files outside `/docs` (max 10 lines; link to docs).
 - Update `docs/00-index.md` and any affected architecture/onboarding pages.
 - Build/test to confirm no behavior change.
+
+## Architecture guardrails (tests/MGF.Architecture.Tests)
+- UseCases and Operations must not depend on Data/EF/Npgsql (exceptions listed in the test file).
+- Contracts remain host-agnostic (no Configuration/Options/DI/Hosting).
+- No DevTools dependencies from production projects.
+- README.md files outside `/docs` are signposts only (<=10 lines, docs links only).

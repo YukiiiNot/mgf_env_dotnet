@@ -1,4 +1,2 @@
-# MGF (.NET)
-
-Primary documentation entrypoint: `docs/00-index.md`.
-Getting started: `docs/01-onboarding/getting-started.md`.
+docs/00-index.md
+docs/01-onboarding/getting-started.md
