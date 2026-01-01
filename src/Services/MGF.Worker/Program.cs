@@ -2,8 +2,10 @@ using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
 using MGF.UseCases.DeliveryEmail;
+using MGF.UseCases.ProjectBootstrap;
 using MGF.Worker;
 using MGF.Worker.Email;
+using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.Square;
 
 var mgfEnv = DatabaseConnection.GetEnvironment();
@@ -24,6 +26,8 @@ if (workerSettings.Count > 0)
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IWorkerEmailGateway, WorkerEmailGateway>();
 builder.Services.AddScoped<ISendDeliveryEmailUseCase, SendDeliveryEmailUseCase>();
+builder.Services.AddScoped<IProjectBootstrapProvisioningGateway, ProjectBootstrapProvisioningGateway>();
+builder.Services.AddScoped<IBootstrapProjectUseCase, BootstrapProjectUseCase>();
 builder.Services.AddHttpClient<SquareApiClient>();
 builder.Services.AddHostedService<JobWorker>();
 

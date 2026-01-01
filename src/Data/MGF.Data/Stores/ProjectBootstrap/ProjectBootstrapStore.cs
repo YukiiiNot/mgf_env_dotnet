@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using MGF.Contracts.Abstractions;
 using MGF.Data.Data;
 using MGF.Domain.Entities;
 

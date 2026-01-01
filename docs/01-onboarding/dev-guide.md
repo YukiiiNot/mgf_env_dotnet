@@ -46,6 +46,7 @@ Add new emails by:
 
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
 Delivery email send now flows through `ISendDeliveryEmailUseCase` from `MGF.Worker`.
+Project bootstrap flows through `IBootstrapProjectUseCase`; provisioning IO is behind `IProjectBootstrapProvisioningGateway` (Worker).
 
 Examples that belong here:
 - CreateProject

@@ -33,6 +33,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 ## Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
 Delivery email send now lives in `MGF.UseCases` via `ISendDeliveryEmailUseCase` and is called by `MGF.Worker`.
+Project bootstrap now flows through `IBootstrapProjectUseCase`; provisioning IO is isolated behind `IProjectBootstrapProvisioningGateway`.
 
 Examples that belong here:
 - CreateProject

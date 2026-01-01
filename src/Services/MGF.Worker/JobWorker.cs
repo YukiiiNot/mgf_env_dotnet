@@ -10,13 +10,13 @@ using MGF.Data.Data;
 using MGF.Data.Stores.Counters;
 using MGF.Data.Stores.Delivery;
 using MGF.Data.Stores.Jobs;
-using MGF.Data.Stores.ProjectBootstrap;
 using MGF.Worker.Square;
 using MGF.Worker.ProjectArchive;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.ProjectDelivery;
 using MGF.Worker.RootIntegrity;
 using MGF.UseCases.DeliveryEmail;
+using MGF.UseCases.ProjectBootstrap;
 
 public sealed class JobWorker : BackgroundService
 {
@@ -71,7 +71,6 @@ public sealed class JobWorker : BackgroundService
                 var jobQueueStore = scope.ServiceProvider.GetRequiredService<IJobQueueStore>();
                 var counterAllocator = scope.ServiceProvider.GetRequiredService<ICounterAllocator>();
                 var deliveryStore = scope.ServiceProvider.GetRequiredService<IProjectDeliveryStore>();
-                var bootstrapStore = scope.ServiceProvider.GetRequiredService<IProjectBootstrapStore>();
 
                 var reaped = await ReapStaleRunningJobsAsync(jobQueueStore, stoppingToken);
                 if (reaped > 0)
@@ -98,7 +97,6 @@ public sealed class JobWorker : BackgroundService
                     jobQueueStore,
                     counterAllocator,
                     deliveryStore,
-                    bootstrapStore,
                     job,
                     scope.ServiceProvider,
                     stoppingToken);
@@ -182,7 +180,6 @@ public sealed class JobWorker : BackgroundService
         IJobQueueStore jobQueueStore,
         ICounterAllocator counterAllocator,
         IProjectDeliveryStore deliveryStore,
-        IProjectBootstrapStore bootstrapStore,
         ClaimedJob job,
         IServiceProvider services,
         CancellationToken cancellationToken)
@@ -228,10 +225,10 @@ public sealed class JobWorker : BackgroundService
 
             if (string.Equals(job.JobTypeKey, "project.bootstrap", StringComparison.Ordinal))
             {
+                var useCase = services.GetRequiredService<IBootstrapProjectUseCase>();
                 var succeeded = await HandleProjectBootstrapAsync(
-                    db,
                     jobQueueStore,
-                    bootstrapStore,
+                    useCase,
                     job,
                     cancellationToken);
                 if (succeeded)
@@ -318,9 +315,8 @@ public sealed class JobWorker : BackgroundService
     }
 
     private async Task<bool> HandleProjectBootstrapAsync(
-        AppDbContext db,
         IJobQueueStore jobQueueStore,
-        IProjectBootstrapStore bootstrapStore,
+        IBootstrapProjectUseCase useCase,
         ClaimedJob job,
         CancellationToken cancellationToken)
     {
@@ -344,23 +340,37 @@ public sealed class JobWorker : BackgroundService
 
         try
         {
-            var bootstrapper = new ProjectBootstrapper(configuration);
-            var result = await bootstrapper.RunAsync(db, bootstrapStore, payload, job.JobId, cancellationToken);
+            var request = new BootstrapProjectRequest(
+                JobId: job.JobId,
+                ProjectId: payload.ProjectId,
+                EditorInitials: payload.EditorInitials,
+                VerifyDomainRoots: payload.VerifyDomainRoots,
+                CreateDomainRoots: payload.CreateDomainRoots,
+                ProvisionProjectContainers: payload.ProvisionProjectContainers,
+                AllowRepair: payload.AllowRepair,
+                ForceSandbox: payload.ForceSandbox,
+                AllowNonReal: payload.AllowNonReal,
+                Force: payload.Force,
+                TestMode: payload.TestMode,
+                AllowTestCleanup: payload.AllowTestCleanup
+            );
+
+            var result = await useCase.ExecuteAsync(request, cancellationToken);
 
             logger.LogInformation(
                 "MGF.Worker: project.bootstrap completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
-                result.JobId,
-                result.ProjectId,
-                result.Domains.Count,
-                result.HasErrors
+                result.RunResult.JobId,
+                result.RunResult.ProjectId,
+                result.RunResult.Domains.Count,
+                result.RunResult.HasErrors
             );
 
-            if (result.HasErrors)
+            if (result.RunResult.HasErrors)
             {
                 await MarkFailedAsync(
                     jobQueueStore,
                     job,
-                    new InvalidOperationException(result.LastError ?? "project.bootstrap completed with provisioning errors."),
+                    new InvalidOperationException(result.RunResult.LastError ?? "project.bootstrap completed with provisioning errors."),
                     cancellationToken
                 );
                 return false;

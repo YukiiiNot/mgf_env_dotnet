@@ -1,4 +1,23 @@
-namespace MGF.Worker.ProjectBootstrap;
+namespace MGF.UseCases.ProjectBootstrap;
+
+using System.Text.Json;
+
+public sealed record BootstrapProjectRequest(
+    string JobId,
+    string ProjectId,
+    IReadOnlyList<string> EditorInitials,
+    bool VerifyDomainRoots,
+    bool CreateDomainRoots,
+    bool ProvisionProjectContainers,
+    bool AllowRepair,
+    bool ForceSandbox,
+    bool AllowNonReal,
+    bool Force,
+    bool TestMode,
+    bool AllowTestCleanup
+);
+
+public sealed record BootstrapProjectResult(ProjectBootstrapRunResult RunResult);
 
 public sealed record ProjectBootstrapPayload(
     string ProjectId,
@@ -51,4 +70,28 @@ public sealed record ProvisioningSummary(
     IReadOnlyList<string> MissingRequired,
     IReadOnlyList<string> Errors,
     IReadOnlyList<string> Warnings
+);
+
+public sealed record ProjectBootstrapContext(
+    string ProjectId,
+    string ProjectCode,
+    string ProjectName,
+    string ClientId,
+    string? ClientName,
+    string StatusKey,
+    string DataProfile,
+    JsonElement Metadata
+);
+
+public sealed record ProjectBootstrapStorageRootCandidate(
+    string DomainKey,
+    string StorageProviderKey,
+    string RootKey,
+    string FolderRelpath
+);
+
+public sealed record ProjectBootstrapExecutionResult(
+    ProjectBootstrapRunResult RunResult,
+    IReadOnlyList<ProjectBootstrapStorageRootCandidate> StorageRootCandidates,
+    Exception? Exception
 );

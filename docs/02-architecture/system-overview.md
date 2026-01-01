@@ -13,6 +13,7 @@ This repo hosts MGF's internal API, worker, desktop app, and supporting tools fo
 
 ## Runtime flow
 Worker/API/CLI -> UseCases -> Data/Integrations.
+Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Data stores + `IProjectBootstrapProvisioningGateway` (provisioning IO).
 
 ## Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.

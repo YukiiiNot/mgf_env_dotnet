@@ -1,5 +1,7 @@
 namespace MGF.Worker.ProjectBootstrap;
 
+using MGF.UseCases.ProjectBootstrap;
+
 internal static class ProjectStorageRootHelper
 {
     internal const string RootKeyTestRun = "test_run";

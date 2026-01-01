@@ -1,24 +1,13 @@
 namespace MGF.Worker.ProjectBootstrap;
 
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MGF.Domain.Entities;
-using MGF.Data.Data;
-using MGF.Data.Stores.ProjectBootstrap;
 using MGF.Provisioning;
+using MGF.UseCases.ProjectBootstrap;
 
 public sealed class ProjectBootstrapper
 {
-    private const string StatusReady = "ready_to_provision";
-    private const string StatusProvisioning = "provisioning";
-    private const string StatusActive = "active";
-    private const string StatusProvisionFailed = "provision_failed";
-    private static readonly JsonSerializerOptions BootstrapJsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
     private readonly IConfiguration configuration;
     private readonly FolderTemplateLoader templateLoader = new();
     private readonly FolderTemplatePlanner planner = new();
@@ -31,126 +20,42 @@ public sealed class ProjectBootstrapper
         executor = new FolderPlanExecutor(fileStore);
     }
 
-    public async Task<ProjectBootstrapRunResult> RunAsync(
-        AppDbContext db,
-        IProjectBootstrapStore bootstrapStore,
-        ProjectBootstrapPayload payload,
-        string jobId,
+    public async Task<ProjectBootstrapExecutionResult> RunAsync(
+        ProjectBootstrapContext context,
+        BootstrapProjectRequest request,
         CancellationToken cancellationToken)
     {
-        var project = await db.Projects.AsNoTracking()
-            .SingleOrDefaultAsync(p => p.ProjectId == payload.ProjectId, cancellationToken);
-
-        if (project is null)
-        {
-            throw new InvalidOperationException($"Project not found: {payload.ProjectId}");
-        }
-
         var repoRoot = FindRepoRoot();
         var templatesRoot = ResolveTemplatesRoot();
         var domains = BuildDomainDefinitions(templatesRoot);
 
         var startedAt = DateTimeOffset.UtcNow;
         var results = new List<ProjectBootstrapDomainResult>();
+        var storageRootCandidates = new List<ProjectBootstrapStorageRootCandidate>();
         var hasErrors = false;
         string? lastError = null;
 
-        if (!payload.AllowNonReal && !string.Equals(project.DataProfile, "real", StringComparison.OrdinalIgnoreCase))
-        {
-            foreach (var domain in domains)
-            {
-                results.Add(new ProjectBootstrapDomainResult(
-                    DomainKey: domain.DomainKey,
-                    RootPath: ResolveDomainRootPath(domain, payload, repoRoot),
-                    RootState: "blocked_non_real",
-                    DomainRootProvisioning: null,
-                    ProjectContainerProvisioning: null,
-                    Notes: new[] { $"Project data_profile='{project.DataProfile}' is not eligible for provisioning." }
-                ));
-            }
-
-            var blockedResult = new ProjectBootstrapRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
-                StartedAtUtc: startedAt,
-                VerifyDomainRoots: payload.VerifyDomainRoots,
-                CreateDomainRoots: payload.CreateDomainRoots,
-                ProvisionProjectContainers: payload.ProvisionProjectContainers,
-                AllowRepair: payload.AllowRepair,
-                ForceSandbox: payload.ForceSandbox,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
-                Domains: results,
-                HasErrors: true,
-                LastError: $"Project data_profile='{project.DataProfile}' is not eligible for provisioning."
-            );
-
-            await AppendProvisioningRunAsync(bootstrapStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
-            return blockedResult;
-        }
-
-        if (!ProjectBootstrapGuards.TryValidateStart(project.StatusKey, payload.Force, out var statusError, out var alreadyProvisioning))
-        {
-            foreach (var domain in domains)
-            {
-                results.Add(new ProjectBootstrapDomainResult(
-                    DomainKey: domain.DomainKey,
-                    RootPath: ResolveDomainRootPath(domain, payload, repoRoot),
-                    RootState: alreadyProvisioning ? "blocked_already_provisioning" : "blocked_status_not_ready",
-                    DomainRootProvisioning: null,
-                    ProjectContainerProvisioning: null,
-                    Notes: new[] { statusError ?? "Project status not eligible for provisioning." }
-                ));
-            }
-
-            var blockedResult = new ProjectBootstrapRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
-                StartedAtUtc: startedAt,
-                VerifyDomainRoots: payload.VerifyDomainRoots,
-                CreateDomainRoots: payload.CreateDomainRoots,
-                ProvisionProjectContainers: payload.ProvisionProjectContainers,
-                AllowRepair: payload.AllowRepair,
-                ForceSandbox: payload.ForceSandbox,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
-                Domains: results,
-                HasErrors: true,
-                LastError: statusError
-            );
-
-            await AppendProvisioningRunAsync(bootstrapStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
-            return blockedResult;
-        }
-
-        await UpdateProjectStatusAsync(bootstrapStore, project.ProjectId, StatusProvisioning, cancellationToken);
-
-        var clientName = await db.Clients.AsNoTracking()
-            .Where(c => c.ClientId == project.ClientId)
-            .Select(c => c.DisplayName)
-            .SingleOrDefaultAsync(cancellationToken);
-
-        var tokens = ProvisioningTokens.Create(project.ProjectCode, project.Name, clientName, payload.EditorInitials);
+        var tokens = ProvisioningTokens.Create(
+            context.ProjectCode,
+            context.ProjectName,
+            context.ClientName,
+            request.EditorInitials);
 
         try
         {
             foreach (var domain in domains)
             {
                 var result = await ProcessDomainAsync(
-                    db,
-                    bootstrapStore,
+                    request,
                     domain,
-                    payload,
                     tokens,
                     repoRoot,
                     cancellationToken);
-                results.Add(result);
+                results.Add(result.DomainResult);
+                if (result.StorageRootCandidate is not null)
+                {
+                    storageRootCandidates.Add(result.StorageRootCandidate);
+                }
             }
 
             var anySuccess = results.Any(IsDomainSuccess);
@@ -163,56 +68,112 @@ public sealed class ProjectBootstrapper
             }
 
             var runResult = new ProjectBootstrapRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
+                JobId: request.JobId,
+                ProjectId: request.ProjectId,
+                EditorInitials: request.EditorInitials,
                 StartedAtUtc: startedAt,
-                VerifyDomainRoots: payload.VerifyDomainRoots,
-                CreateDomainRoots: payload.CreateDomainRoots,
-                ProvisionProjectContainers: payload.ProvisionProjectContainers,
-                AllowRepair: payload.AllowRepair,
-                ForceSandbox: payload.ForceSandbox,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
+                VerifyDomainRoots: request.VerifyDomainRoots,
+                CreateDomainRoots: request.CreateDomainRoots,
+                ProvisionProjectContainers: request.ProvisionProjectContainers,
+                AllowRepair: request.AllowRepair,
+                ForceSandbox: request.ForceSandbox,
+                AllowNonReal: request.AllowNonReal,
+                Force: request.Force,
+                TestMode: request.TestMode,
+                AllowTestCleanup: request.AllowTestCleanup,
                 Domains: results,
                 HasErrors: hasErrors,
                 LastError: lastError
             );
 
-            await AppendProvisioningRunAsync(bootstrapStore, project.ProjectId, project.Metadata, runResult, cancellationToken);
-
-            var finalStatus = hasErrors ? StatusProvisionFailed : StatusActive;
-            await UpdateProjectStatusAsync(bootstrapStore, project.ProjectId, finalStatus, cancellationToken);
-
-            return runResult;
+            return new ProjectBootstrapExecutionResult(runResult, storageRootCandidates, null);
         }
         catch (Exception ex)
         {
             var failedResult = new ProjectBootstrapRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
+                JobId: request.JobId,
+                ProjectId: request.ProjectId,
+                EditorInitials: request.EditorInitials,
                 StartedAtUtc: startedAt,
-                VerifyDomainRoots: payload.VerifyDomainRoots,
-                CreateDomainRoots: payload.CreateDomainRoots,
-                ProvisionProjectContainers: payload.ProvisionProjectContainers,
-                AllowRepair: payload.AllowRepair,
-                ForceSandbox: payload.ForceSandbox,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
+                VerifyDomainRoots: request.VerifyDomainRoots,
+                CreateDomainRoots: request.CreateDomainRoots,
+                ProvisionProjectContainers: request.ProvisionProjectContainers,
+                AllowRepair: request.AllowRepair,
+                ForceSandbox: request.ForceSandbox,
+                AllowNonReal: request.AllowNonReal,
+                Force: request.Force,
+                TestMode: request.TestMode,
+                AllowTestCleanup: request.AllowTestCleanup,
                 Domains: results,
                 HasErrors: true,
                 LastError: ex.Message
             );
 
-            await AppendProvisioningRunAsync(bootstrapStore, project.ProjectId, project.Metadata, failedResult, cancellationToken);
-            await UpdateProjectStatusAsync(bootstrapStore, project.ProjectId, StatusProvisionFailed, cancellationToken);
-            throw;
+            return new ProjectBootstrapExecutionResult(failedResult, storageRootCandidates, ex);
         }
+    }
+
+    public ProjectBootstrapRunResult BuildBlockedNonRealResult(
+        ProjectBootstrapContext context,
+        BootstrapProjectRequest request)
+    {
+        var note = $"Project data_profile='{context.DataProfile}' is not eligible for provisioning.";
+        return BuildBlockedResult(context, request, "blocked_non_real", note);
+    }
+
+    public ProjectBootstrapRunResult BuildBlockedStatusResult(
+        ProjectBootstrapContext context,
+        BootstrapProjectRequest request,
+        string? statusError,
+        bool alreadyProvisioning)
+    {
+        var note = statusError ?? "Project status not eligible for provisioning.";
+        var rootState = alreadyProvisioning ? "blocked_already_provisioning" : "blocked_status_not_ready";
+        return BuildBlockedResult(context, request, rootState, note);
+    }
+
+    private ProjectBootstrapRunResult BuildBlockedResult(
+        ProjectBootstrapContext context,
+        BootstrapProjectRequest request,
+        string rootState,
+        string note)
+    {
+        var repoRoot = FindRepoRoot();
+        var templatesRoot = ResolveTemplatesRoot();
+        var domains = BuildDomainDefinitions(templatesRoot);
+        var startedAt = DateTimeOffset.UtcNow;
+
+        var results = new List<ProjectBootstrapDomainResult>();
+        foreach (var domain in domains)
+        {
+            results.Add(new ProjectBootstrapDomainResult(
+                DomainKey: domain.DomainKey,
+                RootPath: ResolveDomainRootPath(domain, request, repoRoot),
+                RootState: rootState,
+                DomainRootProvisioning: null,
+                ProjectContainerProvisioning: null,
+                Notes: new[] { note }
+            ));
+        }
+
+        return new ProjectBootstrapRunResult(
+            JobId: request.JobId,
+            ProjectId: request.ProjectId,
+            EditorInitials: request.EditorInitials,
+            StartedAtUtc: startedAt,
+            VerifyDomainRoots: request.VerifyDomainRoots,
+            CreateDomainRoots: request.CreateDomainRoots,
+            ProvisionProjectContainers: request.ProvisionProjectContainers,
+            AllowRepair: request.AllowRepair,
+            ForceSandbox: request.ForceSandbox,
+            AllowNonReal: request.AllowNonReal,
+            Force: request.Force,
+            TestMode: request.TestMode,
+            AllowTestCleanup: request.AllowTestCleanup,
+            Domains: results,
+            HasErrors: true,
+            LastError: note
+        );
     }
 
     public static ProjectBootstrapPayload ParsePayload(string payloadJson)
@@ -243,39 +204,43 @@ public sealed class ProjectBootstrapper
         );
     }
 
-    private async Task<ProjectBootstrapDomainResult> ProcessDomainAsync(
-        AppDbContext db,
-        IProjectBootstrapStore bootstrapStore,
+    private async Task<ProjectBootstrapDomainExecutionResult> ProcessDomainAsync(
+        BootstrapProjectRequest request,
         DomainDefinition domain,
-        ProjectBootstrapPayload payload,
         ProvisioningTokens tokens,
         string repoRoot,
         CancellationToken cancellationToken)
     {
         var notes = new List<string>();
-        var rootPath = ResolveDomainRootPath(domain, payload, repoRoot);
+        var rootPath = ResolveDomainRootPath(domain, request, repoRoot);
 
         if (string.IsNullOrWhiteSpace(rootPath))
         {
-            return new ProjectBootstrapDomainResult(
-                DomainKey: domain.DomainKey,
-                RootPath: string.Empty,
-                RootState: "skipped_unconfigured",
-                DomainRootProvisioning: null,
-                ProjectContainerProvisioning: null,
-                Notes: new[] { "Root path not configured." }
+            return new ProjectBootstrapDomainExecutionResult(
+                new ProjectBootstrapDomainResult(
+                    DomainKey: domain.DomainKey,
+                    RootPath: string.Empty,
+                    RootState: "skipped_unconfigured",
+                    DomainRootProvisioning: null,
+                    ProjectContainerProvisioning: null,
+                    Notes: new[] { "Root path not configured." }
+                ),
+                null
             );
         }
 
-        if (payload.ForceSandbox && !rootPath.StartsWith(repoRoot, StringComparison.OrdinalIgnoreCase))
+        if (request.ForceSandbox && !rootPath.StartsWith(repoRoot, StringComparison.OrdinalIgnoreCase))
         {
-            return new ProjectBootstrapDomainResult(
-                DomainKey: domain.DomainKey,
-                RootPath: rootPath,
-                RootState: "blocked_sandbox_outside_repo",
-                DomainRootProvisioning: null,
-                ProjectContainerProvisioning: null,
-                Notes: new[] { "Sandbox root must be within repo runtime." }
+            return new ProjectBootstrapDomainExecutionResult(
+                new ProjectBootstrapDomainResult(
+                    DomainKey: domain.DomainKey,
+                    RootPath: rootPath,
+                    RootState: "blocked_sandbox_outside_repo",
+                    DomainRootProvisioning: null,
+                    ProjectContainerProvisioning: null,
+                    Notes: new[] { "Sandbox root must be within repo runtime." }
+                ),
+                null
             );
         }
 
@@ -285,15 +250,18 @@ public sealed class ProjectBootstrapper
 
         if (!rootExists)
         {
-            if (!payload.CreateDomainRoots)
+            if (!request.CreateDomainRoots)
             {
-                return new ProjectBootstrapDomainResult(
-                    DomainKey: domain.DomainKey,
-                    RootPath: rootPath,
-                    RootState: "blocked_missing_root",
-                    DomainRootProvisioning: null,
-                    ProjectContainerProvisioning: null,
-                    Notes: new[] { "Root path missing and CreateDomainRoots=false." }
+                return new ProjectBootstrapDomainExecutionResult(
+                    new ProjectBootstrapDomainResult(
+                        DomainKey: domain.DomainKey,
+                        RootPath: rootPath,
+                        RootState: "blocked_missing_root",
+                        DomainRootProvisioning: null,
+                        ProjectContainerProvisioning: null,
+                        Notes: new[] { "Root path missing and CreateDomainRoots=false." }
+                    ),
+                    null
                 );
             }
 
@@ -311,13 +279,13 @@ public sealed class ProjectBootstrapper
             rootExists = Directory.Exists(rootPath);
             rootState = created.Success ? "root_created" : "root_create_failed";
 
-            if (created.Success && payload.VerifyDomainRoots)
+            if (created.Success && request.VerifyDomainRoots)
             {
                 var verified = await VerifyOrRepairAsync(
                     templatePath: domain.DomainRootTemplatePath,
                     basePath: GetParentPath(rootPath, domain.DomainKey),
                     tokens: tokens,
-                    allowRepair: payload.AllowRepair,
+                    allowRepair: request.AllowRepair,
                     rootNameOverride: GetRootFolderName(rootPath),
                     cancellationToken: cancellationToken
                 );
@@ -325,13 +293,13 @@ public sealed class ProjectBootstrapper
                 rootState = verified.Success ? "root_verified" : "root_verify_failed";
             }
         }
-        else if (payload.VerifyDomainRoots)
+        else if (request.VerifyDomainRoots)
         {
             var verified = await VerifyOrRepairAsync(
                 templatePath: domain.DomainRootTemplatePath,
                 basePath: GetParentPath(rootPath, domain.DomainKey),
                 tokens: tokens,
-                allowRepair: payload.AllowRepair,
+                allowRepair: request.AllowRepair,
                 rootNameOverride: GetRootFolderName(rootPath),
                 cancellationToken: cancellationToken
             );
@@ -347,48 +315,54 @@ public sealed class ProjectBootstrapper
 
         ProvisioningSummary? containerProvisioning = null;
         ProvisioningResult? containerResult = null;
-        if (payload.ProvisionProjectContainers && rootExists && IsRootReady(rootState))
+        if (request.ProvisionProjectContainers && rootExists && IsRootReady(rootState))
         {
-            var containerBasePath = payload.TestMode
+            var containerBasePath = request.TestMode
                 ? ProjectBootstrapGuards.BuildTestContainerBasePath(rootPath)
                 : Path.Combine(rootPath, domain.ProjectContainerSubfolder);
 
-            var testTargetPath = payload.TestMode
+            var testTargetPath = request.TestMode
                 ? ProjectBootstrapGuards.BuildTestContainerTargetPath(rootPath, tokens)
                 : null;
 
-        if (payload.TestMode && testTargetPath is not null && Directory.Exists(testTargetPath))
-        {
-            if (!ProjectBootstrapGuards.TryValidateTestCleanup(rootPath, testTargetPath, payload.AllowTestCleanup, out var cleanupError))
+            if (request.TestMode && testTargetPath is not null && Directory.Exists(testTargetPath))
             {
-                notes.Add(cleanupError ?? "Test cleanup blocked.");
-                return new ProjectBootstrapDomainResult(
-                    DomainKey: domain.DomainKey,
-                    RootPath: rootPath,
-                    RootState: "blocked_test_cleanup",
-                    DomainRootProvisioning: domainRootProvisioning,
-                    ProjectContainerProvisioning: null,
-                    Notes: notes
-                );
-            }
+                if (!ProjectBootstrapGuards.TryValidateTestCleanup(rootPath, testTargetPath, request.AllowTestCleanup, out var cleanupError))
+                {
+                    notes.Add(cleanupError ?? "Test cleanup blocked.");
+                    return new ProjectBootstrapDomainExecutionResult(
+                        new ProjectBootstrapDomainResult(
+                            DomainKey: domain.DomainKey,
+                            RootPath: rootPath,
+                            RootState: "blocked_test_cleanup",
+                            DomainRootProvisioning: domainRootProvisioning,
+                            ProjectContainerProvisioning: null,
+                            Notes: notes
+                        ),
+                        null
+                    );
+                }
 
-            var cleanup = await ProjectBootstrapCleanupHelper.TryDeleteWithRetryAsync(
-                testTargetPath,
-                cancellationToken
-            );
-            if (!cleanup.Success)
-            {
-                notes.Add(cleanup.Error ?? "Test cleanup failed (locked; cleanup skipped).");
-                return new ProjectBootstrapDomainResult(
-                    DomainKey: domain.DomainKey,
-                    RootPath: rootPath,
-                    RootState: "cleanup_locked",
-                    DomainRootProvisioning: domainRootProvisioning,
-                    ProjectContainerProvisioning: null,
-                    Notes: notes
+                var cleanup = await ProjectBootstrapCleanupHelper.TryDeleteWithRetryAsync(
+                    testTargetPath,
+                    cancellationToken
                 );
+                if (!cleanup.Success)
+                {
+                    notes.Add(cleanup.Error ?? "Test cleanup failed (locked; cleanup skipped).");
+                    return new ProjectBootstrapDomainExecutionResult(
+                        new ProjectBootstrapDomainResult(
+                            DomainKey: domain.DomainKey,
+                            RootPath: rootPath,
+                            RootState: "cleanup_locked",
+                            DomainRootProvisioning: domainRootProvisioning,
+                            ProjectContainerProvisioning: null,
+                            Notes: notes
+                        ),
+                        null
+                    );
+                }
             }
-        }
 
             var applied = await ExecuteTemplateAsync(
                 templatePath: domain.ProjectContainerTemplatePath,
@@ -404,7 +378,7 @@ public sealed class ProjectBootstrapper
                 templatePath: domain.ProjectContainerTemplatePath,
                 basePath: containerBasePath,
                 tokens: tokens,
-                allowRepair: payload.AllowRepair,
+                allowRepair: request.AllowRepair,
                 rootNameOverride: null,
                 cancellationToken: cancellationToken
             );
@@ -412,15 +386,16 @@ public sealed class ProjectBootstrapper
             containerResult = verified;
             containerProvisioning = ToSummary(verified);
         }
-        else if (payload.ProvisionProjectContainers && !IsRootReady(rootState))
+        else if (request.ProvisionProjectContainers && !IsRootReady(rootState))
         {
             notes.Add("Project containers skipped because root is not ready.");
         }
-        else if (!payload.ProvisionProjectContainers)
+        else if (!request.ProvisionProjectContainers)
         {
             notes.Add("Project containers skipped (ProvisionProjectContainers=false).");
         }
 
+        ProjectBootstrapStorageRootCandidate? storageRootCandidate = null;
         if (ProjectStorageRootHelper.ShouldUpsert(rootState, containerProvisioning))
         {
             var relpathError = "Container result was missing.";
@@ -431,20 +406,13 @@ public sealed class ProjectBootstrapper
                     out var folderRelpath,
                     out relpathError))
             {
-                var rootKey = ProjectStorageRootHelper.GetRootKey(payload.TestMode);
-                var upsertError = await bootstrapStore.UpsertProjectStorageRootAsync(
-                    payload.ProjectId,
-                    domain.StorageProviderKey,
-                    rootKey,
-                    folderRelpath,
-                    cancellationToken
+                var rootKey = ProjectStorageRootHelper.GetRootKey(request.TestMode);
+                storageRootCandidate = new ProjectBootstrapStorageRootCandidate(
+                    DomainKey: domain.DomainKey,
+                    StorageProviderKey: domain.StorageProviderKey,
+                    RootKey: rootKey,
+                    FolderRelpath: folderRelpath
                 );
-
-                if (!string.IsNullOrWhiteSpace(upsertError))
-                {
-                    notes.Add(upsertError);
-                    rootState = "storage_root_failed";
-                }
             }
             else
             {
@@ -453,7 +421,7 @@ public sealed class ProjectBootstrapper
             }
         }
 
-        return new ProjectBootstrapDomainResult(
+        var domainResult = new ProjectBootstrapDomainResult(
             DomainKey: domain.DomainKey,
             RootPath: rootPath,
             RootState: rootState,
@@ -461,6 +429,8 @@ public sealed class ProjectBootstrapper
             ProjectContainerProvisioning: containerProvisioning,
             Notes: notes
         );
+
+        return new ProjectBootstrapDomainExecutionResult(domainResult, storageRootCandidate);
     }
 
     private async Task<ProvisioningResult> VerifyOrRepairAsync(
@@ -625,29 +595,9 @@ public sealed class ProjectBootstrapper
         return Path.Combine(manifestDir, "folder_manifest.json");
     }
 
-    private static Task AppendProvisioningRunAsync(
-        IProjectBootstrapStore bootstrapStore,
-        string projectId,
-        JsonElement metadata,
-        ProjectBootstrapRunResult runResult,
-        CancellationToken cancellationToken)
+    private string ResolveDomainRootPath(DomainDefinition domain, BootstrapProjectRequest request, string repoRoot)
     {
-        var runResultJson = JsonSerializer.SerializeToElement(runResult, BootstrapJsonOptions);
-        return bootstrapStore.AppendProvisioningRunAsync(projectId, metadata, runResultJson, cancellationToken);
-    }
-
-    private static Task UpdateProjectStatusAsync(
-        IProjectBootstrapStore bootstrapStore,
-        string projectId,
-        string statusKey,
-        CancellationToken cancellationToken)
-    {
-        return bootstrapStore.UpdateProjectStatusAsync(projectId, statusKey, cancellationToken);
-    }
-
-    private string ResolveDomainRootPath(DomainDefinition domain, ProjectBootstrapPayload payload, string repoRoot)
-    {
-        if (payload.ForceSandbox)
+        if (request.ForceSandbox)
         {
             return Path.Combine(repoRoot, "runtime", $"bootstrap_sandbox_{domain.DomainKey}");
         }
@@ -923,6 +873,11 @@ public sealed class ProjectBootstrapper
         string DomainRootTemplatePath,
         string ProjectContainerTemplatePath,
         string ProjectContainerSubfolder
+    );
+
+    private sealed record ProjectBootstrapDomainExecutionResult(
+        ProjectBootstrapDomainResult DomainResult,
+        ProjectBootstrapStorageRootCandidate? StorageRootCandidate
     );
 }
 
