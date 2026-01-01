@@ -1,4 +1,4 @@
-namespace MGF.Worker.Integrations.Dropbox;
+namespace MGF.Integrations.Dropbox;
 
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -16,7 +16,7 @@ public sealed record DropboxAccessTokenResult(
     string Source,
     string? Error);
 
-internal sealed class DropboxAccessTokenProvider : IDropboxAccessTokenProvider
+public sealed class DropboxAccessTokenProvider : IDropboxAccessTokenProvider
 {
     private static readonly SemaphoreSlim RefreshLock = new(1, 1);
     private static string? CachedToken;

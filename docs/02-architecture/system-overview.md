@@ -9,6 +9,7 @@ This repo hosts MGF's internal API, worker, desktop app, and supporting tools fo
 - `src/DevTools/*` and `src/Operations/*` - CLIs for migrations, provisioning, delivery, and audits.
 - `src/Platform/MGF.Provisioning` - provisioning engine (template planning/execution) with replaceable policy rules.
 - `src/Data/MGF.Data` - shared data access, configuration, and EF model.
+- `src/Integrations/MGF.Integrations.*` - external API adapters (Dropbox, etc.).
 - `src/Application/MGF.UseCases` - use-case boundary for business workflows.
 
 ## Runtime flow

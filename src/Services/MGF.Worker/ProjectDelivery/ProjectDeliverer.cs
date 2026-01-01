@@ -16,7 +16,7 @@ using MGF.Worker.Email.Registry;
 using MGF.Worker.Email.Sending;
 using MGF.Provisioning;
 using MGF.Worker.ProjectBootstrap;
-using MGF.Worker.Integrations.Dropbox;
+using MGF.Integrations.Dropbox;
 
 public sealed class ProjectDeliverer
 {

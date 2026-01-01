@@ -15,8 +15,8 @@ This repo favors guardrails, contracts, and runbooks over cleverness.
 
 ## Integrations
 
-Add new integrations under `src/Services/MGF.Worker/Integrations/<Provider>`.
-Keep APIs behind small interfaces so tests can fake them.
+Add new integrations under `src/Integrations/MGF.Integrations.<Provider>/`.
+Keep APIs behind small interfaces so tests can fake them, with Worker calling the integration.
 
 ## Provisioning engine
 

@@ -1,4 +1,4 @@
-namespace MGF.Worker.Integrations.Dropbox;
+namespace MGF.Integrations.Dropbox;
 
 using System.Net;
 using System.Net.Http.Headers;
@@ -13,7 +13,7 @@ public interface IDropboxFilesClient
     Task UploadBytesAsync(string accessToken, string dropboxPath, byte[] content, CancellationToken cancellationToken);
 }
 
-internal sealed class DropboxFilesClient : IDropboxFilesClient
+public sealed class DropboxFilesClient : IDropboxFilesClient
 {
     private const int UploadSessionThresholdBytes = 150 * 1024 * 1024;
     private const int UploadChunkSizeBytes = 8 * 1024 * 1024;

@@ -1,4 +1,4 @@
-namespace MGF.Worker.Integrations.Dropbox;
+namespace MGF.Integrations.Dropbox;
 
 using System.Net.Http.Headers;
 using System.Text;
@@ -17,7 +17,7 @@ public interface IDropboxShareLinkClient
 
 public sealed record DropboxShareLinkResult(string Url, string? Id, bool IsNew);
 
-internal sealed class DropboxShareLinkClient : IDropboxShareLinkClient
+public sealed class DropboxShareLinkClient : IDropboxShareLinkClient
 {
     private readonly HttpClient httpClient;
     private readonly IConfiguration configuration;
