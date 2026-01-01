@@ -39,7 +39,7 @@ builder.Services.AddTransient<IDropboxFilesClient>(services =>
 builder.Services.AddTransient<IDropboxAccessTokenProvider>(services =>
 {
     var httpClient = services.GetRequiredService<IHttpClientFactory>().CreateClient();
-    var logger = services.GetService<ILogger<JobWorker>>();
+    var logger = services.GetService<ILogger<DropboxAccessTokenProvider>>();
     return new DropboxAccessTokenProvider(httpClient, services.GetRequiredService<IConfiguration>(), logger);
 });
 builder.Services.AddScoped<IWorkerEmailGateway, WorkerEmailGateway>();
