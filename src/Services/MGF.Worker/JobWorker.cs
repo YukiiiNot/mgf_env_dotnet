@@ -11,6 +11,7 @@ using MGF.Worker.ProjectArchive;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.ProjectDelivery;
 using MGF.Worker.RootIntegrity;
+using MGF.UseCases.DeliveryEmail;
 
 public sealed class JobWorker : BackgroundService
 {
@@ -83,7 +84,7 @@ public sealed class JobWorker : BackgroundService
                     continue;
                 }
 
-                await RunJobAsync(db, job, stoppingToken);
+                await RunJobAsync(db, job, scope.ServiceProvider, stoppingToken);
 
                 processedJobs++;
                 if (maxJobs.HasValue && processedJobs >= maxJobs.Value)
@@ -214,7 +215,11 @@ public sealed class JobWorker : BackgroundService
         }
     }
 
-    private async Task RunJobAsync(AppDbContext db, ClaimedJob job, CancellationToken cancellationToken)
+    private async Task RunJobAsync(
+        AppDbContext db,
+        ClaimedJob job,
+        IServiceProvider services,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -281,7 +286,8 @@ public sealed class JobWorker : BackgroundService
 
             if (string.Equals(job.JobTypeKey, "project.delivery_email", StringComparison.Ordinal))
             {
-                var succeeded = await HandleProjectDeliveryEmailAsync(db, job, cancellationToken);
+                var useCase = services.GetRequiredService<ISendDeliveryEmailUseCase>();
+                var succeeded = await HandleProjectDeliveryEmailAsync(db, job, useCase, cancellationToken);
                 if (succeeded)
                 {
                     await MarkSucceededAsync(db, job.JobId, cancellationToken);
@@ -517,6 +523,7 @@ public sealed class JobWorker : BackgroundService
     private async Task<bool> HandleProjectDeliveryEmailAsync(
         AppDbContext db,
         ClaimedJob job,
+        ISendDeliveryEmailUseCase useCase,
         CancellationToken cancellationToken)
     {
         ProjectDeliveryEmailPayload payload;
@@ -539,8 +546,14 @@ public sealed class JobWorker : BackgroundService
 
         try
         {
-            var emailer = new ProjectDeliveryEmailer(configuration, logger: logger);
-            var result = await emailer.RunAsync(db, payload, job.JobId, cancellationToken);
+            var observedRecipients = new DeliveryEmailObservedRecipients(payload.ToEmails, payload.ReplyToEmail);
+            var request = new SendDeliveryEmailRequest(
+                ProjectId: payload.ProjectId,
+                DeliveryVersionId: null,
+                EditorInitials: payload.EditorInitials,
+                Mode: DeliveryEmailMode.Send,
+                ObservedRecipients: observedRecipients);
+            var result = await useCase.ExecuteAsync(request, cancellationToken);
 
             if (!string.Equals(result.Status, "sent", StringComparison.OrdinalIgnoreCase))
             {

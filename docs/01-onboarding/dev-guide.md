@@ -34,6 +34,7 @@ Add new emails by:
 ## Use-case boundary (MGF.UseCases)
 
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
+Delivery email send now flows through `ISendDeliveryEmailUseCase` from `MGF.Worker`.
 
 Examples that belong here:
 - CreateProject

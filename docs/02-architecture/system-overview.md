@@ -10,6 +10,9 @@ This repo hosts MGF's internal API, worker, desktop app, and supporting tools fo
 - `src/Data/MGF.Data` - shared data access, configuration, and EF model.
 - `src/Application/MGF.UseCases` - use-case boundary for business workflows.
 
+## Runtime flow
+Worker/API/CLI -> UseCases -> Data/Integrations.
+
 ## Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
 
