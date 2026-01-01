@@ -1,10 +1,15 @@
-using System.Text.RegularExpressions;
-
 namespace MGF.Provisioning;
+
+using MGF.Provisioning.Policy;
 
 public sealed class FolderTemplatePlanner
 {
-    private static readonly Regex TopLevelPrefixRegex = new("^\\d{2}_.+", RegexOptions.Compiled);
+    private readonly IProvisioningPolicy policy;
+
+    public FolderTemplatePlanner(IProvisioningPolicy? policy = null)
+    {
+        this.policy = policy ?? new MgfDefaultProvisioningPolicy();
+    }
 
     public FolderPlan Plan(FolderTemplate template, ProvisioningTokens tokens, string basePath)
     {
@@ -48,7 +53,7 @@ public sealed class FolderTemplatePlanner
         return new FolderPlan(targetRoot, withAbsolute);
     }
 
-    private static void ExpandNode(
+    private void ExpandNode(
         FolderNode node,
         string parentRelativePath,
         string? topLevelName,
@@ -64,18 +69,12 @@ public sealed class FolderTemplatePlanner
             var currentTopLevelName = topLevelName ?? expandedName;
             if (topLevelName is null)
             {
-                if (!TopLevelPrefixRegex.IsMatch(expandedName))
-                {
-                    throw new InvalidOperationException($"Top-level folder '{expandedName}' must match ^\\d{{2}}_.+.");
-                }
+                policy.ValidateTopLevelFolderName(expandedName);
             }
 
             PathSafety.EnsureSafeSegment(expandedName, "node name");
 
-            if (string.Equals(expandedName, ".mgf", StringComparison.Ordinal) && !string.Equals(currentTopLevelName, "00_Admin", StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(".mgf folder is only allowed under 00_Admin.");
-            }
+            policy.ValidateNodeName(expandedName, currentTopLevelName);
 
             var relativePath = string.IsNullOrEmpty(parentRelativePath)
                 ? expandedName

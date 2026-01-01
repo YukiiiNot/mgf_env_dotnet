@@ -1,4 +1,5 @@
 using MGF.Contracts.Abstractions;
+using MGF.Provisioning.Policy;
 
 namespace MGF.Provisioning;
 
@@ -10,12 +11,14 @@ public sealed class FolderProvisioner
     private readonly FolderTemplateLoader templateLoader;
     private readonly FolderTemplatePlanner planner;
     private readonly FolderPlanExecutor executor;
+    private readonly IProvisioningPolicy policy;
 
-    public FolderProvisioner(IFileStore fileStore)
+    public FolderProvisioner(IFileStore fileStore, IProvisioningPolicy? policy = null)
     {
         this.fileStore = fileStore;
+        this.policy = policy ?? new MgfDefaultProvisioningPolicy();
         templateLoader = new FolderTemplateLoader();
-        planner = new FolderTemplatePlanner();
+        planner = new FolderTemplatePlanner(this.policy);
         executor = new FolderPlanExecutor(fileStore);
     }
 
@@ -74,9 +77,9 @@ public sealed class FolderProvisioner
         return Path.GetFullPath(Path.Combine(templateDir, "seeds"));
     }
 
-    private static string ResolveManifestPath(FolderPlan plan)
+    private string ResolveManifestPath(FolderPlan plan)
     {
-        var manifestFolderRelative = Path.Combine("00_Admin", ".mgf", "manifest");
+        var manifestFolderRelative = policy.ManifestFolderRelativePath;
         var manifestFolder = plan.Items.FirstOrDefault(
             item =>
                 item.Kind == PlanItemKind.Folder

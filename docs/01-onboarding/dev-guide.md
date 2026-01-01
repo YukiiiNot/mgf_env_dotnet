@@ -21,6 +21,11 @@ This repo favors guardrails, contracts, and runbooks over cleverness.
 Add new integrations under `src/Services/MGF.Worker/Integrations/<Provider>`.
 Keep APIs behind small interfaces so tests can fake them.
 
+## Provisioning engine
+
+MGF.Provisioning is the reusable provisioning engine; MGF-specific rules live in
+`src/Platform/MGF.Provisioning/Provisioning/Policy`. See [../02-architecture/provisioning.md](../02-architecture/provisioning.md).
+
 ## Email subsystem
 
 All email work lives under `src/Services/MGF.Worker/Email/`.
