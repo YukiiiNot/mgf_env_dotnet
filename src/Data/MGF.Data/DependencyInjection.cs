@@ -10,6 +10,7 @@ using MGF.Data.Options;
 using MGF.Data.Stores.Delivery;
 using MGF.Data.Stores.Jobs;
 using MGF.Data.Stores.Counters;
+using MGF.Data.Stores.ProjectBootstrap;
 
 namespace MGF.Data;
 
@@ -35,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IJobQueueStore, JobQueueStore>();
         services.AddScoped<ICounterAllocator, CounterAllocator>();
         services.AddScoped<IProjectDeliveryStore, ProjectDeliveryStore>();
+        services.AddScoped<IProjectBootstrapStore, ProjectBootstrapStore>();
 
         return services;
     }

@@ -1,22 +1,24 @@
 namespace MGF.Worker.ProjectBootstrap;
 
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Domain.Entities;
 using MGF.Data.Data;
+using MGF.Data.Stores.ProjectBootstrap;
 using MGF.Provisioning;
-using Npgsql;
 
 public sealed class ProjectBootstrapper
 {
-    private const int MaxRunsToKeep = 10;
     private const string StatusReady = "ready_to_provision";
     private const string StatusProvisioning = "provisioning";
     private const string StatusActive = "active";
     private const string StatusProvisionFailed = "provision_failed";
+    private static readonly JsonSerializerOptions BootstrapJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
     private readonly IConfiguration configuration;
     private readonly FolderTemplateLoader templateLoader = new();
     private readonly FolderTemplatePlanner planner = new();
@@ -31,6 +33,7 @@ public sealed class ProjectBootstrapper
 
     public async Task<ProjectBootstrapRunResult> RunAsync(
         AppDbContext db,
+        IProjectBootstrapStore bootstrapStore,
         ProjectBootstrapPayload payload,
         string jobId,
         CancellationToken cancellationToken)
@@ -85,7 +88,7 @@ public sealed class ProjectBootstrapper
                 LastError: $"Project data_profile='{project.DataProfile}' is not eligible for provisioning."
             );
 
-            await AppendProvisioningRunAsync(db, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
+            await AppendProvisioningRunAsync(bootstrapStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
             return blockedResult;
         }
 
@@ -122,11 +125,11 @@ public sealed class ProjectBootstrapper
                 LastError: statusError
             );
 
-            await AppendProvisioningRunAsync(db, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
+            await AppendProvisioningRunAsync(bootstrapStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
             return blockedResult;
         }
 
-        await UpdateProjectStatusAsync(db, project.ProjectId, StatusProvisioning, cancellationToken);
+        await UpdateProjectStatusAsync(bootstrapStore, project.ProjectId, StatusProvisioning, cancellationToken);
 
         var clientName = await db.Clients.AsNoTracking()
             .Where(c => c.ClientId == project.ClientId)
@@ -139,7 +142,14 @@ public sealed class ProjectBootstrapper
         {
             foreach (var domain in domains)
             {
-                var result = await ProcessDomainAsync(db, domain, payload, tokens, repoRoot, cancellationToken);
+                var result = await ProcessDomainAsync(
+                    db,
+                    bootstrapStore,
+                    domain,
+                    payload,
+                    tokens,
+                    repoRoot,
+                    cancellationToken);
                 results.Add(result);
             }
 
@@ -171,10 +181,10 @@ public sealed class ProjectBootstrapper
                 LastError: lastError
             );
 
-            await AppendProvisioningRunAsync(db, project.ProjectId, project.Metadata, runResult, cancellationToken);
+            await AppendProvisioningRunAsync(bootstrapStore, project.ProjectId, project.Metadata, runResult, cancellationToken);
 
             var finalStatus = hasErrors ? StatusProvisionFailed : StatusActive;
-            await UpdateProjectStatusAsync(db, project.ProjectId, finalStatus, cancellationToken);
+            await UpdateProjectStatusAsync(bootstrapStore, project.ProjectId, finalStatus, cancellationToken);
 
             return runResult;
         }
@@ -199,8 +209,8 @@ public sealed class ProjectBootstrapper
                 LastError: ex.Message
             );
 
-            await AppendProvisioningRunAsync(db, project.ProjectId, project.Metadata, failedResult, cancellationToken);
-            await UpdateProjectStatusAsync(db, project.ProjectId, StatusProvisionFailed, cancellationToken);
+            await AppendProvisioningRunAsync(bootstrapStore, project.ProjectId, project.Metadata, failedResult, cancellationToken);
+            await UpdateProjectStatusAsync(bootstrapStore, project.ProjectId, StatusProvisionFailed, cancellationToken);
             throw;
         }
     }
@@ -235,6 +245,7 @@ public sealed class ProjectBootstrapper
 
     private async Task<ProjectBootstrapDomainResult> ProcessDomainAsync(
         AppDbContext db,
+        IProjectBootstrapStore bootstrapStore,
         DomainDefinition domain,
         ProjectBootstrapPayload payload,
         ProvisioningTokens tokens,
@@ -421,8 +432,7 @@ public sealed class ProjectBootstrapper
                     out relpathError))
             {
                 var rootKey = ProjectStorageRootHelper.GetRootKey(payload.TestMode);
-                var upsertError = await UpsertProjectStorageRootAsync(
-                    db,
+                var upsertError = await bootstrapStore.UpsertProjectStorageRootAsync(
                     payload.ProjectId,
                     domain.StorageProviderKey,
                     rootKey,
@@ -615,66 +625,24 @@ public sealed class ProjectBootstrapper
         return Path.Combine(manifestDir, "folder_manifest.json");
     }
 
-    private async Task AppendProvisioningRunAsync(
-        AppDbContext db,
+    private static Task AppendProvisioningRunAsync(
+        IProjectBootstrapStore bootstrapStore,
         string projectId,
         JsonElement metadata,
         ProjectBootstrapRunResult runResult,
         CancellationToken cancellationToken)
     {
-        var root = JsonNode.Parse(metadata.GetRawText()) as JsonObject ?? new JsonObject();
-        var provisioning = root["provisioning"] as JsonObject ?? new JsonObject();
-        var runs = provisioning["runs"] as JsonArray ?? new JsonArray();
-
-        var runNode = JsonSerializer.SerializeToNode(runResult, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        if (runNode is not null)
-        {
-            runs.Add(runNode);
-        }
-
-        while (runs.Count > MaxRunsToKeep)
-        {
-            runs.RemoveAt(0);
-        }
-
-        provisioning["runs"] = runs;
-        root["provisioning"] = provisioning;
-
-        var updatedJson = root.ToJsonString(new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.projects
-            SET metadata = {updatedJson}::jsonb,
-                updated_at = now()
-            WHERE project_id = {projectId};
-            """,
-            cancellationToken
-        );
+        var runResultJson = JsonSerializer.SerializeToElement(runResult, BootstrapJsonOptions);
+        return bootstrapStore.AppendProvisioningRunAsync(projectId, metadata, runResultJson, cancellationToken);
     }
 
-    private static async Task UpdateProjectStatusAsync(
-        AppDbContext db,
+    private static Task UpdateProjectStatusAsync(
+        IProjectBootstrapStore bootstrapStore,
         string projectId,
         string statusKey,
         CancellationToken cancellationToken)
     {
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.projects
-            SET status_key = {statusKey},
-                updated_at = now()
-            WHERE project_id = {projectId};
-            """,
-            cancellationToken
-        );
+        return bootstrapStore.UpdateProjectStatusAsync(projectId, statusKey, cancellationToken);
     }
 
     private string ResolveDomainRootPath(DomainDefinition domain, ProjectBootstrapPayload payload, string repoRoot)
@@ -728,48 +696,6 @@ public sealed class ProjectBootstrapper
         return rootState is "ready_existing_root" or "root_created" or "root_verified";
     }
 
-    private static async Task<string?> UpsertProjectStorageRootAsync(
-        AppDbContext db,
-        string projectId,
-        string storageProviderKey,
-        string rootKey,
-        string folderRelpath,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-
-            var storageRootId = EntityIds.NewWithPrefix("psr");
-            var parameters = new[]
-            {
-                new NpgsqlParameter("project_storage_root_id", storageRootId),
-                new NpgsqlParameter("project_id", projectId),
-                new NpgsqlParameter("storage_provider_key", storageProviderKey),
-                new NpgsqlParameter("root_key", rootKey),
-                new NpgsqlParameter("folder_relpath", folderRelpath),
-            };
-
-            await db.Database.ExecuteSqlRawAsync(
-                ProjectStorageRootSql.UpsertStorageRoot,
-                parameters,
-                cancellationToken
-            );
-
-            await db.Database.ExecuteSqlRawAsync(
-                ProjectStorageRootSql.UpdateIsPrimaryForProvider,
-                parameters,
-                cancellationToken
-            );
-
-            await transaction.CommitAsync(cancellationToken);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            return $"Storage root upsert failed: {ex.Message}";
-        }
-    }
 
     private static bool ReadBoolean(JsonElement root, string name, bool defaultValue)
     {

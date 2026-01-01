@@ -5,7 +5,7 @@ This project owns persistence concerns (EF model, migrations, seeding, and raw S
 Folder conventions:
 - Abstractions/: public Data interfaces used by hosts.
 - Data/: DbContext, entity configs, repositories, and data seams.
-- Stores/: raw SQL stores organized by domain (e.g., Stores/Jobs, Stores/Counters, Stores/Delivery).
+- Stores/: raw SQL stores organized by domain (e.g., Stores/Jobs, Stores/Counters, Stores/Delivery, Stores/ProjectBootstrap).
 - Migrations/: EF migrations.
 - Options/Configuration: data layer config types.
 
