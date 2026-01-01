@@ -46,18 +46,17 @@ public sealed class ProjectDeliverer
 
     public ProjectDeliverer(
         IConfiguration configuration,
-        IDropboxShareLinkClient? shareLinkClient = null,
-        IDropboxAccessTokenProvider? accessTokenProvider = null,
-        IDropboxFilesClient? dropboxFilesClient = null,
+        IDropboxShareLinkClient shareLinkClient,
+        IDropboxAccessTokenProvider accessTokenProvider,
+        IDropboxFilesClient dropboxFilesClient,
         IEmailSender? emailSender = null,
         ILogger? logger = null)
     {
         this.configuration = configuration;
         provisioner = new FolderProvisioner(fileStore);
-        this.shareLinkClient = shareLinkClient ?? new DropboxShareLinkClient(new HttpClient(), configuration);
-        this.accessTokenProvider = accessTokenProvider
-            ?? new DropboxAccessTokenProvider(new HttpClient(), configuration, logger);
-        this.dropboxFilesClient = dropboxFilesClient ?? new DropboxFilesClient(new HttpClient(), configuration);
+        this.shareLinkClient = shareLinkClient;
+        this.accessTokenProvider = accessTokenProvider;
+        this.dropboxFilesClient = dropboxFilesClient;
         emailService = new EmailService(configuration, sender: emailSender, logger: logger);
         this.logger = logger;
     }

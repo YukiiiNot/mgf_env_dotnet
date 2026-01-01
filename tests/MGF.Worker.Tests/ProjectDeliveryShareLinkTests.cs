@@ -114,7 +114,11 @@ public sealed class ProjectDeliveryShareLinkTests
     {
         var config = new ConfigurationBuilder().Build();
         var capture = new CaptureShareLinkClient();
-        var deliverer = new ProjectDeliverer(config, shareLinkClient: capture, accessTokenProvider: new FakeTokenProvider());
+        var deliverer = new ProjectDeliverer(
+            config,
+            shareLinkClient: capture,
+            accessTokenProvider: new FakeTokenProvider(),
+            dropboxFilesClient: new FakeFilesClient());
 
         var dropboxRoot = @"C:\dropbox_root\99_TestRuns";
         var stablePath = Path.Combine(dropboxRoot, "04_Client_Deliveries", "Client", "MGF25-TEST_Project", "01_Deliverables", "Final");
@@ -146,7 +150,11 @@ public sealed class ProjectDeliveryShareLinkTests
             .Build();
 
         var capture = new CaptureShareLinkClient();
-        var deliverer = new ProjectDeliverer(config, shareLinkClient: capture, accessTokenProvider: new FakeTokenProvider());
+        var deliverer = new ProjectDeliverer(
+            config,
+            shareLinkClient: capture,
+            accessTokenProvider: new FakeTokenProvider(),
+            dropboxFilesClient: new FakeFilesClient());
 
         var dropboxRoot = @"C:\dropbox_root\99_TestRuns";
         var stablePath = Path.Combine(dropboxRoot, "04_Client_Deliveries", "Client", "MGF25-TEST_Project", "01_Deliverables", "Final");
@@ -189,5 +197,17 @@ public sealed class ProjectDeliveryShareLinkTests
             LastPath = dropboxPath;
             return Task.FromResult(new DropboxShareLinkResult("https://dropbox.test/share", "id:123", IsNew: false));
         }
+    }
+
+    private sealed class FakeFilesClient : IDropboxFilesClient
+    {
+        public Task EnsureFolderAsync(string accessToken, string dropboxPath, CancellationToken cancellationToken)
+            => Task.CompletedTask;
+
+        public Task UploadFileAsync(string accessToken, string dropboxPath, string localFilePath, CancellationToken cancellationToken)
+            => Task.CompletedTask;
+
+        public Task UploadBytesAsync(string accessToken, string dropboxPath, byte[] content, CancellationToken cancellationToken)
+            => Task.CompletedTask;
     }
 }

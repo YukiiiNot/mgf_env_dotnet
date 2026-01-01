@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using MGF.Integrations.Dropbox;
 using MGF.Domain.Entities;
 using MGF.Data.Abstractions;
 using MGF.Data.Data;
@@ -250,7 +251,13 @@ public sealed class JobWorker : BackgroundService
 
             if (string.Equals(job.JobTypeKey, "project.delivery", StringComparison.Ordinal))
             {
-                var succeeded = await HandleProjectDeliveryAsync(db, jobQueueStore, deliveryStore, job, cancellationToken);
+                var succeeded = await HandleProjectDeliveryAsync(
+                    db,
+                    jobQueueStore,
+                    deliveryStore,
+                    job,
+                    services,
+                    cancellationToken);
                 if (succeeded)
                 {
                     await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
@@ -459,6 +466,7 @@ public sealed class JobWorker : BackgroundService
         IJobQueueStore jobQueueStore,
         IProjectDeliveryStore deliveryStore,
         ClaimedJob job,
+        IServiceProvider services,
         CancellationToken cancellationToken)
     {
         ProjectDeliveryPayload payload;
@@ -481,7 +489,15 @@ public sealed class JobWorker : BackgroundService
 
         try
         {
-            var deliverer = new ProjectDeliverer(configuration, logger: logger);
+            var shareLinkClient = services.GetRequiredService<IDropboxShareLinkClient>();
+            var accessTokenProvider = services.GetRequiredService<IDropboxAccessTokenProvider>();
+            var dropboxFilesClient = services.GetRequiredService<IDropboxFilesClient>();
+            var deliverer = new ProjectDeliverer(
+                configuration,
+                shareLinkClient,
+                accessTokenProvider,
+                dropboxFilesClient,
+                logger: logger);
             var result = await deliverer.RunAsync(db, deliveryStore, payload, job.JobId, cancellationToken);
 
             logger.LogInformation(

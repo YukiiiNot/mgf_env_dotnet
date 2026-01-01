@@ -1,6 +1,8 @@
 using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
+using Microsoft.Extensions.Logging;
+using MGF.Integrations.Dropbox;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 using MGF.Worker;
@@ -24,6 +26,22 @@ if (workerSettings.Count > 0)
 }
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddTransient<IDropboxShareLinkClient>(services =>
+{
+    var httpClient = services.GetRequiredService<IHttpClientFactory>().CreateClient();
+    return new DropboxShareLinkClient(httpClient, services.GetRequiredService<IConfiguration>());
+});
+builder.Services.AddTransient<IDropboxFilesClient>(services =>
+{
+    var httpClient = services.GetRequiredService<IHttpClientFactory>().CreateClient();
+    return new DropboxFilesClient(httpClient, services.GetRequiredService<IConfiguration>());
+});
+builder.Services.AddTransient<IDropboxAccessTokenProvider>(services =>
+{
+    var httpClient = services.GetRequiredService<IHttpClientFactory>().CreateClient();
+    var logger = services.GetService<ILogger<JobWorker>>();
+    return new DropboxAccessTokenProvider(httpClient, services.GetRequiredService<IConfiguration>(), logger);
+});
 builder.Services.AddScoped<IWorkerEmailGateway, WorkerEmailGateway>();
 builder.Services.AddScoped<ISendDeliveryEmailUseCase, SendDeliveryEmailUseCase>();
 builder.Services.AddScoped<IProjectBootstrapProvisioningGateway, ProjectBootstrapProvisioningGateway>();
