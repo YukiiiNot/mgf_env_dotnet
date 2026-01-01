@@ -6,6 +6,7 @@ using System.Net.Mail;
 using System.Net.Mime;
 using Microsoft.Extensions.Configuration;
 using MGF.Contracts.Abstractions.Email;
+using MGF.Email.Registry;
 
 public sealed class SmtpEmailSender : IEmailSender
 {

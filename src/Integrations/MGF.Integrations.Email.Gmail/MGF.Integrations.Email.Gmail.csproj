@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.Email\MGF.Email.csproj" />
   </ItemGroup>
 
 </Project>

@@ -13,6 +13,7 @@ using MGF.Contracts.Abstractions.Email;
 using MGF.Worker.Email;
 using MGF.Email.Composition;
 using MGF.Email.Models;
+using MGF.Email.Registry;
 using MGF.Provisioning;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Contracts.Abstractions.Dropbox;

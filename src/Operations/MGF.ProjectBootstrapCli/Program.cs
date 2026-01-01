@@ -13,6 +13,7 @@ using MGF.Provisioning;
 using MGF.ProjectBootstrapCli;
 using MGF.Contracts.Abstractions.Email;
 using MGF.Email.Models;
+using MGF.Email.Registry;
 using MGF.UseCases.DeliveryEmail.RenderDeliveryEmailPreview;
 using Npgsql;
 

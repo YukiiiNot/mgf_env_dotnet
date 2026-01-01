@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using MGF.Contracts.Abstractions.Email;
+using MGF.Email.Registry;
 using MGF.Integrations.Email.Smtp;
 using System.Net.Mime;
 

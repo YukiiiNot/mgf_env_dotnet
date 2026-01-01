@@ -7,6 +7,7 @@ using MGF.Contracts.Abstractions.Email;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.Email.Composition;
 using MGF.Email.Models;
+using MGF.Email.Registry;
 
 public sealed class WorkerEmailGateway : IWorkerEmailGateway
 {
