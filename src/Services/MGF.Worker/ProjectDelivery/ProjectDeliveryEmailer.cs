@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Data.Data;
+using MGF.Data.Stores.Delivery;
 using MGF.Worker.Email;
 using MGF.Worker.Email.Composition;
 using MGF.Worker.Email.Models;
@@ -33,6 +34,7 @@ public sealed class ProjectDeliveryEmailer
 
     public async Task<DeliveryEmailResult> RunAsync(
         AppDbContext db,
+        IProjectDeliveryStore deliveryStore,
         ProjectDeliveryEmailPayload payload,
         string jobId,
         CancellationToken cancellationToken)
@@ -49,14 +51,14 @@ public sealed class ProjectDeliveryEmailer
         if (string.IsNullOrWhiteSpace(current.StablePath) && string.IsNullOrWhiteSpace(current.ApiStablePath))
         {
             var failed = BuildFailure(payload.ToEmails, "Delivery stable path missing; run delivery first.");
-            await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
+            await ProjectDeliverer.AppendDeliveryEmailAsync(deliveryStore, project.ProjectId, project.Metadata, failed, cancellationToken);
             return failed;
         }
 
         if (string.IsNullOrWhiteSpace(current.ShareUrl))
         {
             var failed = BuildFailure(payload.ToEmails, "Stable Dropbox share link missing; run delivery first.");
-            await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
+            await ProjectDeliverer.AppendDeliveryEmailAsync(deliveryStore, project.ProjectId, project.Metadata, failed, cancellationToken);
             return failed;
         }
 
@@ -84,7 +86,7 @@ public sealed class ProjectDeliveryEmailer
             if (context is null)
             {
                 var failed = BuildFailure(payload.ToEmails, "Delivery manifest is missing and metadata lacks delivery files.");
-                await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
+                await ProjectDeliverer.AppendDeliveryEmailAsync(deliveryStore, project.ProjectId, project.Metadata, failed, cancellationToken);
                 return failed;
             }
         }
@@ -105,7 +107,7 @@ public sealed class ProjectDeliveryEmailer
         if (recipients.Count == 0)
         {
             var failed = BuildFailure(recipients, "No delivery email recipients were provided.");
-            await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, failed, cancellationToken);
+            await ProjectDeliverer.AppendDeliveryEmailAsync(deliveryStore, project.ProjectId, project.Metadata, failed, cancellationToken);
             return failed;
         }
 
@@ -134,7 +136,7 @@ public sealed class ProjectDeliveryEmailer
             result = BuildFailure(recipients, $"Delivery email failed: {ex.Message}");
         }
 
-        await ProjectDeliverer.AppendDeliveryEmailAsync(db, project.ProjectId, project.Metadata, result, cancellationToken);
+        await ProjectDeliverer.AppendDeliveryEmailAsync(deliveryStore, project.ProjectId, project.Metadata, result, cancellationToken);
         logger?.LogInformation("MGF.Worker: project.delivery_email completed (job_id={JobId}, project_id={ProjectId}, status={Status})", jobId, payload.ProjectId, result.Status);
         return result;
     }

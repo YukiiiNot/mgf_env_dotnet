@@ -3,12 +3,12 @@ namespace MGF.Worker.ProjectDelivery;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Domain.Entities;
 using MGF.Data.Data;
+using MGF.Data.Stores.Delivery;
 using MGF.Worker.Email;
 using MGF.Worker.Email.Composition;
 using MGF.Worker.Email.Models;
@@ -20,7 +20,6 @@ using MGF.Worker.Integrations.Dropbox;
 
 public sealed class ProjectDeliverer
 {
-    private const int MaxRunsToKeep = 10;
     private const int DefaultRetentionMonths = 3;
     private const int ShareLinkTtlDays = 7;
     private const string DeliveryFromAddress = "deliveries@mgfilms.pro";
@@ -30,6 +29,10 @@ public sealed class ProjectDeliverer
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp4", ".mov", ".mxf", ".wav", ".mp3", ".m4a", ".aif", ".aiff", ".srt", ".vtt", ".xml", ".pdf"
+    };
+    private static readonly JsonSerializerOptions DeliveryJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
     private readonly IConfiguration configuration;
@@ -61,6 +64,7 @@ public sealed class ProjectDeliverer
 
     public async Task<ProjectDeliveryRunResult> RunAsync(
         AppDbContext db,
+        IProjectDeliveryStore deliveryStore,
         ProjectDeliveryPayload payload,
         string jobId,
         CancellationToken cancellationToken)
@@ -108,7 +112,7 @@ public sealed class ProjectDeliverer
                 Email: null
             );
 
-            await AppendDeliveryRunAsync(db, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
+            await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
             return blockedResult;
         }
 
@@ -143,11 +147,11 @@ public sealed class ProjectDeliverer
                 Email: null
             );
 
-            await AppendDeliveryRunAsync(db, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
+            await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
             return blockedResult;
         }
 
-        await UpdateProjectStatusAsync(db, project.ProjectId, ProjectDeliveryGuards.StatusDelivering, cancellationToken);
+        await UpdateProjectStatusAsync(deliveryStore, project.ProjectId, ProjectDeliveryGuards.StatusDelivering, cancellationToken);
 
         var clientName = await db.Clients.AsNoTracking()
             .Where(c => c.ClientId == project.ClientId)
@@ -195,8 +199,8 @@ public sealed class ProjectDeliverer
                 Email: null
             );
 
-            await AppendDeliveryRunAsync(db, project.ProjectId, project.Metadata, blockedRun, cancellationToken);
-            await UpdateProjectStatusAsync(db, project.ProjectId, ProjectDeliveryGuards.StatusDeliveryFailed, cancellationToken);
+            await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, blockedRun, cancellationToken);
+            await UpdateProjectStatusAsync(deliveryStore, project.ProjectId, ProjectDeliveryGuards.StatusDeliveryFailed, cancellationToken);
             return blockedRun;
         }
 
@@ -256,10 +260,10 @@ public sealed class ProjectDeliverer
             Email: emailResult
         );
 
-        await AppendDeliveryRunAsync(db, project.ProjectId, project.Metadata, runResult, cancellationToken);
+        await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, runResult, cancellationToken);
 
         var finalStatus = hasErrors ? ProjectDeliveryGuards.StatusDeliveryFailed : ProjectDeliveryGuards.StatusDelivered;
-        await UpdateProjectStatusAsync(db, project.ProjectId, finalStatus, cancellationToken);
+        await UpdateProjectStatusAsync(deliveryStore, project.ProjectId, finalStatus, cancellationToken);
 
         return runResult;
     }
@@ -2005,182 +2009,35 @@ public sealed class ProjectDeliverer
         return result.RootState is "container_missing" or "no_source_folder" or "no_deliverables_found";
     }
 
-    private static async Task AppendDeliveryRunAsync(
-        AppDbContext db,
+    private static Task AppendDeliveryRunAsync(
+        IProjectDeliveryStore deliveryStore,
         string projectId,
         JsonElement metadata,
         ProjectDeliveryRunResult runResult,
         CancellationToken cancellationToken)
     {
-        var root = JsonNode.Parse(metadata.GetRawText()) as JsonObject ?? new JsonObject();
-        var delivery = root["delivery"] as JsonObject ?? new JsonObject();
-        var runs = delivery["runs"] as JsonArray ?? new JsonArray();
-
-        var runNode = JsonSerializer.SerializeToNode(runResult, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        if (runNode is not null)
-        {
-            runs.Add(runNode);
-        }
-
-        while (runs.Count > MaxRunsToKeep)
-        {
-            runs.RemoveAt(0);
-        }
-
-        delivery["runs"] = runs;
-        UpdateDeliveryCurrent(delivery, runResult);
-        root["delivery"] = delivery;
-
-        var updatedJson = root.ToJsonString(new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.projects
-            SET metadata = {updatedJson}::jsonb,
-                updated_at = now()
-            WHERE project_id = {projectId};
-            """,
-            cancellationToken
-        );
+        var runResultJson = JsonSerializer.SerializeToElement(runResult, DeliveryJsonOptions);
+        return deliveryStore.AppendDeliveryRunAsync(projectId, metadata, runResultJson, cancellationToken);
     }
 
-    internal static async Task AppendDeliveryEmailAsync(
-        AppDbContext db,
+    internal static Task AppendDeliveryEmailAsync(
+        IProjectDeliveryStore deliveryStore,
         string projectId,
         JsonElement metadata,
         DeliveryEmailResult emailResult,
         CancellationToken cancellationToken)
     {
-        var root = JsonNode.Parse(metadata.GetRawText()) as JsonObject ?? new JsonObject();
-        var delivery = root["delivery"] as JsonObject ?? new JsonObject();
-        var current = delivery["current"] as JsonObject ?? new JsonObject();
-
-        ApplyLastEmail(current, emailResult);
-
-        delivery["current"] = current;
-        root["delivery"] = delivery;
-
-        var updatedJson = root.ToJsonString(new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.projects
-            SET metadata = {updatedJson}::jsonb,
-                updated_at = now()
-            WHERE project_id = {projectId};
-            """,
-            cancellationToken
-        );
+        var emailResultJson = JsonSerializer.SerializeToElement(emailResult, DeliveryJsonOptions);
+        return deliveryStore.AppendDeliveryEmailAsync(projectId, metadata, emailResultJson, cancellationToken);
     }
 
-    internal static void ApplyLastEmail(JsonObject current, DeliveryEmailResult emailResult)
-    {
-        var emailNode = JsonSerializer.SerializeToNode(emailResult, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        if (emailNode is not null)
-        {
-            current["lastEmail"] = emailNode;
-        }
-    }
-
-    internal static void UpdateDeliveryCurrent(JsonObject delivery, ProjectDeliveryRunResult runResult)
-    {
-        var current = delivery["current"] as JsonObject ?? new JsonObject();
-
-        var existingShareUrl = current["stableShareUrl"]?.GetValue<string>();
-        var existingShareId = current["stableShareId"]?.GetValue<string>();
-
-        if (!string.IsNullOrWhiteSpace(runResult.DestinationPath))
-        {
-            current["stablePath"] = runResult.DestinationPath;
-        }
-
-        if (!string.IsNullOrWhiteSpace(runResult.ApiStablePath))
-        {
-            current["apiStablePath"] = runResult.ApiStablePath;
-        }
-
-        if (!string.IsNullOrWhiteSpace(runResult.ApiVersionPath))
-        {
-            current["apiVersionPath"] = runResult.ApiVersionPath;
-        }
-
-        if (!string.IsNullOrWhiteSpace(runResult.VersionLabel))
-        {
-            current["currentVersion"] = runResult.VersionLabel;
-        }
-
-        if (runResult.RetentionUntilUtc.HasValue)
-        {
-            current["retentionUntilUtc"] = runResult.RetentionUntilUtc;
-        }
-
-        var resolvedShareUrl = !string.IsNullOrWhiteSpace(runResult.ShareUrl) ? runResult.ShareUrl : existingShareUrl;
-        var resolvedShareId = !string.IsNullOrWhiteSpace(runResult.ShareId) ? runResult.ShareId : existingShareId;
-
-        if (!string.IsNullOrWhiteSpace(resolvedShareUrl))
-        {
-            current["stableShareUrl"] = resolvedShareUrl;
-            current["shareProviderKey"] = "dropbox";
-        }
-
-        if (!string.IsNullOrWhiteSpace(resolvedShareId))
-        {
-            current["stableShareId"] = resolvedShareId;
-        }
-
-        if (!string.IsNullOrWhiteSpace(runResult.ShareStatus))
-        {
-            current["shareStatus"] = runResult.ShareStatus;
-        }
-
-        if (!string.IsNullOrWhiteSpace(runResult.ShareError))
-        {
-            current["shareError"] = runResult.ShareError;
-        }
-
-        if (runResult.ShareStatus is "created" or "reused")
-        {
-            current.Remove("shareError");
-            current["lastShareVerifiedAtUtc"] = DateTimeOffset.UtcNow;
-        }
-
-        if (runResult.Email is not null)
-        {
-            ApplyLastEmail(current, runResult.Email);
-        }
-
-        delivery["current"] = current;
-    }
-
-    private static async Task UpdateProjectStatusAsync(
-        AppDbContext db,
+    private static Task UpdateProjectStatusAsync(
+        IProjectDeliveryStore deliveryStore,
         string projectId,
         string statusKey,
         CancellationToken cancellationToken)
     {
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.projects
-            SET status_key = {statusKey},
-                updated_at = now()
-            WHERE project_id = {projectId};
-            """,
-            cancellationToken
-        );
+        return deliveryStore.UpdateProjectStatusAsync(projectId, statusKey, cancellationToken);
     }
 
     private string ResolveDomainRootPath(string domainKey)

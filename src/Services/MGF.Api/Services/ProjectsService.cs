@@ -4,15 +4,21 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
 using MGF.Data.Data;
+using MGF.Data.Stores.Counters;
 
 public sealed class ProjectsService
 {
     private readonly AppDbContext db;
+    private readonly ICounterAllocator counterAllocator;
     private readonly ILogger<ProjectsService> logger;
 
-    public ProjectsService(AppDbContext db, ILogger<ProjectsService> logger)
+    public ProjectsService(
+        AppDbContext db,
+        ICounterAllocator counterAllocator,
+        ILogger<ProjectsService> logger)
     {
         this.db = db;
+        this.counterAllocator = counterAllocator;
         this.logger = logger;
     }
 
@@ -75,7 +81,7 @@ public sealed class ProjectsService
 
         try
         {
-            var projectCode = await AllocateProjectCodeAsync(cancellationToken);
+            var projectCode = await counterAllocator.AllocateProjectCodeAsync(cancellationToken);
 
             var metadata = JsonDocument.Parse("{}").RootElement.Clone();
 
@@ -136,29 +142,6 @@ public sealed class ProjectsService
         {
             await db.Database.CloseConnectionAsync();
         }
-    }
-
-    private async Task<string> AllocateProjectCodeAsync(CancellationToken cancellationToken)
-    {
-        return await db.Database
-            .SqlQueryRaw<string>(
-                """
-                WITH ensured AS (
-                  INSERT INTO public.project_code_counters(prefix, year_2, next_seq)
-                  VALUES ('MGF', (EXTRACT(YEAR FROM now())::int % 100)::smallint, 1)
-                  ON CONFLICT (prefix, year_2) DO NOTHING
-                ),
-                updated AS (
-                  UPDATE public.project_code_counters
-                  SET next_seq = next_seq + 1, updated_at = now()
-                  WHERE prefix = 'MGF' AND year_2 = (EXTRACT(YEAR FROM now())::int % 100)::smallint
-                  RETURNING year_2, (next_seq - 1) AS allocated_seq
-                )
-                SELECT 'MGF' || lpad(year_2::text, 2, '0') || '-' || lpad(allocated_seq::text, 4, '0')
-                FROM updated;
-                """
-            )
-            .SingleAsync(cancellationToken);
     }
 
     private async Task AddProjectMemberAsync(string projectId, string personId, string roleKey, CancellationToken cancellationToken)

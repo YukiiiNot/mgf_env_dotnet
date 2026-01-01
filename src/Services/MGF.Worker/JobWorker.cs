@@ -5,7 +5,11 @@ using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using MGF.Domain.Entities;
+using MGF.Data.Abstractions;
 using MGF.Data.Data;
+using MGF.Data.Stores.Counters;
+using MGF.Data.Stores.Delivery;
+using MGF.Data.Stores.Jobs;
 using MGF.Worker.Square;
 using MGF.Worker.ProjectArchive;
 using MGF.Worker.ProjectBootstrap;
@@ -63,14 +67,17 @@ public sealed class JobWorker : BackgroundService
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var jobQueueStore = scope.ServiceProvider.GetRequiredService<IJobQueueStore>();
+                var counterAllocator = scope.ServiceProvider.GetRequiredService<ICounterAllocator>();
+                var deliveryStore = scope.ServiceProvider.GetRequiredService<IProjectDeliveryStore>();
 
-                var reaped = await ReapStaleRunningJobsAsync(db, stoppingToken);
+                var reaped = await ReapStaleRunningJobsAsync(jobQueueStore, stoppingToken);
                 if (reaped > 0)
                 {
                     logger.LogInformation("MGF.Worker: reaped {ReapedCount} stale running jobs", reaped);
                 }
 
-                var job = await TryClaimJobAsync(db, stoppingToken);
+                var job = await TryClaimJobAsync(jobQueueStore, stoppingToken);
                 if (job is null)
                 {
                     if (exitWhenIdle)
@@ -84,7 +91,7 @@ public sealed class JobWorker : BackgroundService
                     continue;
                 }
 
-                await RunJobAsync(db, job, scope.ServiceProvider, stoppingToken);
+                await RunJobAsync(db, jobQueueStore, counterAllocator, deliveryStore, job, scope.ServiceProvider, stoppingToken);
 
                 processedJobs++;
                 if (maxJobs.HasValue && processedJobs >= maxJobs.Value)
@@ -114,68 +121,28 @@ public sealed class JobWorker : BackgroundService
         string PayloadJson
     );
 
-    private async Task<ClaimedJob?> TryClaimJobAsync(AppDbContext db, CancellationToken cancellationToken)
+    private async Task<ClaimedJob?> TryClaimJobAsync(IJobQueueStore jobQueueStore, CancellationToken cancellationToken)
     {
-        await db.Database.OpenConnectionAsync(cancellationToken);
-        try
+        var claimed = await jobQueueStore.TryClaimJobAsync(workerId, LockDuration, cancellationToken);
+        if (claimed is null)
         {
-            await using var cmd = db.Database.GetDbConnection().CreateCommand();
-            cmd.CommandText =
-                """
-                WITH candidate AS (
-                  SELECT job_id
-                  FROM public.jobs
-                  WHERE status_key = 'queued'
-                    AND run_after <= now()
-                    AND (locked_until IS NULL OR locked_until < now())
-                  ORDER BY created_at
-                  LIMIT 1
-                  FOR UPDATE SKIP LOCKED
-                ),
-                locked AS (
-                  UPDATE public.jobs j
-                  SET status_key = 'running',
-                      locked_by = @locked_by,
-                      locked_until = now() + (@lock_seconds * interval '1 second'),
-                      started_at = COALESCE(j.started_at, now()),
-                      last_error = NULL
-                  FROM candidate
-                  WHERE j.job_id = candidate.job_id
-                  RETURNING j.job_id, j.job_type_key, j.attempt_count, j.max_attempts, j.payload
-                )
-                SELECT job_id, job_type_key, attempt_count, max_attempts, payload::text AS payload_json
-                FROM locked;
-                """;
-
-            AddParameter(cmd, "locked_by", workerId);
-            AddParameter(cmd, "lock_seconds", (int)LockDuration.TotalSeconds);
-
-            await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-            if (!await reader.ReadAsync(cancellationToken))
-            {
-                return null;
-            }
-
-            var jobId = reader.GetString(0);
-            var jobTypeKey = reader.GetString(1);
-            var attemptCount = reader.GetInt32(2);
-            var maxAttempts = reader.GetInt32(3);
-            var payloadJson = reader.GetString(4);
-
-            logger.LogInformation(
-                "MGF.Worker: claimed job {JobId} (type={JobTypeKey}, attempt={Attempt}/{Max})",
-                jobId,
-                jobTypeKey,
-                attemptCount + 1,
-                maxAttempts
-            );
-
-            return new ClaimedJob(jobId, jobTypeKey, attemptCount, maxAttempts, payloadJson);
+            return null;
         }
-        finally
-        {
-            await db.Database.CloseConnectionAsync();
-        }
+
+        logger.LogInformation(
+            "MGF.Worker: claimed job {JobId} (type={JobTypeKey}, attempt={Attempt}/{Max})",
+            claimed.JobId,
+            claimed.JobTypeKey,
+            claimed.AttemptCount + 1,
+            claimed.MaxAttempts
+        );
+
+        return new ClaimedJob(
+            claimed.JobId,
+            claimed.JobTypeKey,
+            claimed.AttemptCount,
+            claimed.MaxAttempts,
+            claimed.PayloadJson);
     }
 
     private static int? ParseMaxJobs(string? value)
@@ -193,30 +160,18 @@ public sealed class JobWorker : BackgroundService
         return null;
     }
 
-    private async Task<int> ReapStaleRunningJobsAsync(AppDbContext db, CancellationToken cancellationToken)
+    private Task<int> ReapStaleRunningJobsAsync(
+        IJobQueueStore jobQueueStore,
+        CancellationToken cancellationToken)
     {
-        await db.Database.OpenConnectionAsync(cancellationToken);
-        try
-        {
-            await using var cmd = db.Database.GetDbConnection().CreateCommand();
-            cmd.CommandText = JobReaperSql.ReapStaleRunningJobs;
-
-            var result = await cmd.ExecuteScalarAsync(cancellationToken);
-            if (result is null || result is DBNull)
-            {
-                return 0;
-            }
-
-            return Convert.ToInt32(result, CultureInfo.InvariantCulture);
-        }
-        finally
-        {
-            await db.Database.CloseConnectionAsync();
-        }
+        return jobQueueStore.ReapStaleRunningJobsAsync(cancellationToken);
     }
 
     private async Task RunJobAsync(
         AppDbContext db,
+        IJobQueueStore jobQueueStore,
+        ICounterAllocator counterAllocator,
+        IProjectDeliveryStore deliveryStore,
         ClaimedJob job,
         IServiceProvider services,
         CancellationToken cancellationToken)
@@ -226,16 +181,22 @@ public sealed class JobWorker : BackgroundService
             if (string.Equals(job.JobTypeKey, "dropbox.create_project_structure", StringComparison.Ordinal))
             {
                 await HandleDropboxCreateProjectStructureAsync(job, cancellationToken);
-                await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 return;
             }
 
             if (string.Equals(job.JobTypeKey, "square.webhook_event.process", StringComparison.Ordinal))
             {
-                var succeeded = await HandleSquareWebhookEventProcessAsync(db, job, cancellationToken);
+                var webhookStore = services.GetRequiredService<ISquareWebhookStore>();
+                var succeeded = await HandleSquareWebhookEventProcessAsync(
+                    db,
+                    jobQueueStore,
+                    job,
+                    webhookStore,
+                    cancellationToken);
                 if (succeeded)
                 {
-                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                    await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 }
                 return;
             }
@@ -243,43 +204,43 @@ public sealed class JobWorker : BackgroundService
             if (string.Equals(job.JobTypeKey, "square.reconcile.payments", StringComparison.Ordinal))
             {
                 await HandleSquareReconcilePaymentsAsync(db, job, cancellationToken);
-                await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 return;
             }
 
             if (string.Equals(job.JobTypeKey, "square.payment.upsert", StringComparison.Ordinal))
             {
-                await HandleSquarePaymentUpsertAsync(db, job, cancellationToken);
-                await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                await HandleSquarePaymentUpsertAsync(db, counterAllocator, job, cancellationToken);
+                await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 return;
             }
 
             if (string.Equals(job.JobTypeKey, "project.bootstrap", StringComparison.Ordinal))
             {
-                var succeeded = await HandleProjectBootstrapAsync(db, job, cancellationToken);
+                var succeeded = await HandleProjectBootstrapAsync(db, jobQueueStore, job, cancellationToken);
                 if (succeeded)
                 {
-                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                    await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 }
                 return;
             }
 
             if (string.Equals(job.JobTypeKey, "project.archive", StringComparison.Ordinal))
             {
-                var succeeded = await HandleProjectArchiveAsync(db, job, cancellationToken);
+                var succeeded = await HandleProjectArchiveAsync(db, jobQueueStore, job, cancellationToken);
                 if (succeeded)
                 {
-                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                    await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 }
                 return;
             }
 
             if (string.Equals(job.JobTypeKey, "project.delivery", StringComparison.Ordinal))
             {
-                var succeeded = await HandleProjectDeliveryAsync(db, job, cancellationToken);
+                var succeeded = await HandleProjectDeliveryAsync(db, jobQueueStore, deliveryStore, job, cancellationToken);
                 if (succeeded)
                 {
-                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                    await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 }
                 return;
             }
@@ -287,20 +248,26 @@ public sealed class JobWorker : BackgroundService
             if (string.Equals(job.JobTypeKey, "project.delivery_email", StringComparison.Ordinal))
             {
                 var useCase = services.GetRequiredService<ISendDeliveryEmailUseCase>();
-                var succeeded = await HandleProjectDeliveryEmailAsync(db, job, useCase, cancellationToken);
+                var succeeded = await HandleProjectDeliveryEmailAsync(
+                    db,
+                    jobQueueStore,
+                    deliveryStore,
+                    job,
+                    useCase,
+                    cancellationToken);
                 if (succeeded)
                 {
-                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                    await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 }
                 return;
             }
 
             if (string.Equals(job.JobTypeKey, "domain.root_integrity", StringComparison.Ordinal))
             {
-                var succeeded = await HandleRootIntegrityAsync(db, job, cancellationToken);
+                var succeeded = await HandleRootIntegrityAsync(db, jobQueueStore, job, cancellationToken);
                 if (succeeded)
                 {
-                    await MarkSucceededAsync(db, job.JobId, cancellationToken);
+                    await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
                 }
                 return;
             }
@@ -309,7 +276,7 @@ public sealed class JobWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
         }
     }
 
@@ -336,6 +303,7 @@ public sealed class JobWorker : BackgroundService
 
     private async Task<bool> HandleProjectBootstrapAsync(
         AppDbContext db,
+        IJobQueueStore jobQueueStore,
         ClaimedJob job,
         CancellationToken cancellationToken)
     {
@@ -347,7 +315,7 @@ public sealed class JobWorker : BackgroundService
         catch (Exception ex)
         {
             logger.LogWarning(ex, "MGF.Worker: project.bootstrap payload invalid (job_id={JobId})", job.JobId);
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
 
@@ -373,7 +341,7 @@ public sealed class JobWorker : BackgroundService
             if (result.HasErrors)
             {
                 await MarkFailedAsync(
-                    db,
+                    jobQueueStore,
                     job,
                     new InvalidOperationException(result.LastError ?? "project.bootstrap completed with provisioning errors."),
                     cancellationToken
@@ -391,13 +359,14 @@ public sealed class JobWorker : BackgroundService
                 job.JobId,
                 payload.ProjectId
             );
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
     }
 
     private async Task<bool> HandleProjectArchiveAsync(
         AppDbContext db,
+        IJobQueueStore jobQueueStore,
         ClaimedJob job,
         CancellationToken cancellationToken)
     {
@@ -409,7 +378,7 @@ public sealed class JobWorker : BackgroundService
         catch (Exception ex)
         {
             logger.LogWarning(ex, "MGF.Worker: project.archive payload invalid (job_id={JobId})", job.JobId);
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
 
@@ -435,7 +404,7 @@ public sealed class JobWorker : BackgroundService
             if (result.HasErrors)
             {
                 await MarkFailedAsync(
-                    db,
+                    jobQueueStore,
                     job,
                     new InvalidOperationException(result.LastError ?? "project.archive completed with errors."),
                     cancellationToken
@@ -453,13 +422,15 @@ public sealed class JobWorker : BackgroundService
                 job.JobId,
                 payload.ProjectId
             );
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
     }
 
     private async Task<bool> HandleProjectDeliveryAsync(
         AppDbContext db,
+        IJobQueueStore jobQueueStore,
+        IProjectDeliveryStore deliveryStore,
         ClaimedJob job,
         CancellationToken cancellationToken)
     {
@@ -471,7 +442,7 @@ public sealed class JobWorker : BackgroundService
         catch (Exception ex)
         {
             logger.LogWarning(ex, "MGF.Worker: project.delivery payload invalid (job_id={JobId})", job.JobId);
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
 
@@ -483,8 +454,8 @@ public sealed class JobWorker : BackgroundService
 
         try
         {
-        var deliverer = new ProjectDeliverer(configuration, logger: logger);
-            var result = await deliverer.RunAsync(db, payload, job.JobId, cancellationToken);
+            var deliverer = new ProjectDeliverer(configuration, logger: logger);
+            var result = await deliverer.RunAsync(db, deliveryStore, payload, job.JobId, cancellationToken);
 
             logger.LogInformation(
                 "MGF.Worker: project.delivery completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
@@ -497,7 +468,7 @@ public sealed class JobWorker : BackgroundService
             if (result.HasErrors)
             {
                 await MarkFailedAsync(
-                    db,
+                    jobQueueStore,
                     job,
                     new InvalidOperationException(result.LastError ?? "project.delivery completed with errors."),
                     cancellationToken
@@ -515,13 +486,15 @@ public sealed class JobWorker : BackgroundService
                 job.JobId,
                 payload.ProjectId
             );
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
     }
 
     private async Task<bool> HandleProjectDeliveryEmailAsync(
         AppDbContext db,
+        IJobQueueStore jobQueueStore,
+        IProjectDeliveryStore deliveryStore,
         ClaimedJob job,
         ISendDeliveryEmailUseCase useCase,
         CancellationToken cancellationToken)
@@ -534,7 +507,7 @@ public sealed class JobWorker : BackgroundService
         catch (Exception ex)
         {
             logger.LogWarning(ex, "MGF.Worker: project.delivery_email payload invalid (job_id={JobId})", job.JobId);
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
 
@@ -558,7 +531,7 @@ public sealed class JobWorker : BackgroundService
             if (!string.Equals(result.Status, "sent", StringComparison.OrdinalIgnoreCase))
             {
                 await MarkFailedAsync(
-                    db,
+                    jobQueueStore,
                     job,
                     new InvalidOperationException(result.Error ?? "project.delivery_email failed."),
                     cancellationToken
@@ -576,13 +549,14 @@ public sealed class JobWorker : BackgroundService
                 job.JobId,
                 payload.ProjectId
             );
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
     }
 
     private async Task<bool> HandleRootIntegrityAsync(
         AppDbContext db,
+        IJobQueueStore jobQueueStore,
         ClaimedJob job,
         CancellationToken cancellationToken)
     {
@@ -594,7 +568,7 @@ public sealed class JobWorker : BackgroundService
         catch (Exception ex)
         {
             logger.LogWarning(ex, "MGF.Worker: domain.root_integrity payload invalid (job_id={JobId})", job.JobId);
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
 
@@ -613,7 +587,7 @@ public sealed class JobWorker : BackgroundService
             var result = await checker.RunAsync(db, payload, job.JobId, cancellationToken);
 
             var updatedPayload = RootIntegrityChecker.BuildJobPayloadJson(payload, result);
-            await UpdateJobPayloadAsync(db, job.JobId, updatedPayload, cancellationToken);
+            await UpdateJobPayloadAsync(jobQueueStore, job.JobId, updatedPayload, cancellationToken);
 
             logger.LogInformation(
                 "MGF.Worker: domain.root_integrity completed (job_id={JobId}, provider={ProviderKey}, root_key={RootKey}, errors={HasErrors})",
@@ -626,7 +600,7 @@ public sealed class JobWorker : BackgroundService
             if (result.HasErrors)
             {
                 await MarkFailedAsync(
-                    db,
+                    jobQueueStore,
                     job,
                     new InvalidOperationException(result.Errors.FirstOrDefault() ?? "domain.root_integrity completed with errors."),
                     cancellationToken
@@ -639,14 +613,16 @@ public sealed class JobWorker : BackgroundService
         catch (Exception ex)
         {
             logger.LogError(ex, "MGF.Worker: domain.root_integrity failed (job_id={JobId})", job.JobId);
-            await MarkFailedAsync(db, job, ex, cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
             return false;
         }
     }
 
     private async Task<bool> HandleSquareWebhookEventProcessAsync(
         AppDbContext db,
+        IJobQueueStore jobQueueStore,
         ClaimedJob job,
+        ISquareWebhookStore webhookStore,
         CancellationToken cancellationToken
     )
     {
@@ -657,7 +633,7 @@ public sealed class JobWorker : BackgroundService
                 job.JobId,
                 payloadError
             );
-            await MarkFailedAsync(db, job, new InvalidOperationException(payloadError), cancellationToken);
+            await MarkFailedAsync(jobQueueStore, job, new InvalidOperationException(payloadError), cancellationToken);
             return false;
         }
 
@@ -692,7 +668,7 @@ public sealed class JobWorker : BackgroundService
                         squareEventId
                     );
                     await MarkFailedAsync(
-                        db,
+                        jobQueueStore,
                         job,
                         new InvalidOperationException(
                             $"square_webhook_events row not found for square_event_id={squareEventId}."
@@ -766,8 +742,8 @@ public sealed class JobWorker : BackgroundService
                     job.JobId,
                     squareEventId
                 );
-                await MarkSquareWebhookEventFailedAsync(db, squareEventId, ex, cancellationToken);
-                await MarkFailedAsync(db, job, ex, cancellationToken);
+                await MarkSquareWebhookEventFailedAsync(webhookStore, squareEventId, ex, cancellationToken);
+                await MarkFailedAsync(jobQueueStore, job, ex, cancellationToken);
                 return false;
             }
         }
@@ -777,20 +753,13 @@ public sealed class JobWorker : BackgroundService
         }
     }
 
-    private static async Task UpdateJobPayloadAsync(
-        AppDbContext db,
+    private static Task UpdateJobPayloadAsync(
+        IJobQueueStore jobQueueStore,
         string jobId,
         string payloadJson,
         CancellationToken cancellationToken)
     {
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.jobs
-            SET payload = {payloadJson}::jsonb
-            WHERE job_id = {jobId};
-            """,
-            cancellationToken
-        );
+        return jobQueueStore.UpdateJobPayloadAsync(jobId, payloadJson, cancellationToken);
     }
 
     private async Task HandleSquareReconcilePaymentsAsync(AppDbContext db, ClaimedJob job, CancellationToken cancellationToken)
@@ -897,7 +866,11 @@ public sealed class JobWorker : BackgroundService
         }
     }
 
-    private async Task HandleSquarePaymentUpsertAsync(AppDbContext db, ClaimedJob job, CancellationToken cancellationToken)
+    private async Task HandleSquarePaymentUpsertAsync(
+        AppDbContext db,
+        ICounterAllocator counterAllocator,
+        ClaimedJob job,
+        CancellationToken cancellationToken)
     {
         var accessToken = configuration["Square:AccessToken"];
         if (string.IsNullOrWhiteSpace(accessToken))
@@ -959,10 +932,16 @@ public sealed class JobWorker : BackgroundService
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                var ledgerProjectId = await EnsureLedgerProjectIdAsync(db, clientId, now, cancellationToken);
+                var ledgerProjectId = await EnsureLedgerProjectIdAsync(
+                    db,
+                    counterAllocator,
+                    clientId,
+                    now,
+                    cancellationToken);
 
                 await UpsertSquarePaymentAsync(
                     db,
+                    counterAllocator,
                     parsed,
                     clientId: clientId,
                     ledgerProjectId: ledgerProjectId,
@@ -1241,6 +1220,7 @@ public sealed class JobWorker : BackgroundService
 
     private async Task ProcessSquarePaymentEventAsync(
         AppDbContext db,
+        ICounterAllocator counterAllocator,
         SquareWebhookEvent row,
         ParsedSquareWebhookEvent parsed,
         string jobId,
@@ -1272,10 +1252,16 @@ public sealed class JobWorker : BackgroundService
             );
         }
 
-        var ledgerProjectId = await EnsureLedgerProjectIdAsync(db, clientId, now, cancellationToken);
+        var ledgerProjectId = await EnsureLedgerProjectIdAsync(
+            db,
+            counterAllocator,
+            clientId,
+            now,
+            cancellationToken);
 
         await UpsertSquarePaymentAsync(
             db,
+            counterAllocator,
             payment,
             clientId: clientId,
             ledgerProjectId: ledgerProjectId,
@@ -1550,6 +1536,7 @@ public sealed class JobWorker : BackgroundService
 
     private async Task<string> EnsureLedgerProjectIdAsync(
         AppDbContext db,
+        ICounterAllocator counterAllocator,
         string clientId,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken
@@ -1566,7 +1553,7 @@ public sealed class JobWorker : BackgroundService
         }
 
         var projectId = EntityIds.NewProjectId();
-        var projectCode = await AllocateProjectCodeAsync(db, cancellationToken);
+        var projectCode = await counterAllocator.AllocateProjectCodeAsync(cancellationToken);
 
         db.Projects.Add(
             new Project(
@@ -1585,60 +1572,9 @@ public sealed class JobWorker : BackgroundService
         return projectId;
     }
 
-    private static async Task<string> AllocateProjectCodeAsync(AppDbContext db, CancellationToken cancellationToken)
-    {
-        return await db.Database
-            .SqlQueryRaw<string>(
-                """
-                WITH ensured AS (
-                  INSERT INTO public.project_code_counters(prefix, year_2, next_seq)
-                  VALUES ('MGF', (EXTRACT(YEAR FROM now())::int % 100)::smallint, 1)
-                  ON CONFLICT (prefix, year_2) DO NOTHING
-                ),
-                updated AS (
-                  UPDATE public.project_code_counters
-                  SET next_seq = next_seq + 1, updated_at = now()
-                  WHERE prefix = 'MGF' AND year_2 = (EXTRACT(YEAR FROM now())::int % 100)::smallint
-                  RETURNING year_2, (next_seq - 1) AS allocated_seq
-                )
-                SELECT 'MGF' || lpad(year_2::text, 2, '0') || '-' || lpad(allocated_seq::text, 4, '0')
-                FROM updated;
-                """
-            )
-            .SingleAsync(cancellationToken);
-    }
-
-    private static async Task<string> AllocateInvoiceNumberAsync(
-        AppDbContext db,
-        short year2,
-        CancellationToken cancellationToken
-    )
-    {
-        var seq = await db.Database
-            .SqlQuery<int>(
-                $"""
-                WITH ensured AS (
-                  INSERT INTO public.invoice_number_counters(prefix, year_2, next_seq)
-                  VALUES ('MGF', {year2}, 1)
-                  ON CONFLICT (prefix, year_2) DO NOTHING
-                ),
-                updated AS (
-                  UPDATE public.invoice_number_counters
-                  SET next_seq = next_seq + 1, updated_at = now()
-                  WHERE prefix = 'MGF' AND year_2 = {year2}
-                  RETURNING (next_seq - 1) AS allocated_seq
-                )
-                SELECT allocated_seq
-                FROM updated;
-                """
-            )
-            .SingleAsync(cancellationToken);
-
-        return $"MGF-INV-{year2:00}-{seq:000000}";
-    }
-
     private static async Task UpsertSquarePaymentAsync(
         AppDbContext db,
+        ICounterAllocator counterAllocator,
         ParsedSquarePayment payment,
         string clientId,
         string ledgerProjectId,
@@ -1701,7 +1637,7 @@ public sealed class JobWorker : BackgroundService
 
         var issuedAt = payment.IssuedAtUtc;
         var year2 = (short)(issuedAt.Year % 100);
-        var invoiceNumber = await AllocateInvoiceNumberAsync(db, year2, cancellationToken);
+        var invoiceNumber = await counterAllocator.AllocateInvoiceNumberAsync(year2, cancellationToken);
         var invoiceIdNew = EntityIds.NewWithPrefix("inv");
 
         await invoices.AddAsync(
@@ -1983,24 +1919,15 @@ public sealed class JobWorker : BackgroundService
         );
     }
 
-    private static async Task MarkSquareWebhookEventFailedAsync(
-        AppDbContext db,
+    private static Task MarkSquareWebhookEventFailedAsync(
+        ISquareWebhookStore webhookStore,
         string squareEventId,
         Exception ex,
         CancellationToken cancellationToken
     )
     {
         var errorText = ex.ToString();
-
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.square_webhook_events
-            SET status = {"failed"},
-                error = {errorText}
-            WHERE square_event_id = {squareEventId};
-            """,
-            cancellationToken
-        );
+        return webhookStore.MarkFailedAsync(squareEventId, errorText, cancellationToken);
     }
 
     private static bool TryGetObject(JsonElement element, string propertyName, out JsonElement obj)
@@ -2059,25 +1986,21 @@ public sealed class JobWorker : BackgroundService
         return null;
     }
 
-    private async Task MarkSucceededAsync(AppDbContext db, string jobId, CancellationToken cancellationToken)
+    private async Task MarkSucceededAsync(
+        IJobQueueStore jobQueueStore,
+        string jobId,
+        CancellationToken cancellationToken)
     {
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.jobs
-            SET status_key = {"succeeded"},
-                finished_at = now(),
-                locked_by = NULL,
-                locked_until = NULL,
-                last_error = NULL
-            WHERE job_id = {jobId};
-            """,
-            cancellationToken
-        );
+        await jobQueueStore.MarkSucceededAsync(jobId, cancellationToken);
 
         logger.LogInformation("MGF.Worker: job {JobId} succeeded", jobId);
     }
 
-    private async Task MarkFailedAsync(AppDbContext db, ClaimedJob job, Exception ex, CancellationToken cancellationToken)
+    private async Task MarkFailedAsync(
+        IJobQueueStore jobQueueStore,
+        ClaimedJob job,
+        Exception ex,
+        CancellationToken cancellationToken)
     {
         var errorText = ex.ToString();
         var newAttemptCount = job.AttemptCount + 1;
@@ -2088,21 +2011,9 @@ public sealed class JobWorker : BackgroundService
         var runAfter = shouldRetry ? DateTimeOffset.UtcNow.Add(delay) : DateTimeOffset.UtcNow;
         DateTimeOffset? finishedAt = shouldRetry ? null : DateTimeOffset.UtcNow;
 
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.jobs
-            SET attempt_count = attempt_count + 1,
-                status_key = {statusKey},
-                run_after = {runAfter},
-                finished_at = {finishedAt},
-                locked_by = NULL,
-                locked_until = NULL,
-                last_error = {errorText},
-                payload = jsonb_set(payload, ARRAY['lastError'], to_jsonb({errorText}::text), true)
-            WHERE job_id = {job.JobId};
-            """,
-            cancellationToken
-        );
+        await jobQueueStore.MarkFailedAsync(
+            new JobFailureUpdate(job.JobId, statusKey, runAfter, finishedAt, errorText),
+            cancellationToken);
 
         if (shouldRetry)
         {

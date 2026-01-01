@@ -9,6 +9,7 @@ using Microsoft.Extensions.Primitives;
 using MGF.Api.Square;
 using MGF.Domain.Entities;
 using MGF.Data.Data;
+using MGF.Data.Abstractions;
 
 [ApiController]
 [Route("webhooks/square")]
@@ -19,18 +20,21 @@ public sealed class SquareWebhooksController : ControllerBase
     private const string LegacySignatureHeaderName = "x-square-signature";
 
     private readonly AppDbContext db;
+    private readonly ISquareWebhookStore webhookStore;
     private readonly IConfiguration configuration;
     private readonly ISquareWebhookVerifier verifier;
     private readonly ILogger<SquareWebhooksController> logger;
 
     public SquareWebhooksController(
         AppDbContext db,
+        ISquareWebhookStore webhookStore,
         IConfiguration configuration,
         ISquareWebhookVerifier verifier,
         ILogger<SquareWebhooksController> logger
     )
     {
         this.db = db;
+        this.webhookStore = webhookStore;
         this.configuration = configuration;
         this.verifier = verifier;
         this.logger = logger;
@@ -145,27 +149,22 @@ public sealed class SquareWebhooksController : ControllerBase
 
             try
             {
-                insertedEventCount = await db.Database.ExecuteSqlInterpolatedAsync(
-                    $"""
-                    INSERT INTO public.square_webhook_events (square_event_id, event_type, object_type, object_id, location_id, payload)
-                    VALUES ({squareEventId}, {eventType}, {objectType}, {objectId}, {locationId}, {payloadJson}::jsonb)
-                    ON CONFLICT (square_event_id) DO NOTHING;
-                    """,
-                    cancellationToken
-                );
+                insertedEventCount = await webhookStore.InsertEventAsync(
+                    new SquareWebhookEventRecord(
+                        squareEventId,
+                        eventType,
+                        objectType,
+                        objectId,
+                        locationId,
+                        payloadJson),
+                    cancellationToken);
 
                 if (insertedEventCount > 0)
                 {
                     var jobId = EntityIds.NewWithPrefix("job");
                     var jobPayloadJson = JsonSerializer.Serialize(new { square_event_id = squareEventId });
 
-                    await db.Database.ExecuteSqlInterpolatedAsync(
-                        $"""
-                        INSERT INTO public.jobs (job_id, job_type_key, payload, status_key, run_after, entity_type_key, entity_key)
-                        VALUES ({jobId}, {"square.webhook_event.process"}, {jobPayloadJson}::jsonb, {"queued"}, now(), {"square_webhook_event"}, {squareEventId});
-                        """,
-                        cancellationToken
-                    );
+                    await webhookStore.EnqueueProcessingJobAsync(jobId, jobPayloadJson, squareEventId, cancellationToken);
                 }
 
                 await transaction.CommitAsync(cancellationToken);
