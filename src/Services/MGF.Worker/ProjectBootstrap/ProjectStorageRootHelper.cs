@@ -1,6 +1,6 @@
 namespace MGF.Worker.ProjectBootstrap;
 
-using MGF.UseCases.ProjectBootstrap;
+using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 
 internal static class ProjectStorageRootHelper
 {

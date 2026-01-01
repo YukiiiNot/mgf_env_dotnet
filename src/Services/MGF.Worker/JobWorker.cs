@@ -15,8 +15,8 @@ using MGF.Worker.ProjectArchive;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.ProjectDelivery;
 using MGF.Worker.RootIntegrity;
-using MGF.UseCases.DeliveryEmail;
-using MGF.UseCases.ProjectBootstrap;
+using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
+using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 
 public sealed class JobWorker : BackgroundService
 {

@@ -3,7 +3,7 @@ namespace MGF.Worker.Email;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Contracts.Abstractions;
-using MGF.UseCases.DeliveryEmail;
+using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.Worker.Email.Composition;
 using MGF.Worker.Email.Models;
 using MGF.Worker.Email.Registry;

@@ -1,8 +1,8 @@
 using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
-using MGF.UseCases.DeliveryEmail;
-using MGF.UseCases.ProjectBootstrap;
+using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
+using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 using MGF.Worker;
 using MGF.Worker.Email;
 using MGF.Worker.ProjectBootstrap;

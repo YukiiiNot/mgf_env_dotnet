@@ -4,7 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MGF.Provisioning;
-using MGF.UseCases.ProjectBootstrap;
+using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 
 public sealed class ProjectBootstrapper
 {

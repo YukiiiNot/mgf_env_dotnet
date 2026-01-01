@@ -2,7 +2,7 @@ using System.Text.Json;
 using MGF.Contracts.Abstractions;
 using MGF.Data.Stores.ProjectBootstrap;
 using MGF.Domain.Entities;
-using MGF.UseCases.ProjectBootstrap;
+using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 
 namespace MGF.Worker.Tests;
 

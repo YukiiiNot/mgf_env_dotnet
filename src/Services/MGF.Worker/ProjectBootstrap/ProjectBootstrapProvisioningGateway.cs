@@ -1,7 +1,7 @@
 namespace MGF.Worker.ProjectBootstrap;
 
 using Microsoft.Extensions.Configuration;
-using MGF.UseCases.ProjectBootstrap;
+using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 
 public sealed class ProjectBootstrapProvisioningGateway : IProjectBootstrapProvisioningGateway
 {

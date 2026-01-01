@@ -21,6 +21,10 @@ This document is the canonical source for repo structure conventions. If structu
 - Test projects: `tests/MGF.<Project>.Tests` or `tests/MGF.<Area>.<SubArea>.Tests`.
 - Avoid legacy prefixes or duplicate buckets; prefer moving into the correct bucket.
 
+## Use-case layout (MGF.UseCases)
+- Use-cases live under `src/Application/MGF.UseCases/UseCases/<Area>/<UseCaseName>/`.
+- Each use-case folder includes `I<UseCaseName>UseCase.cs`, `<UseCaseName>UseCase.cs`, `Models.cs`, and optional `Errors.cs`.
+
 ## When to create a new project?
 Create a new project when you need at least one of:
 - A new deployable host boundary (API/Worker/CLI/UI).

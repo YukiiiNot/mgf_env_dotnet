@@ -1,4 +1,4 @@
-namespace MGF.UseCases.ProjectBootstrap;
+namespace MGF.UseCases.ProjectBootstrap.BootstrapProject;
 
 public interface IBootstrapProjectUseCase
 {

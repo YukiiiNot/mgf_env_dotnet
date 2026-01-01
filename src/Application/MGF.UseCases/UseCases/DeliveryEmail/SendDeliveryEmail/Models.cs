@@ -1,4 +1,4 @@
-namespace MGF.UseCases.DeliveryEmail;
+namespace MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 
 using MGF.Provisioning;
 
