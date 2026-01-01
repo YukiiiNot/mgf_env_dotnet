@@ -1,4 +1,4 @@
-namespace MGF.Contracts.Abstractions;
+namespace MGF.Data.Stores.ProjectBootstrap;
 
 using System.Text.Json;
 

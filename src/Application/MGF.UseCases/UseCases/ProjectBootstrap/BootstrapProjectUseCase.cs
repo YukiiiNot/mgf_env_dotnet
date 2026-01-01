@@ -3,6 +3,7 @@ namespace MGF.UseCases.ProjectBootstrap;
 using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using MGF.Contracts.Abstractions;
+using MGF.Data.Stores.ProjectBootstrap;
 
 public sealed class BootstrapProjectUseCase : IBootstrapProjectUseCase
 {

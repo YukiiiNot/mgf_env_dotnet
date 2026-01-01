@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MGF.Contracts.Abstractions;
+using MGF.Data.Stores.ProjectBootstrap;
 using MGF.Domain.Entities;
 using MGF.UseCases.ProjectBootstrap;
 
