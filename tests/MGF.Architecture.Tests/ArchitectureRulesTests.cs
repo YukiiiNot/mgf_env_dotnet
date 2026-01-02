@@ -141,27 +141,14 @@ public sealed class ArchitectureRulesTests
     }
 
     [Fact]
-    public void Readmes_Outside_Docs_Are_Signposts_Only()
+    public void Markdown_Outside_Docs_Is_Forbidden()
     {
-        var readmes = Directory.GetFiles(RepoRoot, "README.md", SearchOption.AllDirectories)
+        var markdownFiles = Directory.GetFiles(RepoRoot, "*.md", SearchOption.AllDirectories)
             .Where(path => !IsUnder(path, DocsRoot))
+            .Where(path => !IsAllowedNonDocsMarkdown(path))
             .ToArray();
 
-        foreach (var readme in readmes)
-        {
-            var lines = File.ReadAllLines(readme);
-            Assert.True(lines.Length <= 10, $"README exceeds 10 lines: {readme}");
-
-            foreach (var line in lines)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-
-                Assert.Contains("docs/", line, StringComparison.OrdinalIgnoreCase);
-            }
-        }
+        Assert.Empty(markdownFiles);
     }
 
     [Fact]
@@ -275,6 +262,25 @@ public sealed class ArchitectureRulesTests
         var fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             + Path.DirectorySeparatorChar;
         return fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsAllowedNonDocsMarkdown(string path)
+    {
+        var fullPath = Path.GetFullPath(path);
+
+        var pullRequestTemplate = Path.Combine(RepoRoot, ".github", "PULL_REQUEST_TEMPLATE.md");
+        if (string.Equals(fullPath, pullRequestTemplate, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var issueTemplateRoot = Path.Combine(RepoRoot, ".github", "ISSUE_TEMPLATE");
+        if (IsUnder(fullPath, issueTemplateRoot))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private static bool IsIgnoredFolder(string name)
