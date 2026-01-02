@@ -21,7 +21,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 - `src/Core/MGF.Contracts`: current home for application abstractions and shared workflow helpers.
 - `src/Core/MGF.Domain`: domain entities and IDs.
 - `src/Application/MGF.UseCases`: workflow/use-case boundary (scaffold; logic moves here over time).
-- Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Contracts store -> Data + `IProjectBootstrapProvisioningGateway` (Services adapter: MGF.Worker.Adapters.Storage).
+- Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Contracts store -> Data + `IProjectBootstrapProvisioningGateway` (Services adapter: `src/Services/MGF.Worker/Adapters/Storage/ProjectBootstrap/`).
 
 ## Future direction
 - New workflows and orchestration logic go in `src/Application/MGF.UseCases`; Services and Operations call into it.

@@ -17,7 +17,7 @@ This repo hosts MGF's internal API, worker, desktop app, and supporting tools fo
 
 ## Runtime flow
 Worker/API/CLI -> UseCases -> Contracts -> Data/Integrations (CLIs call UseCases; do not reference service hosts).
-Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Contracts store -> Data + `IProjectBootstrapProvisioningGateway` (Services adapter: MGF.Worker.Adapters.Storage).
+Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Contracts store -> Data + `IProjectBootstrapProvisioningGateway` (Services adapter: `src/Services/MGF.Worker/Adapters/Storage/ProjectBootstrap/`).
 Square webhooks: API -> `IIngestSquareWebhookUseCase` -> Contracts store -> Data.
 People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
 

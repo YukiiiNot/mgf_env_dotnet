@@ -58,9 +58,9 @@ Short, daily-readable map of what exists, what is partial, and what we do next.
 - Contract-first: update docs/tests/runbooks with each workflow change.
 - Avoid overlapping files. Use ownership zones:
   - Email subsystem: `src/Platform/MGF.Email/`
-  - Delivery: `src/Application/MGF.UseCases/UseCases/Operations/ProjectDelivery/` + `src/Services/MGF.Worker.Adapters.Storage/ProjectDelivery/`
-  - Bootstrap: `src/Application/MGF.UseCases/UseCases/Operations/ProjectBootstrap/` + `src/Services/MGF.Worker.Adapters.Storage/ProjectBootstrap/`
-  - Archive: `src/Application/MGF.UseCases/UseCases/Operations/ProjectArchive/` + `src/Services/MGF.Worker.Adapters.Storage/ProjectArchive/`
+  - Delivery: `src/Application/MGF.UseCases/UseCases/Operations/ProjectDelivery/` + `src/Services/MGF.Worker/Adapters/Storage/ProjectDelivery/`
+  - Bootstrap: `src/Application/MGF.UseCases/UseCases/Operations/ProjectBootstrap/` + `src/Services/MGF.Worker/Adapters/Storage/ProjectBootstrap/`
+  - Archive: `src/Application/MGF.UseCases/UseCases/Operations/ProjectArchive/` + `src/Services/MGF.Worker/Adapters/Storage/ProjectArchive/`
   - Templates/Contracts: `artifacts/templates/`, `docs/03-contracts/storage/infra-contracts.md`
 - Communicate changes in ROADMAP + README docs index.
 
