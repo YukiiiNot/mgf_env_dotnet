@@ -4,8 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.Data.Options;
+using MGF.Desktop.Views.Shells;
 
-namespace MGF.Desktop.Wpf;
+namespace MGF.Desktop;
 
 public partial class App : System.Windows.Application
 {
@@ -48,4 +49,3 @@ public partial class App : System.Windows.Application
         base.OnExit(e);
     }
 }
-

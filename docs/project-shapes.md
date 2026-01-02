@@ -193,11 +193,17 @@ architecture tests in the same PR.
 - Forbidden: `Docs`, `Controllers`
 - Rule: Worker host layout; adapters live under `Adapters/Storage`.
 
-### MGF.Desktop.Wpf (`src/Ui/MGF.Desktop.Wpf`)
+### MGF.Desktop (`src/Ui/MGF.Desktop`)
 - Allowed: `Hosting`, `Views`, `Properties`
 - Required: `Hosting`, `Views`, `Properties`
 - Forbidden: `Docs`, `Controllers`, `Stores`
-- Rule: UI host; hosting in `Hosting/`, views in `Views/`.
+- Rule: UI host; hosting in `Hosting/`, views under `Views/<Surface>/...` with shared styles/assets in `Views/Shared/`.
+
+### MGF.Website (`src/Ui/MGF.Website`)
+- Allowed: `Hosting`
+- Required: `Hosting`
+- Forbidden: `Docs`, `Controllers`, `Stores`
+- Rule: UI host stub; hosting bootstrap only until the web surface is defined.
 
 ## Known Non-Compliance Backlog (Planned Slices)
 - `MGF.Worker`: target shape is host-only with `Jobs/` (migrate each workflow into UseCases, leave only handlers/wiring).

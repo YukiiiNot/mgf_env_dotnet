@@ -378,9 +378,13 @@ public sealed class ArchitectureRulesTests
                 Allowed: new[] { "Properties", "Hosting", "Jobs", "Adapters" },
                 Required: new[] { "Properties", "Hosting", "Jobs", "Adapters" },
                 Forbidden: new[] { "Docs", "Controllers" }),
-            ["MGF.Desktop.Wpf"] = new ShapeContract(
+            ["MGF.Desktop"] = new ShapeContract(
                 Allowed: new[] { "Hosting", "Views", "Properties" },
                 Required: new[] { "Hosting", "Views", "Properties" },
+                Forbidden: new[] { "Docs", "Controllers", "Stores" }),
+            ["MGF.Website"] = new ShapeContract(
+                Allowed: new[] { "Hosting" },
+                Required: new[] { "Hosting" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
         };
 

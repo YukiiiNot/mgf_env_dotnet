@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -9,7 +9,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace MGF.Desktop.Wpf;
+namespace MGF.Desktop.Views.Shells;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
