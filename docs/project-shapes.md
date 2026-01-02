@@ -131,12 +131,6 @@ architecture tests in the same PR.
 - Forbidden: `Docs`, `Controllers`, `UseCases`
 - Rule: Provider implementation only; keep flat.
 
-### MGF.Integrations.Storage (`src/Integrations/MGF.Integrations.Storage`)
-- Allowed: `RootIntegrity`
-- Required: *(none)*
-- Forbidden: `Docs`, `Controllers`, `UseCases`
-- Rule: Storage/local filesystem adapters only; keep IO out of hosts and UseCases.
-
 ### MGF.Integrations.Email.Gmail (`src/Integrations/MGF.Integrations.Email.Gmail`)
 - Allowed: *(none)*
 - Required: *(none)*
@@ -166,6 +160,12 @@ architecture tests in the same PR.
 - Required: `Composition`
 - Forbidden: `Docs`, `Senders`, `Integrations`
 - Rule: Composition/registry only; no provider logic.
+
+### MGF.Storage (`src/Platform/MGF.Storage`)
+- Allowed: `RootIntegrity`
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Storage/local filesystem adapters only; keep IO out of hosts and UseCases.
 
 ### MGF.FolderProvisioning (`src/Platform/MGF.FolderProvisioning`)
 - Allowed: `Provisioning`

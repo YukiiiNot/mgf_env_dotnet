@@ -8,6 +8,7 @@ public sealed class ArchitectureRulesTests
     private static readonly string SrcRoot = Path.Combine(RepoRoot, "src");
     private static readonly string DocsRoot = Path.Combine(RepoRoot, "docs");
     private static readonly string ToolsRoot = Path.Combine(RepoRoot, "tools");
+    private static readonly string IntegrationsRoot = Path.Combine(SrcRoot, "Integrations");
 
     [Fact]
     public void UseCases_DoNotReference_Data_Or_Ef_Npgsql()
@@ -112,6 +113,31 @@ public sealed class ArchitectureRulesTests
 
         var projectFiles = Directory.GetFiles(ToolsRoot, "*.csproj", SearchOption.AllDirectories);
         Assert.Empty(projectFiles);
+    }
+
+    [Fact]
+    public void Integrations_Are_Vendor_Specific()
+    {
+        if (!Directory.Exists(IntegrationsRoot))
+        {
+            return;
+        }
+
+        var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "MGF.Integrations.Dropbox",
+            "MGF.Integrations.Square",
+            "MGF.Integrations.Email.Gmail",
+            "MGF.Integrations.Email.Smtp"
+        };
+
+        var projectPaths = Directory.GetFiles(IntegrationsRoot, "*.csproj", SearchOption.AllDirectories);
+        foreach (var projectPath in projectPaths)
+        {
+            var projectDir = Path.GetDirectoryName(projectPath) ?? throw new InvalidOperationException(projectPath);
+            var projectName = Path.GetFileName(projectDir);
+            Assert.Contains(projectName, allowed);
+        }
     }
 
     [Fact]
@@ -306,10 +332,6 @@ public sealed class ArchitectureRulesTests
                 Allowed: Array.Empty<string>(),
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
-            ["MGF.Integrations.Storage"] = new ShapeContract(
-                Allowed: new[] { "RootIntegrity" },
-                Required: Array.Empty<string>(),
-                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Integrations.Email.Gmail"] = new ShapeContract(
                 Allowed: Array.Empty<string>(),
                 Required: Array.Empty<string>(),
@@ -330,6 +352,10 @@ public sealed class ArchitectureRulesTests
                 Allowed: new[] { "Composition", "Models", "Registry" },
                 Required: new[] { "Composition" },
                 Forbidden: new[] { "Docs", "Senders", "Integrations" }),
+            ["MGF.Storage"] = new ShapeContract(
+                Allowed: new[] { "RootIntegrity" },
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.FolderProvisioning"] = new ShapeContract(
                 Allowed: new[] { "Provisioning" },
                 Required: new[] { "Provisioning" },

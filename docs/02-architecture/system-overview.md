@@ -9,6 +9,7 @@ This repo hosts MGF's internal API, worker, desktop app, and supporting tools fo
 - `src/DevTools/*` and `src/Operations/*` - CLIs for migrations, provisioning, delivery, and audits.
 - `src/Platform/MGF.Email` - email composition/registry used by Worker and ops tools (templates copied by hosts).
 - `src/Platform/MGF.FolderProvisioning` - provisioning engine (template planning/execution) with replaceable policy rules.
+- `src/Platform/MGF.Storage` - storage/local filesystem adapters (RootIntegrity executor).
 - `src/Data/MGF.Data` - shared data access, configuration, and EF model.
 - `src/Integrations/MGF.Integrations.Email.*` - provider-specific email senders (Gmail, SMTP).
 - `src/Integrations/MGF.Integrations.*` - external API adapters (Dropbox, etc.).

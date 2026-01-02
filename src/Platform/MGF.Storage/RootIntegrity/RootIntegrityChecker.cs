@@ -1,4 +1,4 @@
-namespace MGF.Integrations.Storage.RootIntegrity;
+namespace MGF.Storage.RootIntegrity;
 
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;

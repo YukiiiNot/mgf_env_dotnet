@@ -4,8 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>MGF.Integrations.Storage</AssemblyName>
-    <RootNamespace>MGF.Integrations.Storage</RootNamespace>
+    <AssemblyName>MGF.Storage</AssemblyName>
+    <RootNamespace>MGF.Storage</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

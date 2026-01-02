@@ -1,5 +1,5 @@
 using MGF.Contracts.Abstractions.RootIntegrity;
-using MGF.Integrations.Storage.RootIntegrity;
+using MGF.Storage.RootIntegrity;
 
 public sealed class RootIntegrityPlannerTests
 {

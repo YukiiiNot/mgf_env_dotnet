@@ -10,7 +10,7 @@ using MGF.Integrations.Dropbox;
 using MGF.Integrations.Email.Gmail;
 using MGF.Integrations.Email.Smtp;
 using MGF.Integrations.Square;
-using MGF.Integrations.Storage.RootIntegrity;
+using MGF.Storage.RootIntegrity;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 using MGF.UseCases.Operations.RootIntegrity.RunRootIntegrity;
