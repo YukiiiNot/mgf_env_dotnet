@@ -5,6 +5,7 @@ using MGF.Contracts.Abstractions;
 using MGF.Contracts.Abstractions.Integrations.Square;
 using MGF.Contracts.Abstractions.ProjectBootstrap;
 using MGF.Contracts.Abstractions.Operations.Jobs;
+using MGF.Contracts.Abstractions.Operations.People;
 using MGF.Contracts.Abstractions.Operations.Projects;
 using MGF.Contracts.Abstractions.Operations.StorageRoots;
 using MGF.Contracts.Abstractions.Projects;
@@ -46,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectBootstrapStore, ProjectBootstrapStore>();
         services.AddScoped<IProjectCreationStore, ProjectCreationStore>();
         services.AddScoped<IJobOpsStore, JobOpsStore>();
+        services.AddScoped<IPeopleOpsStore, PeopleOpsStore>();
         services.AddScoped<IProjectOpsStore, ProjectOpsStore>();
         services.AddScoped<IStorageRootContractStore, StorageRootContractStore>();
 

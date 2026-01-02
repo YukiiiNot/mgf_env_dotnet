@@ -5,6 +5,7 @@ using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
 using MGF.UseCases.Integrations.Square.IngestWebhook;
+using MGF.UseCases.Operations.People.ListPeople;
 using MGF.UseCases.Projects.CreateProject;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +27,7 @@ builder.Services.AddScoped<JobsService>();
 builder.Services.AddScoped<ProjectsService>();
 builder.Services.AddScoped<ICreateProjectUseCase, CreateProjectUseCase>();
 builder.Services.AddScoped<IIngestSquareWebhookUseCase, IngestSquareWebhookUseCase>();
+builder.Services.AddScoped<IListPeopleUseCase, ListPeopleUseCase>();
 builder.Services.AddSingleton<ISquareWebhookVerifier, SquareWebhookVerifier>();
 
 var app = builder.Build();

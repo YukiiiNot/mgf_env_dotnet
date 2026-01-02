@@ -18,6 +18,7 @@ This repo hosts MGF's internal API, worker, desktop app, and supporting tools fo
 Worker/API/CLI -> UseCases -> Contracts -> Data/Integrations (CLIs call UseCases; do not reference service hosts).
 Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Data stores + `IProjectBootstrapProvisioningGateway` (provisioning IO).
 Square webhooks: API -> `IIngestSquareWebhookUseCase` -> Contracts store -> Data.
+People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
 
 ## Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.

@@ -28,6 +28,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 - Data stays the single owner of persistence and migrations.
 - Integrations isolate external APIs and adapters behind interfaces.
 - Webhook controllers validate/parse requests, then call use-cases; persistence lives behind Contracts/Data.
+- API read endpoints (e.g., people listing) should call use-cases that depend on Contracts stores.
 
 ## Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business workflows. See [../project-shapes.md](../project-shapes.md) for
