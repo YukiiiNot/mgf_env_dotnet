@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Contracts.Abstractions.Email;
 using MGF.Domain.Entities;
-using MGF.Data.Abstractions;
+using MGF.Contracts.Abstractions.Integrations.Square;
 using MGF.Data.Data;
 using MGF.Data.Stores.Counters;
 using MGF.Data.Stores.Delivery;

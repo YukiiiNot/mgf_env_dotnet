@@ -1,8 +1,14 @@
-namespace MGF.Data.Abstractions;
+namespace MGF.Contracts.Abstractions.Integrations.Square;
 
 public interface ISquareWebhookStore
 {
     Task<int> InsertEventAsync(SquareWebhookEventRecord record, CancellationToken cancellationToken = default);
+
+    Task<int> InsertEventAndEnqueueJobAsync(
+        SquareWebhookEventRecord record,
+        string jobId,
+        string payloadJson,
+        CancellationToken cancellationToken = default);
 
     Task EnqueueProcessingJobAsync(
         string jobId,

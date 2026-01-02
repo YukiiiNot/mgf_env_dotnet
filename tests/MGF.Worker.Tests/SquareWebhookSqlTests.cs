@@ -1,6 +1,6 @@
 namespace MGF.Worker.Tests;
 
-using MGF.Data.Abstractions;
+using MGF.Contracts.Abstractions.Integrations.Square;
 using MGF.Data.Data;
 
 public sealed class SquareWebhookSqlTests

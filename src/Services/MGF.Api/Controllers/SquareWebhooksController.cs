@@ -4,12 +4,9 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using MGF.Api.Square;
-using MGF.Domain.Entities;
-using MGF.Data.Data;
-using MGF.Data.Abstractions;
+using MGF.UseCases.Integrations.Square.IngestWebhook;
 
 [ApiController]
 [Route("webhooks/square")]
@@ -19,24 +16,21 @@ public sealed class SquareWebhooksController : ControllerBase
     private const string SignatureHeaderName = "x-square-hmacsha256-signature";
     private const string LegacySignatureHeaderName = "x-square-signature";
 
-    private readonly AppDbContext db;
-    private readonly ISquareWebhookStore webhookStore;
     private readonly IConfiguration configuration;
     private readonly ISquareWebhookVerifier verifier;
+    private readonly IIngestSquareWebhookUseCase ingestUseCase;
     private readonly ILogger<SquareWebhooksController> logger;
 
     public SquareWebhooksController(
-        AppDbContext db,
-        ISquareWebhookStore webhookStore,
         IConfiguration configuration,
         ISquareWebhookVerifier verifier,
+        IIngestSquareWebhookUseCase ingestUseCase,
         ILogger<SquareWebhooksController> logger
     )
     {
-        this.db = db;
-        this.webhookStore = webhookStore;
         this.configuration = configuration;
         this.verifier = verifier;
+        this.ingestUseCase = ingestUseCase;
         this.logger = logger;
     }
 
@@ -142,44 +136,17 @@ public sealed class SquareWebhooksController : ControllerBase
 
             var payloadJson = Encoding.UTF8.GetString(bodyBytes);
 
-            var insertedEventCount = 0;
+            var ingestResult = await ingestUseCase.ExecuteAsync(
+                new IngestSquareWebhookRequest(
+                    SquareEventId: squareEventId,
+                    EventType: eventType,
+                    ObjectType: objectType,
+                    ObjectId: objectId,
+                    LocationId: locationId,
+                    PayloadJson: payloadJson),
+                cancellationToken);
 
-            await db.Database.OpenConnectionAsync(cancellationToken);
-            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-
-            try
-            {
-                insertedEventCount = await webhookStore.InsertEventAsync(
-                    new SquareWebhookEventRecord(
-                        squareEventId,
-                        eventType,
-                        objectType,
-                        objectId,
-                        locationId,
-                        payloadJson),
-                    cancellationToken);
-
-                if (insertedEventCount > 0)
-                {
-                    var jobId = EntityIds.NewWithPrefix("job");
-                    var jobPayloadJson = JsonSerializer.Serialize(new { square_event_id = squareEventId });
-
-                    await webhookStore.EnqueueProcessingJobAsync(jobId, jobPayloadJson, squareEventId, cancellationToken);
-                }
-
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
-            finally
-            {
-                await db.Database.CloseConnectionAsync();
-            }
-
-            if (insertedEventCount == 0)
+            if (ingestResult.InsertedEventCount == 0)
             {
                 logger.LogInformation(
                     "MGF.Api: Square webhook duplicate ignored (event_id={SquareEventId}, type={EventType})",

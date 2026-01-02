@@ -1,7 +1,7 @@
 namespace MGF.Data.Data;
 
 using Microsoft.EntityFrameworkCore;
-using MGF.Data.Abstractions;
+using MGF.Contracts.Abstractions.Integrations.Square;
 
 public sealed class SquareWebhookStore : ISquareWebhookStore
 {
@@ -17,6 +17,42 @@ public sealed class SquareWebhookStore : ISquareWebhookStore
         return db.Database.ExecuteSqlInterpolatedAsync(
             SquareWebhookSql.BuildInsertEventCommand(record),
             cancellationToken);
+    }
+
+    public async Task<int> InsertEventAndEnqueueJobAsync(
+        SquareWebhookEventRecord record,
+        string jobId,
+        string payloadJson,
+        CancellationToken cancellationToken = default)
+    {
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var insertedEventCount = await db.Database.ExecuteSqlInterpolatedAsync(
+                SquareWebhookSql.BuildInsertEventCommand(record),
+                cancellationToken);
+
+            if (insertedEventCount > 0)
+            {
+                await db.Database.ExecuteSqlInterpolatedAsync(
+                    SquareWebhookSql.BuildEnqueueProcessingJobCommand(jobId, payloadJson, record.SquareEventId),
+                    cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return insertedEventCount;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
     }
 
     public Task EnqueueProcessingJobAsync(

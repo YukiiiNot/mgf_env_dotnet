@@ -27,6 +27,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 - Services stay thin: hosting, composition root, and transport concerns only.
 - Data stays the single owner of persistence and migrations.
 - Integrations isolate external APIs and adapters behind interfaces.
+- Webhook controllers validate/parse requests, then call use-cases; persistence lives behind Contracts/Data.
 
 ## Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business workflows. See [../project-shapes.md](../project-shapes.md) for
