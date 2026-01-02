@@ -1,1 +1,0 @@
-docs/persistence-patterns.md
