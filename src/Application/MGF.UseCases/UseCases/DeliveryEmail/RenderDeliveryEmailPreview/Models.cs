@@ -2,7 +2,7 @@ namespace MGF.UseCases.DeliveryEmail.RenderDeliveryEmailPreview;
 
 using MGF.Contracts.Abstractions.Email;
 using MGF.Email.Models;
-using MGF.Provisioning;
+using MGF.FolderProvisioning;
 
 public sealed record RenderDeliveryEmailPreviewRequest(
     ProvisioningTokens Tokens,
@@ -17,3 +17,4 @@ public sealed record RenderDeliveryEmailPreviewRequest(
 
 public sealed record RenderDeliveryEmailPreviewResult(
     EmailMessage Message);
+

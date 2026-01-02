@@ -1,7 +1,7 @@
 namespace MGF.Email.Composition;
 
 using MGF.Email.Models;
-using MGF.Provisioning;
+using MGF.FolderProvisioning;
 
 public sealed record DeliveryReadyEmailContext(
     ProvisioningTokens Tokens,
@@ -13,4 +13,5 @@ public sealed record DeliveryReadyEmailContext(
     string? ReplyTo,
     string? LogoUrl,
     string? FromName);
+
 

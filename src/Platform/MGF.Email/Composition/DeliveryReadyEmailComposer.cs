@@ -2,7 +2,7 @@ namespace MGF.Email.Composition;
 
 using MGF.Contracts.Abstractions.Email;
 using MGF.Email.Models;
-using MGF.Provisioning;
+using MGF.FolderProvisioning;
 
 public sealed class DeliveryReadyEmailComposer : IEmailComposer
 {
@@ -39,3 +39,4 @@ public sealed class DeliveryReadyEmailComposer : IEmailComposer
         return $"Your deliverables are ready \u2014 {code} {name}";
     }
 }
+

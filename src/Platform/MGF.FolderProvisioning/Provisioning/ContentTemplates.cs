@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace MGF.Provisioning;
+namespace MGF.FolderProvisioning;
 
 public static class ContentTemplates
 {
@@ -35,4 +35,5 @@ public static class ContentTemplates
         return false;
     }
 }
+
 

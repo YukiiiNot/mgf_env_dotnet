@@ -1,4 +1,4 @@
-namespace MGF.Provisioning;
+namespace MGF.FolderProvisioning;
 
 public static class PathSafety
 {
@@ -49,4 +49,5 @@ public static class PathSafety
         }
     }
 }
+
 

@@ -1,4 +1,4 @@
-namespace MGF.Provisioning.Tests;
+namespace MGF.FolderProvisioning.Tests;
 
 public sealed class ProvisionerManifestTests
 {
@@ -100,4 +100,5 @@ public sealed class ProvisionerManifestTests
         throw new InvalidOperationException("Could not locate repo root for schema path.");
     }
 }
+
 

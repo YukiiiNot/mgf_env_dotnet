@@ -9,9 +9,9 @@ This document is the canonical source for repo structure conventions. If structu
 - Services: runtime hosts (API, Worker) and composition roots.
 - Data: persistence, EF model/config, migrations, and stores.
 - Integrations: external adapters and API clients.
-- Platform: shared runtime infrastructure and reusable engines.
+- Platform: shared runtime infrastructure and reusable engines (e.g., MGF.FolderProvisioning = folder topology provisioning engine for storage providers (Dropbox/NAS/LucidLink)).
 - Operations: operational CLIs (migration, bootstrap, delivery); CLI workflows call UseCases, not service hosts.
-- DevTools: dev-only utilities and audits.
+- DevTools: dev-only utilities and audits (e.g., dev secrets, migrations info, legacy audit).
 - Ui: desktop/web UI hosts.
 
 ## Naming conventions
@@ -24,6 +24,11 @@ This document is the canonical source for repo structure conventions. If structu
 ## Use-case layout (MGF.UseCases)
 - Use-cases live under `src/Application/MGF.UseCases/UseCases/<Area>/<UseCaseName>/`.
 - Each use-case folder includes `I<UseCaseName>UseCase.cs`, `<UseCaseName>UseCase.cs`, `Models.cs`, and optional `Errors.cs`.
+
+## Data access patterns (Repositories vs Stores)
+- Repositories are the default EF-backed access pattern for domain aggregates.
+- Stores are narrow, explicit seams for procedural/atomic/JSON patch/bulk operations and for quarantining raw SQL.
+- See `docs/persistence-patterns.md` for the detailed checklist.
 
 ## Email capability layout
 - Platform composition/registry + profile resolution: `src/Platform/MGF.Email`.
@@ -52,3 +57,4 @@ Do not create a new project just to group files; use folders and namespaces firs
 - Contracts remain host-agnostic (no Configuration/Options/DI/Hosting).
 - No DevTools dependencies from production projects.
 - README.md files outside `/docs` are signposts only (<=10 lines, docs links only).
+

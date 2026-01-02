@@ -1,4 +1,4 @@
-namespace MGF.Provisioning.Policy;
+namespace MGF.FolderProvisioning.Policy;
 
 public interface IProvisioningPolicy
 {
@@ -8,3 +8,4 @@ public interface IProvisioningPolicy
 
     string ManifestFolderRelativePath { get; }
 }
+

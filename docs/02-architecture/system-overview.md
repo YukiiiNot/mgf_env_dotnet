@@ -8,7 +8,7 @@ This repo hosts MGF's internal API, worker, desktop app, and supporting tools fo
 - `src/Ui/MGF.Desktop.Wpf` - desktop ops console (early stage).
 - `src/DevTools/*` and `src/Operations/*` - CLIs for migrations, provisioning, delivery, and audits.
 - `src/Platform/MGF.Email` - email composition/registry used by Worker and ops tools (templates copied by hosts).
-- `src/Platform/MGF.Provisioning` - provisioning engine (template planning/execution) with replaceable policy rules.
+- `src/Platform/MGF.FolderProvisioning` - provisioning engine (template planning/execution) with replaceable policy rules.
 - `src/Data/MGF.Data` - shared data access, configuration, and EF model.
 - `src/Integrations/MGF.Integrations.Email.*` - provider-specific email senders (Gmail, SMTP).
 - `src/Integrations/MGF.Integrations.*` - external API adapters (Dropbox, etc.).
@@ -35,5 +35,6 @@ Does not belong here: DbContext, Dropbox SDK, SMTP client.
 - Persistence patterns: [../persistence-patterns.md](../persistence-patterns.md)
 - Runbooks: [../05-runbooks/repo-workflow.md](../05-runbooks/repo-workflow.md)
 - Contracts index: [../03-contracts/](../03-contracts/)
+
 
 

@@ -1,4 +1,4 @@
-namespace MGF.Provisioning.Tests;
+namespace MGF.FolderProvisioning.Tests;
 
 public sealed class PlannerValidationTests
 {
@@ -37,4 +37,5 @@ public sealed class PlannerValidationTests
         Assert.Contains("Top-level", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 }
+
 

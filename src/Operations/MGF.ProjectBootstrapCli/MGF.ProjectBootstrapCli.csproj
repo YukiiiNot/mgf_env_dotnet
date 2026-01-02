@@ -19,7 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Email\MGF.Email.csproj" />
-    <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.FolderProvisioning\MGF.FolderProvisioning.csproj" />
     <ProjectReference Include="..\..\Services\MGF.Operations.Runtime\MGF.Operations.Runtime.csproj" />
   </ItemGroup>
 
@@ -39,6 +39,7 @@
   </ItemGroup>
 
 </Project>
+
 
 
 

@@ -1,4 +1,4 @@
-using MGF.Provisioning;
+using MGF.FolderProvisioning;
 using MGF.Email.Composition;
 using MGF.Email.Models;
 
@@ -83,4 +83,5 @@ public sealed class EmailTemplateRendererTests
         Assert.Contains("Showing 50 of 55 files.", html, StringComparison.OrdinalIgnoreCase);
     }
 }
+
 

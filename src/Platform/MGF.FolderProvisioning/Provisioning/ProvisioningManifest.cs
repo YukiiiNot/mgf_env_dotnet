@@ -1,7 +1,7 @@
 using System.Text.Json;
 using MGF.Contracts.Abstractions;
 
-namespace MGF.Provisioning;
+namespace MGF.FolderProvisioning;
 
 public sealed class ProvisioningManifest
 {
@@ -51,5 +51,6 @@ public static class ProvisioningManifestWriter
         await fileStore.WriteAllBytesAsync(manifestPath, bytes, cancellationToken);
     }
 }
+
 
 

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using MGF.Provisioning;
+using MGF.FolderProvisioning;
 using MGF.Email.Composition;
 using MGF.Email.Models;
 
@@ -120,4 +120,5 @@ public sealed class EmailTemplateSnapshotTests
         long? SizeBytes,
         DateTimeOffset? LastWriteTimeUtc);
 }
+
 

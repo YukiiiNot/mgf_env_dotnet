@@ -12,7 +12,8 @@
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
     <ProjectReference Include="..\..\Core\MGF.Domain\MGF.Domain.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Email\MGF.Email.csproj" />
-    <ProjectReference Include="..\..\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.FolderProvisioning\MGF.FolderProvisioning.csproj" />
   </ItemGroup>
 
 </Project>
+

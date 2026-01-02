@@ -1,4 +1,4 @@
-namespace MGF.Provisioning.Tests;
+namespace MGF.FolderProvisioning.Tests;
 
 public sealed class TemplateContractTests
 {
@@ -50,4 +50,5 @@ public sealed class TemplateContractTests
         throw new InvalidOperationException("Could not locate repo root for schema path.");
     }
 }
+
 

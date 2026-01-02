@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <AssemblyName>MGF.Provisioning.Tests</AssemblyName>
-    <RootNamespace>MGF.Provisioning.Tests</RootNamespace>
+    <AssemblyName>MGF.FolderProvisioning.Tests</AssemblyName>
+    <RootNamespace>MGF.FolderProvisioning.Tests</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -21,7 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Platform\MGF.Provisioning\MGF.Provisioning.csproj" />
+    <ProjectReference Include="..\..\src\Platform\MGF.FolderProvisioning\MGF.FolderProvisioning.csproj" />
   </ItemGroup>
 
 </Project>
+

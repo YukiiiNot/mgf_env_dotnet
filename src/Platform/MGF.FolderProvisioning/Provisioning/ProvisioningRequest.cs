@@ -1,4 +1,4 @@
-namespace MGF.Provisioning;
+namespace MGF.FolderProvisioning;
 
 public enum ProvisioningMode
 {
@@ -52,4 +52,5 @@ public sealed record ProvisioningTokens(
         };
     }
 }
+
 

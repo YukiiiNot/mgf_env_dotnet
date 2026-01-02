@@ -1,7 +1,7 @@
 using MGF.Contracts.Abstractions;
-using MGF.Provisioning.Policy;
+using MGF.FolderProvisioning.Policy;
 
-namespace MGF.Provisioning;
+namespace MGF.FolderProvisioning;
 
 public sealed class FolderProvisioner
 {
@@ -123,5 +123,6 @@ public sealed class FolderProvisioner
         };
     }
 }
+
 
 

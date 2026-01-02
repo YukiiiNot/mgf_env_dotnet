@@ -2,7 +2,7 @@ namespace MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 
 using System.Text.Json;
 using MGF.Contracts.Abstractions;
-using MGF.Provisioning;
+using MGF.FolderProvisioning;
 
 public sealed class SendDeliveryEmailUseCase : ISendDeliveryEmailUseCase
 {
@@ -495,3 +495,4 @@ public sealed class SendDeliveryEmailUseCase : ISendDeliveryEmailUseCase
         public IReadOnlyList<DeliveryEmailFile> Files { get; init; } = Array.Empty<DeliveryEmailFile>();
     }
 }
+

@@ -1,6 +1,6 @@
-namespace MGF.Provisioning;
+namespace MGF.FolderProvisioning;
 
-using MGF.Provisioning.Policy;
+using MGF.FolderProvisioning.Policy;
 
 public sealed class FolderTemplatePlanner
 {
@@ -129,4 +129,5 @@ public sealed class FolderTemplatePlanner
         }
     }
 }
+
 

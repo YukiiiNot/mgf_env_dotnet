@@ -1,4 +1,4 @@
-namespace MGF.Provisioning.Tests;
+namespace MGF.FolderProvisioning.Tests;
 
 public sealed class TokenExpanderTests
 {
@@ -35,4 +35,5 @@ public sealed class TokenExpanderTests
         Assert.Empty(names);
     }
 }
+
 

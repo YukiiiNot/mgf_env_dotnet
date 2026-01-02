@@ -1,4 +1,4 @@
-﻿# Developer Guide (MGF)
+# Developer Guide (MGF)
 
 This repo favors guardrails, contracts, and runbooks over cleverness.
 
@@ -20,8 +20,8 @@ Keep APIs behind small interfaces so tests can fake them, with Worker calling th
 
 ## Provisioning engine
 
-MGF.Provisioning is the reusable provisioning engine; MGF-specific rules live in
-`src/Platform/MGF.Provisioning/Provisioning/Policy`. See [../02-architecture/provisioning.md](../02-architecture/provisioning.md).
+MGF.FolderProvisioning is the reusable provisioning engine; MGF-specific rules live in
+`src/Platform/MGF.FolderProvisioning/Provisioning/Policy`. See [../02-architecture/provisioning.md](../02-architecture/provisioning.md).
 
 ## Email subsystem
 
@@ -52,3 +52,4 @@ project placement and ownership rules.
 - CLI commands: `src/Operations/MGF.ProjectBootstrapCli/Program.cs` (call UseCases, not hosts)
 - Runbooks: `docs/05-runbooks/`
 - Templates/contracts: `artifacts/templates/` and `docs/03-contracts/storage/infra-contracts.md`
+

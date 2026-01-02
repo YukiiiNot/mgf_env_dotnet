@@ -1,6 +1,6 @@
 namespace MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 
-using MGF.Provisioning;
+using MGF.FolderProvisioning;
 
 public enum DeliveryEmailMode
 {
@@ -43,3 +43,4 @@ public sealed record SendDeliveryEmailResult(
     string? StableFinalLinkUsed,
     bool AuditRecorded,
     string? Error);
+

@@ -1,4 +1,4 @@
-namespace MGF.Provisioning.Tests;
+namespace MGF.FolderProvisioning.Tests;
 
 internal static class TestTemplates
 {
@@ -15,4 +15,5 @@ internal static class TestTemplates
         };
     }
 }
+
 

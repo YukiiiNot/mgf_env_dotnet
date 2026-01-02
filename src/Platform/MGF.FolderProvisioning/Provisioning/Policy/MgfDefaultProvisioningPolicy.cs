@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace MGF.Provisioning.Policy;
+namespace MGF.FolderProvisioning.Policy;
 
 public sealed class MgfDefaultProvisioningPolicy : IProvisioningPolicy
 {
@@ -25,3 +25,4 @@ public sealed class MgfDefaultProvisioningPolicy : IProvisioningPolicy
         }
     }
 }
+

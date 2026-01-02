@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace MGF.Provisioning;
+namespace MGF.FolderProvisioning;
 
 public static class Hashing
 {
@@ -17,4 +17,5 @@ public static class Hashing
         return builder.ToString();
     }
 }
+
 

@@ -1,6 +1,6 @@
-using MGF.Provisioning.Policy;
+using MGF.FolderProvisioning.Policy;
 
-namespace MGF.Provisioning.Tests;
+namespace MGF.FolderProvisioning.Tests;
 
 public sealed class ProvisioningPolicyTests
 {
@@ -31,3 +31,4 @@ public sealed class ProvisioningPolicyTests
         Assert.Equal(expected, policy.ManifestFolderRelativePath);
     }
 }
+
