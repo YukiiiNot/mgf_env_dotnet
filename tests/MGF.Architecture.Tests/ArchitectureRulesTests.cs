@@ -306,6 +306,10 @@ public sealed class ArchitectureRulesTests
                 Allowed: Array.Empty<string>(),
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.Integrations.Storage"] = new ShapeContract(
+                Allowed: new[] { "RootIntegrity" },
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Integrations.Email.Gmail"] = new ShapeContract(
                 Allowed: Array.Empty<string>(),
                 Required: Array.Empty<string>(),
@@ -339,7 +343,7 @@ public sealed class ArchitectureRulesTests
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Worker"] = new ShapeContract(
-                Allowed: new[] { "ProjectArchive", "ProjectBootstrap", "ProjectDelivery", "Properties", "RootIntegrity" },
+                Allowed: new[] { "ProjectArchive", "ProjectBootstrap", "ProjectDelivery", "Properties" },
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers" }),
             ["MGF.Desktop.Wpf"] = new ShapeContract(

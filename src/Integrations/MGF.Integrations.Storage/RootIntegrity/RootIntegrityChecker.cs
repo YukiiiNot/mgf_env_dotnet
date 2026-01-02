@@ -1,12 +1,10 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
+namespace MGF.Integrations.Storage.RootIntegrity;
+
 using System.Text.RegularExpressions;
-using Microsoft.EntityFrameworkCore;
-using MGF.Data.Data;
+using Microsoft.Extensions.Configuration;
+using MGF.Contracts.Abstractions.RootIntegrity;
 
-namespace MGF.Worker.RootIntegrity;
-
-public sealed class RootIntegrityChecker
+public sealed class RootIntegrityChecker : IRootIntegrityExecutor
 {
     private static readonly string[] DefaultAllowedRootFiles = ["desktop.ini"];
     private const int DefaultMaxItems = 500;
@@ -19,11 +17,11 @@ public sealed class RootIntegrityChecker
         this.configuration = configuration;
     }
 
-    public async Task<RootIntegrityResult> RunAsync(
-        AppDbContext db,
+    public Task<RootIntegrityResult> ExecuteAsync(
         RootIntegrityPayload payload,
+        RootIntegrityContract contract,
         string jobId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var startedAt = DateTimeOffset.UtcNow;
         var errors = new List<string>();
@@ -35,28 +33,21 @@ public sealed class RootIntegrityChecker
         if (!IsReportMode(payload.Mode) && !IsRepairMode(payload.Mode))
         {
             errors.Add($"Invalid mode '{payload.Mode}'. Expected 'report' or 'repair'.");
-            return BuildResult(payload, string.Empty, startedAt, errors, warnings, actions, quarantinePlan, guardrailBlocks);
-        }
-
-        var contract = await LoadContractAsync(db, payload.ProviderKey, payload.RootKey, cancellationToken);
-        if (contract is null)
-        {
-            errors.Add($"No storage_root_contracts entry for provider_key={payload.ProviderKey} root_key={payload.RootKey}.");
-            return BuildResult(payload, string.Empty, startedAt, errors, warnings, actions, quarantinePlan, guardrailBlocks);
+            return Task.FromResult(BuildResult(payload, string.Empty, startedAt, errors, warnings, actions, quarantinePlan, guardrailBlocks));
         }
 
         var rootPath = ResolveRootPath(payload.ProviderKey);
         if (string.IsNullOrWhiteSpace(rootPath))
         {
             errors.Add($"Storage root not configured for provider_key={payload.ProviderKey}.");
-            return BuildResult(payload, string.Empty, startedAt, errors, warnings, actions, quarantinePlan, guardrailBlocks);
+            return Task.FromResult(BuildResult(payload, string.Empty, startedAt, errors, warnings, actions, quarantinePlan, guardrailBlocks));
         }
 
         rootPath = Path.GetFullPath(rootPath);
         if (!Directory.Exists(rootPath))
         {
             errors.Add($"Root path does not exist: {rootPath}");
-            return BuildResult(payload, rootPath, startedAt, errors, warnings, actions, quarantinePlan, guardrailBlocks);
+            return Task.FromResult(BuildResult(payload, rootPath, startedAt, errors, warnings, actions, quarantinePlan, guardrailBlocks));
         }
 
         var allowedRootFiles = payload.AllowedRootFiles ?? contract.AllowedRootFiles;
@@ -164,7 +155,7 @@ public sealed class RootIntegrityChecker
             }
         }
 
-        return BuildResult(
+        return Task.FromResult(BuildResult(
             payload,
             rootPath,
             startedAt,
@@ -174,7 +165,7 @@ public sealed class RootIntegrityChecker
             quarantinePlan,
             guardrailBlocks,
             scan
-        );
+        ));
     }
 
     public static bool IsRepairMode(string mode)
@@ -410,90 +401,6 @@ public sealed class RootIntegrityChecker
 
             suffix++;
         }
-    }
-
-    private static async Task<RootIntegrityContract?> LoadContractAsync(
-        AppDbContext db,
-        string providerKey,
-        string rootKey,
-        CancellationToken cancellationToken)
-    {
-        var row = await db.Set<Dictionary<string, object>>("storage_root_contracts")
-            .Where(r =>
-                EF.Property<string>(r, "provider_key") == providerKey
-                && EF.Property<string>(r, "root_key") == rootKey
-                && EF.Property<bool>(r, "is_active"))
-            .Select(r => new
-            {
-                ProviderKey = EF.Property<string>(r, "provider_key"),
-                RootKey = EF.Property<string>(r, "root_key"),
-                ContractKey = EF.Property<string>(r, "contract_key"),
-                Required = EF.Property<JsonElement>(r, "required_folders"),
-                Optional = EF.Property<JsonElement>(r, "optional_folders"),
-                AllowedExtras = EF.Property<JsonElement>(r, "allowed_extras"),
-                AllowedRootFiles = EF.Property<JsonElement>(r, "allowed_root_files"),
-                QuarantineRelpath = EF.Property<string?>(r, "quarantine_relpath"),
-                MaxItems = EF.Property<int?>(r, "max_items"),
-                MaxBytes = EF.Property<long?>(r, "max_bytes"),
-                IsActive = EF.Property<bool>(r, "is_active")
-            })
-            .SingleOrDefaultAsync(cancellationToken);
-
-        if (row is null)
-        {
-            return null;
-        }
-
-        return new RootIntegrityContract(
-            ProviderKey: row.ProviderKey,
-            RootKey: row.RootKey,
-            ContractKey: row.ContractKey,
-            RequiredFolders: ParseStringArray(row.Required),
-            OptionalFolders: ParseStringArray(row.Optional),
-            AllowedExtras: ParseStringArray(row.AllowedExtras),
-            AllowedRootFiles: ParseStringArray(row.AllowedRootFiles),
-            QuarantineRelpath: row.QuarantineRelpath,
-            MaxItems: row.MaxItems,
-            MaxBytes: row.MaxBytes,
-            IsActive: row.IsActive
-        );
-    }
-
-    private static IReadOnlyList<string> ParseStringArray(JsonElement element)
-    {
-        if (element.ValueKind != JsonValueKind.Array)
-        {
-            return Array.Empty<string>();
-        }
-
-        var list = new List<string>();
-        foreach (var item in element.EnumerateArray())
-        {
-            if (item.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(item.GetString()))
-            {
-                list.Add(item.GetString()!);
-            }
-        }
-
-        return list;
-    }
-
-    public static string BuildJobPayloadJson(RootIntegrityPayload payload, RootIntegrityResult result)
-    {
-        var root = JsonSerializer.SerializeToNode(payload, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        }) as JsonObject ?? new JsonObject();
-
-        root["result"] = JsonSerializer.SerializeToNode(result, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        return root.ToJsonString(new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
     }
 
     internal sealed record RootIntegrityScan(

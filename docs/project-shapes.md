@@ -131,6 +131,12 @@ architecture tests in the same PR.
 - Forbidden: `Docs`, `Controllers`, `UseCases`
 - Rule: Provider implementation only; keep flat.
 
+### MGF.Integrations.Storage (`src/Integrations/MGF.Integrations.Storage`)
+- Allowed: `RootIntegrity`
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Storage/local filesystem adapters only; keep IO out of hosts and UseCases.
+
 ### MGF.Integrations.Email.Gmail (`src/Integrations/MGF.Integrations.Email.Gmail`)
 - Allowed: *(none)*
 - Required: *(none)*
@@ -180,7 +186,7 @@ architecture tests in the same PR.
 - Rule: Host entrypoint; keep flat.
 
 ### MGF.Worker (`src/Services/MGF.Worker`)
-- Allowed: `ProjectArchive`, `ProjectBootstrap`, `ProjectDelivery`, `Properties`, `RootIntegrity`
+- Allowed: `ProjectArchive`, `ProjectBootstrap`, `ProjectDelivery`, `Properties`
 - Required: *(none)*
 - Forbidden: `Docs`, `Controllers`
 - Rule: Worker host layout (current shape); workflow folders are temporary (see backlog).

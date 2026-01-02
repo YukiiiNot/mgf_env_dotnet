@@ -9,6 +9,7 @@ using MGF.Contracts.Abstractions.Operations.People;
 using MGF.Contracts.Abstractions.Operations.Projects;
 using MGF.Contracts.Abstractions.Operations.StorageRoots;
 using MGF.Contracts.Abstractions.Projects;
+using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
 using MGF.Data.Data.Repositories;
@@ -19,6 +20,7 @@ using MGF.Data.Stores.Counters;
 using MGF.Data.Stores.Operations;
 using MGF.Data.Stores.Projects;
 using MGF.Data.Stores.ProjectBootstrap;
+using MGF.Data.Stores.RootIntegrity;
 
 namespace MGF.Data;
 
@@ -50,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<IPeopleOpsStore, PeopleOpsStore>();
         services.AddScoped<IProjectOpsStore, ProjectOpsStore>();
         services.AddScoped<IStorageRootContractStore, StorageRootContractStore>();
+        services.AddScoped<IRootIntegrityStore, RootIntegrityStore>();
 
         return services;
     }

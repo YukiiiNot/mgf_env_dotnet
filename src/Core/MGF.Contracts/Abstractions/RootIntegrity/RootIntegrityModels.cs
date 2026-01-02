@@ -1,6 +1,7 @@
-using System.Text.Json;
+namespace MGF.Contracts.Abstractions.RootIntegrity;
 
-namespace MGF.Worker.RootIntegrity;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 public sealed record RootIntegrityPayload(
     string ProviderKey,
@@ -106,6 +107,27 @@ public sealed record RootIntegrityPayload(
         }
 
         return result.Count == 0 ? null : result;
+    }
+}
+
+public static class RootIntegrityPayloadSerializer
+{
+    public static string BuildJobPayloadJson(RootIntegrityPayload payload, RootIntegrityResult result)
+    {
+        var root = JsonSerializer.SerializeToNode(payload, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }) as JsonObject ?? new JsonObject();
+
+        root["result"] = JsonSerializer.SerializeToNode(result, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        return root.ToJsonString(new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
     }
 }
 

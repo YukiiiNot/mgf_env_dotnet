@@ -4,13 +4,16 @@ using MGF.Data.Data;
 using Microsoft.Extensions.Logging;
 using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Contracts.Abstractions.Email;
+using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Email.Composition;
 using MGF.Integrations.Dropbox;
 using MGF.Integrations.Email.Gmail;
 using MGF.Integrations.Email.Smtp;
 using MGF.Integrations.Square;
+using MGF.Integrations.Storage.RootIntegrity;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.UseCases.ProjectBootstrap.BootstrapProject;
+using MGF.UseCases.Operations.RootIntegrity.RunRootIntegrity;
 using MGF.Worker;
 using MGF.Worker.ProjectBootstrap;
 
@@ -59,6 +62,8 @@ builder.Services.AddScoped<IWorkerEmailGateway, WorkerEmailGateway>();
 builder.Services.AddScoped<ISendDeliveryEmailUseCase, SendDeliveryEmailUseCase>();
 builder.Services.AddScoped<IProjectBootstrapProvisioningGateway, ProjectBootstrapProvisioningGateway>();
 builder.Services.AddScoped<IBootstrapProjectUseCase, BootstrapProjectUseCase>();
+builder.Services.AddScoped<IRootIntegrityExecutor, RootIntegrityChecker>();
+builder.Services.AddScoped<IRunRootIntegrityUseCase, RunRootIntegrityUseCase>();
 builder.Services.AddHttpClient<SquareApiClient>();
 builder.Services.AddHostedService<JobWorker>();
 

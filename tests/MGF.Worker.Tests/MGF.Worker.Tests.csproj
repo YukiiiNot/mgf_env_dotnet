@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Services\MGF.Worker\MGF.Worker.csproj" />
+    <ProjectReference Include="..\..\src\Integrations\MGF.Integrations.Storage\MGF.Integrations.Storage.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -8,6 +8,7 @@ using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Contracts.Abstractions.Email;
 using MGF.Domain.Entities;
 using MGF.Contracts.Abstractions.Integrations.Square;
+using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Data.Data;
 using MGF.Data.Stores.Counters;
 using MGF.Data.Stores.Delivery;
@@ -17,9 +18,9 @@ using MGF.Integrations.Square;
 using MGF.Worker.ProjectArchive;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.ProjectDelivery;
-using MGF.Worker.RootIntegrity;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.UseCases.ProjectBootstrap.BootstrapProject;
+using MGF.UseCases.Operations.RootIntegrity.RunRootIntegrity;
 
 public sealed class JobWorker : BackgroundService
 {
@@ -286,7 +287,8 @@ public sealed class JobWorker : BackgroundService
 
             if (string.Equals(job.JobTypeKey, "domain.root_integrity", StringComparison.Ordinal))
             {
-                var succeeded = await HandleRootIntegrityAsync(db, jobQueueStore, job, cancellationToken);
+                var useCase = services.GetRequiredService<IRunRootIntegrityUseCase>();
+                var succeeded = await HandleRootIntegrityAsync(jobQueueStore, job, useCase, cancellationToken);
                 if (succeeded)
                 {
                     await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
@@ -602,9 +604,9 @@ public sealed class JobWorker : BackgroundService
     }
 
     private async Task<bool> HandleRootIntegrityAsync(
-        AppDbContext db,
         IJobQueueStore jobQueueStore,
         ClaimedJob job,
+        IRunRootIntegrityUseCase useCase,
         CancellationToken cancellationToken)
     {
         RootIntegrityPayload payload;
@@ -630,10 +632,12 @@ public sealed class JobWorker : BackgroundService
 
         try
         {
-            var checker = new RootIntegrityChecker(configuration);
-            var result = await checker.RunAsync(db, payload, job.JobId, cancellationToken);
+            var useCaseResult = await useCase.ExecuteAsync(
+                new RunRootIntegrityRequest(payload, job.JobId),
+                cancellationToken);
+            var result = useCaseResult.Result;
 
-            var updatedPayload = RootIntegrityChecker.BuildJobPayloadJson(payload, result);
+            var updatedPayload = RootIntegrityPayloadSerializer.BuildJobPayloadJson(payload, result);
             await UpdateJobPayloadAsync(jobQueueStore, job.JobId, updatedPayload, cancellationToken);
 
             logger.LogInformation(

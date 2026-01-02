@@ -48,7 +48,7 @@ Source: `src/Services/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 - `project.archive`: `ProjectArchivePayload` in `src/Services/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`.
 - `project.delivery`: `ProjectDeliveryPayload` in `src/Services/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`.
 - `project.delivery_email`: `ProjectDeliveryEmailPayload` in `src/Services/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`.
-- `domain.root_integrity`: `RootIntegrityPayload` in `src/Services/MGF.Worker/RootIntegrity/RootIntegrityModels.cs`.
+- `domain.root_integrity`: `RootIntegrityPayload` in `src/Core/MGF.Contracts/Abstractions/RootIntegrity/RootIntegrityModels.cs`.
 - `square.webhook_event.process`: `{ square_event_id }` required; parsed by `JobWorker.TryExtractSquareEventId`.
 - `square.payment.upsert`: `{ square_payment_id }` required; parsed by `JobWorker.ExtractSquarePaymentId`.
 - `square.reconcile.payments`: no payload fields required; behavior is driven by config and reconcile cursor state.
@@ -58,6 +58,6 @@ Source: `src/Services/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 
 ## References
 - Worker dispatch: `src/Services/MGF.Worker/JobWorker.cs`
-- Payload models: `src/Services/MGF.Worker/ProjectBootstrap/ProjectBootstrapModels.cs`, `src/Services/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`, `src/Services/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`, `src/Services/MGF.Worker/RootIntegrity/RootIntegrityModels.cs`
+- Payload models: `src/Services/MGF.Worker/ProjectBootstrap/ProjectBootstrapModels.cs`, `src/Services/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`, `src/Services/MGF.Worker/ProjectDelivery/ProjectDeliveryModels.cs`, `src/Core/MGF.Contracts/Abstractions/RootIntegrity/RootIntegrityModels.cs`
 - Job types seed: `src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs`
 
