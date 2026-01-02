@@ -1,4 +1,4 @@
-namespace MGF.Worker.ProjectDelivery;
+﻿namespace MGF.UseCases.Operations.ProjectDelivery.RunProjectDelivery;
 
 internal static class ProjectDeliveryGuards
 {

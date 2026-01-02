@@ -3,6 +3,7 @@ namespace MGF.Data.Stores.Delivery;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
+using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.Data.Data;
 
 public sealed class ProjectDeliveryStore : IProjectDeliveryStore

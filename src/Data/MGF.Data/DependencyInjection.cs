@@ -8,6 +8,7 @@ using MGF.Contracts.Abstractions.Operations.Jobs;
 using MGF.Contracts.Abstractions.Operations.People;
 using MGF.Contracts.Abstractions.Operations.Projects;
 using MGF.Contracts.Abstractions.Operations.StorageRoots;
+using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.Contracts.Abstractions.Projects;
 using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Data.Configuration;
@@ -42,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IClientRepository, EfClientRepository>();
         services.AddScoped<IPersonRepository, EfPersonRepository>();
         services.AddScoped<IDeliveryEmailData, DeliveryEmailData>();
+        services.AddScoped<IProjectDeliveryData, ProjectDeliveryData>();
         services.AddScoped<ISquareWebhookStore, SquareWebhookStore>();
         services.AddScoped<IJobQueueStore, JobQueueStore>();
         services.AddScoped<ICounterAllocator, CounterAllocator>();

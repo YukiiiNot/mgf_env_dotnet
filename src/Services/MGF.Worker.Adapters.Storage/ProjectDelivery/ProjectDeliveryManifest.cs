@@ -1,4 +1,6 @@
-namespace MGF.Worker.ProjectDelivery;
+﻿namespace MGF.Worker.Adapters.Storage.ProjectDelivery;
+
+using MGF.Contracts.Abstractions.ProjectDelivery;
 
 internal sealed record DeliveryManifest
 {

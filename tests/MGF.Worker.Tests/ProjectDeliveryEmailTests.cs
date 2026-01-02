@@ -1,11 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using MGF.Data.Stores.Delivery;
 using MGF.Contracts.Abstractions.Email;
-using MGF.FolderProvisioning;
-using MGF.Email.Models;
+using MGF.Contracts.Abstractions.ProjectDelivery;
+using MGF.Data.Stores.Delivery;
 using MGF.Email.Composition;
-using MGF.Worker.ProjectDelivery;
+using MGF.Email.Models;
+using MGF.FolderProvisioning;
+using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
 
@@ -25,7 +26,7 @@ public sealed class ProjectDeliveryEmailTests
             new DeliveryFileSummary("notes.pdf", 20, DateTimeOffset.UtcNow)
         };
 
-        var body = ProjectDeliverer.BuildDeliveryEmailBody(
+        var body = ProjectDeliveryExecutor.BuildDeliveryEmailBody(
             "https://dropbox.test/final",
             "v2",
             new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),
@@ -45,7 +46,7 @@ public sealed class ProjectDeliveryEmailTests
             .Select(index => new DeliveryFileSummary($"file_{index}.mp4", 10, DateTimeOffset.UtcNow))
             .ToArray();
 
-        var html = ProjectDeliverer.BuildDeliveryEmailBodyHtml(
+        var html = ProjectDeliveryExecutor.BuildDeliveryEmailBodyHtml(
             "https://dropbox.test/final",
             "v1",
             new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),

@@ -1,5 +1,6 @@
+using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.FolderProvisioning;
-using MGF.Worker.ProjectDelivery;
+using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
 
@@ -12,7 +13,7 @@ public sealed class ProjectDeliveryManifestTests
         var stablePath = Path.Combine("04_Client_Deliveries", "Client", "MGF25-TEST_Sample", "01_Deliverables", "Final");
         var versionPath = Path.Combine(stablePath, "v1");
 
-        var manifest = ProjectDeliverer.BuildDeliveryManifest(
+        var manifest = ProjectDeliveryExecutor.BuildDeliveryManifest(
             "prj_test",
             tokens,
             @"C:\lucidlink\Final_Masters",
@@ -20,7 +21,7 @@ public sealed class ProjectDeliveryManifestTests
             versionPath,
             "v1",
             DateTimeOffset.UtcNow.AddMonths(3),
-            Array.Empty<ProjectDeliverer.DeliveryFile>(),
+            Array.Empty<DeliveryFile>(),
             "https://dropbox.test/share",
             apiStablePath: "/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final",
             apiVersionPath: "/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1");

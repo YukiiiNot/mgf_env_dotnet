@@ -10,11 +10,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.Email\MGF.Email.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.FolderProvisioning\MGF.FolderProvisioning.csproj" />
   </ItemGroup>
 

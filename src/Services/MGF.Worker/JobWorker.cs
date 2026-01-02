@@ -8,19 +8,19 @@ using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Contracts.Abstractions.Email;
 using MGF.Domain.Entities;
 using MGF.Contracts.Abstractions.Integrations.Square;
+using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.Contracts.Abstractions.ProjectBootstrap;
 using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Data.Data;
 using MGF.Data.Stores.Counters;
-using MGF.Data.Stores.Delivery;
 using MGF.Data.Stores.Jobs;
 using MGF.Email.Models;
 using MGF.Integrations.Square;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
+using MGF.UseCases.Operations.ProjectDelivery.RunProjectDelivery;
 using MGF.UseCases.Operations.ProjectBootstrap.BootstrapProject;
 using MGF.UseCases.Operations.RootIntegrity.RunRootIntegrity;
 using MGF.Worker.ProjectArchive;
-using MGF.Worker.ProjectDelivery;
 
 public sealed class JobWorker : BackgroundService
 {
@@ -74,7 +74,6 @@ public sealed class JobWorker : BackgroundService
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var jobQueueStore = scope.ServiceProvider.GetRequiredService<IJobQueueStore>();
                 var counterAllocator = scope.ServiceProvider.GetRequiredService<ICounterAllocator>();
-                var deliveryStore = scope.ServiceProvider.GetRequiredService<IProjectDeliveryStore>();
 
                 var reaped = await ReapStaleRunningJobsAsync(jobQueueStore, stoppingToken);
                 if (reaped > 0)
@@ -100,7 +99,6 @@ public sealed class JobWorker : BackgroundService
                     db,
                     jobQueueStore,
                     counterAllocator,
-                    deliveryStore,
                     job,
                     scope.ServiceProvider,
                     stoppingToken);
@@ -183,7 +181,6 @@ public sealed class JobWorker : BackgroundService
         AppDbContext db,
         IJobQueueStore jobQueueStore,
         ICounterAllocator counterAllocator,
-        IProjectDeliveryStore deliveryStore,
         ClaimedJob job,
         IServiceProvider services,
         CancellationToken cancellationToken)
@@ -254,12 +251,11 @@ public sealed class JobWorker : BackgroundService
 
             if (string.Equals(job.JobTypeKey, "project.delivery", StringComparison.Ordinal))
             {
+                var useCase = services.GetRequiredService<IRunProjectDeliveryUseCase>();
                 var succeeded = await HandleProjectDeliveryAsync(
-                    db,
                     jobQueueStore,
-                    deliveryStore,
+                    useCase,
                     job,
-                    services,
                     cancellationToken);
                 if (succeeded)
                 {
@@ -272,9 +268,7 @@ public sealed class JobWorker : BackgroundService
             {
                 var useCase = services.GetRequiredService<ISendDeliveryEmailUseCase>();
                 var succeeded = await HandleProjectDeliveryEmailAsync(
-                    db,
                     jobQueueStore,
-                    deliveryStore,
                     job,
                     useCase,
                     cancellationToken);
@@ -466,17 +460,15 @@ public sealed class JobWorker : BackgroundService
     }
 
     private async Task<bool> HandleProjectDeliveryAsync(
-        AppDbContext db,
         IJobQueueStore jobQueueStore,
-        IProjectDeliveryStore deliveryStore,
+        IRunProjectDeliveryUseCase useCase,
         ClaimedJob job,
-        IServiceProvider services,
         CancellationToken cancellationToken)
     {
         ProjectDeliveryPayload payload;
         try
         {
-            payload = ProjectDeliverer.ParsePayload(job.PayloadJson);
+            payload = ProjectDeliveryPayload.Parse(job.PayloadJson);
         }
         catch (Exception ex)
         {
@@ -493,33 +485,23 @@ public sealed class JobWorker : BackgroundService
 
         try
         {
-            var shareLinkClient = services.GetRequiredService<IDropboxShareLinkClient>();
-            var accessTokenProvider = services.GetRequiredService<IDropboxAccessTokenProvider>();
-            var dropboxFilesClient = services.GetRequiredService<IDropboxFilesClient>();
-            var emailSender = services.GetRequiredService<IEmailSender>();
-            var deliverer = new ProjectDeliverer(
-                configuration,
-                shareLinkClient,
-                accessTokenProvider,
-                dropboxFilesClient,
-                emailSender,
-                logger: logger);
-            var result = await deliverer.RunAsync(db, deliveryStore, payload, job.JobId, cancellationToken);
+            var request = new RunProjectDeliveryRequest(payload, job.JobId);
+            var result = await useCase.ExecuteAsync(request, cancellationToken);
 
             logger.LogInformation(
                 "MGF.Worker: project.delivery completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
-                result.JobId,
-                result.ProjectId,
-                result.Domains.Count,
-                result.HasErrors
+                result.Result.JobId,
+                result.Result.ProjectId,
+                result.Result.Domains.Count,
+                result.Result.HasErrors
             );
 
-            if (result.HasErrors)
+            if (result.Result.HasErrors)
             {
                 await MarkFailedAsync(
                     jobQueueStore,
                     job,
-                    new InvalidOperationException(result.LastError ?? "project.delivery completed with errors."),
+                    new InvalidOperationException(result.Result.LastError ?? "project.delivery completed with errors."),
                     cancellationToken
                 );
                 return false;
@@ -541,9 +523,7 @@ public sealed class JobWorker : BackgroundService
     }
 
     private async Task<bool> HandleProjectDeliveryEmailAsync(
-        AppDbContext db,
         IJobQueueStore jobQueueStore,
-        IProjectDeliveryStore deliveryStore,
         ClaimedJob job,
         ISendDeliveryEmailUseCase useCase,
         CancellationToken cancellationToken)
@@ -551,7 +531,7 @@ public sealed class JobWorker : BackgroundService
         ProjectDeliveryEmailPayload payload;
         try
         {
-            payload = ProjectDeliveryEmailer.ParsePayload(job.PayloadJson);
+            payload = ProjectDeliveryEmailPayload.Parse(job.PayloadJson);
         }
         catch (Exception ex)
         {

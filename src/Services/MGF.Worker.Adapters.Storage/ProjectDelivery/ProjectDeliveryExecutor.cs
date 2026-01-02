@@ -1,23 +1,19 @@
-namespace MGF.Worker.ProjectDelivery;
+namespace MGF.Worker.Adapters.Storage.ProjectDelivery;
 
-using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MGF.Domain.Entities;
-using MGF.Data.Data;
-using MGF.Data.Stores.Delivery;
+using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Contracts.Abstractions.Email;
+using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.Email.Composition;
 using MGF.Email.Models;
 using MGF.Email.Registry;
 using MGF.FolderProvisioning;
 using MGF.Worker.Adapters.Storage.ProjectBootstrap;
-using MGF.Contracts.Abstractions.Dropbox;
 
-public sealed class ProjectDeliverer
+public sealed class ProjectDeliveryExecutor : IProjectDeliveryExecutor
 {
     private const int DefaultRetentionMonths = 3;
     private const int ShareLinkTtlDays = 7;
@@ -29,11 +25,6 @@ public sealed class ProjectDeliverer
     {
         ".mp4", ".mov", ".mxf", ".wav", ".mp3", ".m4a", ".aif", ".aiff", ".srt", ".vtt", ".xml", ".pdf"
     };
-    private static readonly JsonSerializerOptions DeliveryJsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-
     private readonly IConfiguration configuration;
     private readonly LocalFileStore fileStore = new();
     private readonly FolderProvisioner provisioner;
@@ -43,7 +34,7 @@ public sealed class ProjectDeliverer
     private readonly EmailService emailService;
     private readonly ILogger? logger;
 
-    public ProjectDeliverer(
+    public ProjectDeliveryExecutor(
         IConfiguration configuration,
         IDropboxShareLinkClient shareLinkClient,
         IDropboxAccessTokenProvider accessTokenProvider,
@@ -59,259 +50,6 @@ public sealed class ProjectDeliverer
         emailService = new EmailService(configuration, emailSender, logger: logger);
         this.logger = logger;
     }
-
-    public async Task<ProjectDeliveryRunResult> RunAsync(
-        AppDbContext db,
-        IProjectDeliveryStore deliveryStore,
-        ProjectDeliveryPayload payload,
-        string jobId,
-        CancellationToken cancellationToken)
-    {
-        var project = await db.Projects.AsNoTracking()
-            .SingleOrDefaultAsync(p => p.ProjectId == payload.ProjectId, cancellationToken);
-
-        if (project is null)
-        {
-            throw new InvalidOperationException($"Project not found: {payload.ProjectId}");
-        }
-
-        var startedAt = DateTimeOffset.UtcNow;
-
-        if (!payload.AllowNonReal && !string.Equals(project.DataProfile, "real", StringComparison.OrdinalIgnoreCase))
-        {
-            var blocked = BuildBlockedResults(
-                "blocked_non_real",
-                $"Project data_profile='{project.DataProfile}' is not eligible for delivery."
-            );
-
-            var blockedResult = new ProjectDeliveryRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
-                StartedAtUtc: startedAt,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                SourcePath: null,
-                DestinationPath: null,
-                ApiStablePath: null,
-                ApiVersionPath: null,
-                VersionLabel: null,
-                RetentionUntilUtc: null,
-                Files: Array.Empty<DeliveryFileSummary>(),
-                Domains: blocked,
-                HasErrors: true,
-                LastError: $"Project data_profile='{project.DataProfile}' is not eligible for delivery.",
-                ShareStatus: null,
-                ShareUrl: null,
-                ShareId: null,
-                ShareError: null,
-                Email: null
-            );
-
-            await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
-            return blockedResult;
-        }
-
-        if (!ProjectDeliveryGuards.TryValidateStart(project.StatusKey, payload.Force, out var statusError, out var alreadyDelivering))
-        {
-            var rootState = alreadyDelivering ? "blocked_already_delivering" : "blocked_status_not_ready";
-            var blocked = BuildBlockedResults(rootState, statusError ?? "Project status not eligible for delivery.");
-
-            var blockedResult = new ProjectDeliveryRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
-                StartedAtUtc: startedAt,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                SourcePath: null,
-                DestinationPath: null,
-                ApiStablePath: null,
-                ApiVersionPath: null,
-                VersionLabel: null,
-                RetentionUntilUtc: null,
-                Files: Array.Empty<DeliveryFileSummary>(),
-                Domains: blocked,
-                HasErrors: true,
-                LastError: statusError,
-                ShareStatus: null,
-                ShareUrl: null,
-                ShareId: null,
-                ShareError: null,
-                Email: null
-            );
-
-            await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
-            return blockedResult;
-        }
-
-        await UpdateProjectStatusAsync(deliveryStore, project.ProjectId, ProjectDeliveryGuards.StatusDelivering, cancellationToken);
-
-        var clientName = await db.Clients.AsNoTracking()
-            .Where(c => c.ClientId == project.ClientId)
-            .Select(c => c.DisplayName)
-            .SingleOrDefaultAsync(cancellationToken);
-
-        var tokens = ProvisioningTokens.Create(project.ProjectCode, project.Name, clientName, payload.EditorInitials);
-        var repoRoot = FindRepoRoot();
-        var templatesRoot = ResolveTemplatesRoot();
-        var deliveryTemplatePath = Path.Combine(templatesRoot, "dropbox_delivery_container.json");
-        var projectFolderName = await ResolveProjectFolderNameAsync(deliveryTemplatePath, tokens, cancellationToken);
-        var dropboxDeliveryRelpath = await LoadPathTemplatesAsync(db, cancellationToken);
-
-        var sourceResult = await ResolveLucidlinkSourceAsync(db, payload, tokens, cancellationToken);
-        var results = new List<ProjectDeliveryDomainResult> { sourceResult.DomainResult };
-
-        if (!string.Equals(sourceResult.DomainResult.RootState, "source_ready", StringComparison.OrdinalIgnoreCase))
-        {
-            var blocked = BuildBlockedResult("dropbox", "blocked_source_missing", "LucidLink source not ready.");
-            results.Add(blocked);
-
-            var blockedRun = new ProjectDeliveryRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
-                StartedAtUtc: startedAt,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                SourcePath: sourceResult.SourcePath,
-                DestinationPath: null,
-                ApiStablePath: null,
-                ApiVersionPath: null,
-                VersionLabel: null,
-                RetentionUntilUtc: null,
-                Files: sourceResult.Files.Select(ToSummary).ToArray(),
-                Domains: results,
-                HasErrors: true,
-                LastError: sourceResult.DomainResult.Notes.FirstOrDefault(),
-                ShareStatus: null,
-                ShareUrl: null,
-                ShareId: null,
-                ShareError: null,
-                Email: null
-            );
-
-            await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, blockedRun, cancellationToken);
-            await UpdateProjectStatusAsync(deliveryStore, project.ProjectId, ProjectDeliveryGuards.StatusDeliveryFailed, cancellationToken);
-            return blockedRun;
-        }
-
-        var shareState = ReadShareState(project.Metadata);
-        var history = ReadDeliveryHistory(project.Metadata);
-        var dropboxResult = await ProcessDropboxAsync(
-            payload,
-            projectFolderName,
-            tokens,
-            sourceResult,
-            dropboxDeliveryRelpath,
-            shareState,
-            history,
-            deliveryTemplatePath,
-            cancellationToken
-        );
-
-        results.Add(dropboxResult.DomainResult);
-
-        var hasErrors = results.Any(IsDomainError);
-        var lastError = hasErrors ? BuildLastError(results) : null;
-        EmailSendResult? emailResult = null;
-        if (!hasErrors)
-        {
-            emailResult = await TrySendDeliveryEmailAsync(
-                payload,
-                project,
-                tokens,
-                sourceResult,
-                dropboxResult,
-                cancellationToken);
-        }
-
-        var runResult = new ProjectDeliveryRunResult(
-            JobId: jobId,
-            ProjectId: payload.ProjectId,
-            EditorInitials: payload.EditorInitials,
-            StartedAtUtc: startedAt,
-            TestMode: payload.TestMode,
-            AllowTestCleanup: payload.AllowTestCleanup,
-            AllowNonReal: payload.AllowNonReal,
-            Force: payload.Force,
-            SourcePath: sourceResult.SourcePath,
-            DestinationPath: dropboxResult.DestinationPath,
-            ApiStablePath: dropboxResult.ApiStablePath,
-            ApiVersionPath: dropboxResult.ApiVersionPath,
-            VersionLabel: dropboxResult.VersionLabel,
-            RetentionUntilUtc: dropboxResult.RetentionUntilUtc,
-            Files: sourceResult.Files.Select(ToSummary).ToArray(),
-            Domains: results,
-            HasErrors: hasErrors,
-            LastError: lastError,
-            ShareStatus: dropboxResult.ShareStatus,
-            ShareUrl: dropboxResult.ShareUrl,
-            ShareId: dropboxResult.ShareId,
-            ShareError: dropboxResult.ShareError,
-            Email: emailResult
-        );
-
-        await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, runResult, cancellationToken);
-
-        var finalStatus = hasErrors ? ProjectDeliveryGuards.StatusDeliveryFailed : ProjectDeliveryGuards.StatusDelivered;
-        await UpdateProjectStatusAsync(deliveryStore, project.ProjectId, finalStatus, cancellationToken);
-
-        return runResult;
-    }
-
-    public static ProjectDeliveryPayload ParsePayload(string payloadJson)
-    {
-        using var doc = JsonDocument.Parse(payloadJson);
-        var root = doc.RootElement;
-
-        var projectId = root.TryGetProperty("projectId", out var projectIdElement) ? projectIdElement.GetString() : null;
-        if (string.IsNullOrWhiteSpace(projectId))
-        {
-            throw new InvalidOperationException("projectId is required in project.delivery payload.");
-        }
-
-        var editorInitials = ReadEditorInitials(root);
-        var toEmails = ReadEmailAddresses(root, "toEmails");
-        var replyToEmail = TryGetString(root, "replyToEmail");
-
-        return new ProjectDeliveryPayload(
-            ProjectId: projectId,
-            EditorInitials: editorInitials,
-            ToEmails: toEmails,
-            ReplyToEmail: replyToEmail,
-            TestMode: ReadBoolean(root, "testMode", false),
-            AllowTestCleanup: ReadBoolean(root, "allowTestCleanup", false),
-            AllowNonReal: ReadBoolean(root, "allowNonReal", false),
-            Force: ReadBoolean(root, "force", false),
-            RefreshShareLink: ReadBoolean(root, "refreshShareLink", false)
-        );
-    }
-
-    private sealed record DeliverySourceInfo(
-        string? SourcePath,
-        IReadOnlyList<DeliveryFile> Files,
-        ProjectDeliveryDomainResult DomainResult
-    );
-
-    private sealed record DeliveryTargetInfo(
-        string? DestinationPath,
-        string? ApiStablePath,
-        string? ApiVersionPath,
-        string? VersionLabel,
-        DateTimeOffset? RetentionUntilUtc,
-        ProjectDeliveryDomainResult DomainResult,
-        string? ShareStatus,
-        string? ShareUrl,
-        string? ShareId,
-        string? ShareError
-    );
 
     internal sealed record DeliveryShareState(
         string? ShareUrl,
@@ -340,13 +78,6 @@ public sealed class ProjectDeliverer
         DateTimeOffset? VerifiedAtUtc
     );
 
-    internal sealed record DeliveryFile(
-        string SourcePath,
-        string RelativePath,
-        long SizeBytes,
-        DateTimeOffset LastWriteTimeUtc
-    );
-
     internal sealed record DeliveryVersionPlan(
         string VersionLabel,
         string StableRoot,
@@ -360,6 +91,15 @@ public sealed class ProjectDeliverer
         var code = tokens.ProjectCode ?? "MGF";
         var name = tokens.ProjectName ?? "Delivery";
         return $"Your deliverables are ready \u2014 {code} {name}";
+    }
+
+    private static ProvisioningTokens ToProvisioningTokens(DeliveryTokens tokens)
+    {
+        return ProvisioningTokens.Create(
+            tokens.ProjectCode,
+            tokens.ProjectName,
+            tokens.ClientName,
+            tokens.EditorInitials);
     }
 
     internal static EmailMessage BuildDeliveryEmailRequest(
@@ -441,17 +181,17 @@ public sealed class ProjectDeliverer
         return renderer.RenderHtml("delivery_ready.html", context);
     }
 
-    private async Task<DeliverySourceInfo> ResolveLucidlinkSourceAsync(
-        AppDbContext db,
+    public Task<ProjectDeliverySourceResult> ResolveLucidlinkSourceAsync(
         ProjectDeliveryPayload payload,
-        ProvisioningTokens tokens,
-        CancellationToken cancellationToken)
+        string? storageRelpath,
+        CancellationToken cancellationToken = default)
     {
-        _ = tokens;
+        _ = payload;
+        _ = cancellationToken;
         var rootPath = ResolveDomainRootPath("lucidlink");
         if (string.IsNullOrWhiteSpace(rootPath))
         {
-            return new DeliverySourceInfo(
+            return Task.FromResult(new ProjectDeliverySourceResult(
                 SourcePath: null,
                 Files: Array.Empty<DeliveryFile>(),
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -464,12 +204,12 @@ public sealed class ProjectDeliverer
                     DestinationPath: null,
                     Notes: new[] { "LucidLink root not configured." }
                 )
-            );
+            ));
         }
 
         if (!Directory.Exists(rootPath))
         {
-            return new DeliverySourceInfo(
+            return Task.FromResult(new ProjectDeliverySourceResult(
                 SourcePath: null,
                 Files: Array.Empty<DeliveryFile>(),
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -482,20 +222,13 @@ public sealed class ProjectDeliverer
                     DestinationPath: null,
                     Notes: new[] { "LucidLink root missing." }
                 )
-            );
+            ));
         }
 
-        var rootKey = ProjectStorageRootHelper.GetRootKey(payload.TestMode);
-        var relpath = await db.Set<Dictionary<string, object>>("project_storage_roots")
-            .Where(row => EF.Property<string>(row, "project_id") == payload.ProjectId)
-            .Where(row => EF.Property<string>(row, "storage_provider_key") == "lucidlink")
-            .Where(row => EF.Property<string>(row, "root_key") == rootKey)
-            .Select(row => EF.Property<string>(row, "folder_relpath"))
-            .FirstOrDefaultAsync(cancellationToken);
-
+        var relpath = storageRelpath;
         if (string.IsNullOrWhiteSpace(relpath))
         {
-            return new DeliverySourceInfo(
+            return Task.FromResult(new ProjectDeliverySourceResult(
                 SourcePath: null,
                 Files: Array.Empty<DeliveryFile>(),
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -508,13 +241,13 @@ public sealed class ProjectDeliverer
                     DestinationPath: null,
                     Notes: new[] { "LucidLink storage root not found; run bootstrap first." }
                 )
-            );
+            ));
         }
 
         var normalizedRelpath = relpath.Trim().TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (Path.IsPathRooted(normalizedRelpath) || normalizedRelpath.Contains("..", StringComparison.Ordinal))
         {
-            return new DeliverySourceInfo(
+            return Task.FromResult(new ProjectDeliverySourceResult(
                 SourcePath: null,
                 Files: Array.Empty<DeliveryFile>(),
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -527,7 +260,7 @@ public sealed class ProjectDeliverer
                     DestinationPath: null,
                     Notes: new[] { $"LucidLink storage relpath is invalid: {relpath}" }
                 )
-            );
+            ));
         }
 
         var containerPath = Path.Combine(rootPath, normalizedRelpath);
@@ -535,7 +268,7 @@ public sealed class ProjectDeliverer
 
         if (!Directory.Exists(sourcePath))
         {
-            return new DeliverySourceInfo(
+            return Task.FromResult(new ProjectDeliverySourceResult(
                 SourcePath: sourcePath,
                 Files: Array.Empty<DeliveryFile>(),
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -548,13 +281,13 @@ public sealed class ProjectDeliverer
                     DestinationPath: null,
                     Notes: new[] { "LucidLink Final_Masters folder not found." }
                 )
-            );
+            ));
         }
 
         var files = FindDeliverableFiles(sourcePath);
         if (files.Count == 0)
         {
-            return new DeliverySourceInfo(
+            return Task.FromResult(new ProjectDeliverySourceResult(
                 SourcePath: sourcePath,
                 Files: Array.Empty<DeliveryFile>(),
                 DomainResult: new ProjectDeliveryDomainResult(
@@ -567,10 +300,10 @@ public sealed class ProjectDeliverer
                     DestinationPath: null,
                     Notes: new[] { "No deliverable files found in Final_Masters." }
                 )
-            );
+            ));
         }
 
-        return new DeliverySourceInfo(
+        return Task.FromResult(new ProjectDeliverySourceResult(
             SourcePath: sourcePath,
             Files: files,
             DomainResult: new ProjectDeliveryDomainResult(
@@ -583,14 +316,40 @@ public sealed class ProjectDeliverer
                 DestinationPath: null,
                 Notes: Array.Empty<string>()
             )
-        );
+        ));
     }
 
-    private async Task<DeliveryTargetInfo> ProcessDropboxAsync(
+    public async Task<ProjectDeliveryTargetResult> ProcessDropboxAsync(
+        ProjectDeliveryPayload payload,
+        DeliveryTokens tokens,
+        ProjectDeliverySourceResult source,
+        string dropboxDeliveryRelpath,
+        JsonElement projectMetadata,
+        CancellationToken cancellationToken = default)
+    {
+        var provisioningTokens = ToProvisioningTokens(tokens);
+        var deliveryTemplatePath = ResolveDeliveryTemplatePath();
+        var projectFolderName = await ResolveProjectFolderNameAsync(deliveryTemplatePath, provisioningTokens, cancellationToken);
+        var shareState = ReadShareState(projectMetadata);
+        var history = ReadDeliveryHistory(projectMetadata);
+
+        return await ProcessDropboxAsyncCore(
+            payload,
+            projectFolderName,
+            provisioningTokens,
+            source,
+            dropboxDeliveryRelpath,
+            shareState,
+            history,
+            deliveryTemplatePath,
+            cancellationToken);
+    }
+
+    private async Task<ProjectDeliveryTargetResult> ProcessDropboxAsyncCore(
         ProjectDeliveryPayload payload,
         string projectFolderName,
         ProvisioningTokens tokens,
-        DeliverySourceInfo source,
+        ProjectDeliverySourceResult source,
         string dropboxDeliveryRelpath,
         DeliveryShareState shareState,
         DeliveryHistory history,
@@ -617,7 +376,7 @@ public sealed class ProjectDeliverer
         var rootPath = ResolveDomainRootPath("dropbox");
         if (string.IsNullOrWhiteSpace(rootPath))
         {
-            return new DeliveryTargetInfo(
+            return new ProjectDeliveryTargetResult(
                 DestinationPath: null,
                 ApiStablePath: null,
                 ApiVersionPath: null,
@@ -642,7 +401,7 @@ public sealed class ProjectDeliverer
 
         if (!Directory.Exists(rootPath))
         {
-            return new DeliveryTargetInfo(
+            return new ProjectDeliveryTargetResult(
                 DestinationPath: null,
                 ApiStablePath: null,
                 ApiVersionPath: null,
@@ -680,7 +439,7 @@ public sealed class ProjectDeliverer
             if (!ProjectBootstrapGuards.TryValidateTestCleanup(rootPath, targetPath, payload.AllowTestCleanup, out var cleanupError))
             {
                 notes.Add(cleanupError ?? "Test cleanup blocked.");
-                return new DeliveryTargetInfo(
+                return new ProjectDeliveryTargetResult(
                     DestinationPath: targetPath,
                     ApiStablePath: null,
                     ApiVersionPath: null,
@@ -707,7 +466,7 @@ public sealed class ProjectDeliverer
             if (!cleanup.Success)
             {
                 notes.Add(cleanup.Error ?? "Test cleanup failed (locked; cleanup skipped).");
-                return new DeliveryTargetInfo(
+                return new ProjectDeliveryTargetResult(
                     DestinationPath: targetPath,
                     ApiStablePath: null,
                     ApiVersionPath: null,
@@ -737,7 +496,7 @@ public sealed class ProjectDeliverer
         if (!verifySummary.Success)
         {
             notes.Add("Delivery container verify failed.");
-            return new DeliveryTargetInfo(
+            return new ProjectDeliveryTargetResult(
                 DestinationPath: targetPath,
                 ApiStablePath: null,
                 ApiVersionPath: null,
@@ -822,7 +581,7 @@ public sealed class ProjectDeliverer
 
         await WriteDeliveryManifestAsync(manifestPath, manifest, cancellationToken);
 
-        return new DeliveryTargetInfo(
+        return new ProjectDeliveryTargetResult(
             DestinationPath: versionPlan.StableRoot,
             ApiStablePath: null,
             ApiVersionPath: null,
@@ -845,11 +604,11 @@ public sealed class ProjectDeliverer
         );
     }
 
-    private async Task<DeliveryTargetInfo> ProcessDropboxApiAsync(
+    private async Task<ProjectDeliveryTargetResult> ProcessDropboxApiAsync(
         ProjectDeliveryPayload payload,
         string projectFolderName,
         ProvisioningTokens tokens,
-        DeliverySourceInfo source,
+        ProjectDeliverySourceResult source,
         string dropboxDeliveryRelpath,
         DeliveryShareState shareState,
         DeliveryHistory history,
@@ -862,7 +621,7 @@ public sealed class ProjectDeliverer
             var apiRoot = ResolveDropboxApiRootFolder();
             if (string.IsNullOrWhiteSpace(apiRoot))
             {
-                return new DeliveryTargetInfo(
+                return new ProjectDeliveryTargetResult(
                     DestinationPath: null,
                     ApiStablePath: null,
                     ApiVersionPath: null,
@@ -888,7 +647,7 @@ public sealed class ProjectDeliverer
             var tokenResult = await accessTokenProvider.GetAccessTokenAsync(cancellationToken);
             if (string.IsNullOrWhiteSpace(tokenResult.AccessToken))
             {
-                return new DeliveryTargetInfo(
+                return new ProjectDeliveryTargetResult(
                     DestinationPath: null,
                     ApiStablePath: null,
                     ApiVersionPath: null,
@@ -996,7 +755,7 @@ public sealed class ProjectDeliverer
                 Warnings: Array.Empty<string>()
             );
 
-            return new DeliveryTargetInfo(
+            return new ProjectDeliveryTargetResult(
                 DestinationPath: destinationPath ?? apiStablePath,
                 ApiStablePath: apiStablePath,
                 ApiVersionPath: apiVersionPath,
@@ -1021,7 +780,7 @@ public sealed class ProjectDeliverer
         catch (Exception ex)
         {
             notes.Insert(0, ex.Message);
-            return new DeliveryTargetInfo(
+            return new ProjectDeliveryTargetResult(
                 DestinationPath: null,
                 ApiStablePath: null,
                 ApiVersionPath: null,
@@ -1045,27 +804,27 @@ public sealed class ProjectDeliverer
         }
     }
 
-    private async Task<EmailSendResult> TrySendDeliveryEmailAsync(
+    public async Task<EmailSendResult> SendDeliveryEmailAsync(
         ProjectDeliveryPayload payload,
-        Project project,
-        ProvisioningTokens tokens,
-        DeliverySourceInfo source,
-        DeliveryTargetInfo target,
-        CancellationToken cancellationToken)
+        DeliveryTokens tokens,
+        ProjectDeliverySourceResult source,
+        ProjectDeliveryTargetResult target,
+        CancellationToken cancellationToken = default)
     {
+        var provisioningTokens = ToProvisioningTokens(tokens);
         var recipients = NormalizeEmailList(payload.ToEmails);
         if (!IsShareSuccess(target.ShareStatus) || string.IsNullOrWhiteSpace(target.ShareUrl))
         {
             return SkippedEmailResult(
                 recipients,
-                BuildDeliverySubject(tokens),
+                BuildDeliverySubject(provisioningTokens),
                 "Stable Dropbox share link is missing; delivery email skipped.",
                 payload.ReplyToEmail);
         }
 
         var versionLabel = target.VersionLabel ?? "v1";
         var retentionUntil = target.RetentionUntilUtc ?? DateTimeOffset.UtcNow.AddMonths(DefaultRetentionMonths);
-        var subject = BuildDeliverySubject(tokens);
+        var subject = BuildDeliverySubject(provisioningTokens);
         var profile = EmailProfileResolver.Resolve(configuration, EmailProfiles.Deliveries);
         var replyTo = !string.IsNullOrWhiteSpace(payload.ReplyToEmail)
             ? payload.ReplyToEmail
@@ -1092,7 +851,7 @@ public sealed class ProjectDeliverer
         var logoUrl = profile.LogoUrl;
         var fromName = profile.DefaultFromName ?? "MG Films";
         var context = new DeliveryReadyEmailContext(
-            tokens,
+            provisioningTokens,
             shareUrl,
             versionLabel,
             retentionUntil,
@@ -1945,105 +1704,6 @@ public sealed class ProjectDeliverer
     private static DeliveryEmailFileSummary ToEmailSummary(DeliveryFileSummary file)
         => new(file.RelativePath, file.SizeBytes, file.LastWriteTimeUtc);
 
-    private static async Task<string> LoadPathTemplatesAsync(
-        AppDbContext db,
-        CancellationToken cancellationToken)
-    {
-        var templateRow = await db.Set<Dictionary<string, object>>("path_templates")
-            .Where(row => EF.Property<string>(row, "path_key") == "dropbox_delivery_root")
-            .Select(row => EF.Property<string>(row, "relpath"))
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return string.IsNullOrWhiteSpace(templateRow) ? "04_Client_Deliveries" : templateRow.Trim();
-    }
-
-    private static List<ProjectDeliveryDomainResult> BuildBlockedResults(string rootState, string note)
-    {
-        return new List<ProjectDeliveryDomainResult>
-        {
-            BuildBlockedResult("lucidlink", rootState, note),
-            BuildBlockedResult("dropbox", rootState, note)
-        };
-    }
-
-    private static ProjectDeliveryDomainResult BuildBlockedResult(string domainKey, string rootState, string note)
-    {
-        return new ProjectDeliveryDomainResult(
-            DomainKey: domainKey,
-            RootPath: string.Empty,
-            RootState: rootState,
-            DeliveryContainerProvisioning: null,
-            Deliverables: Array.Empty<DeliveryFileSummary>(),
-            VersionLabel: null,
-            DestinationPath: null,
-            Notes: new[] { note }
-        );
-    }
-
-    private static string? BuildLastError(IReadOnlyList<ProjectDeliveryDomainResult> results)
-    {
-        foreach (var result in results)
-        {
-            if (result.Notes.Count > 0 && IsDomainError(result))
-            {
-                return result.Notes[0];
-            }
-        }
-
-        return "project.delivery completed with errors.";
-    }
-
-    private static bool IsDomainError(ProjectDeliveryDomainResult result)
-    {
-        if (result.RootState.StartsWith("blocked_", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (result.RootState.EndsWith("_failed", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (result.RootState.StartsWith("cleanup_", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return result.RootState is "container_missing" or "no_source_folder" or "no_deliverables_found";
-    }
-
-    private static Task AppendDeliveryRunAsync(
-        IProjectDeliveryStore deliveryStore,
-        string projectId,
-        JsonElement metadata,
-        ProjectDeliveryRunResult runResult,
-        CancellationToken cancellationToken)
-    {
-        var runResultJson = JsonSerializer.SerializeToElement(runResult, DeliveryJsonOptions);
-        return deliveryStore.AppendDeliveryRunAsync(projectId, metadata, runResultJson, cancellationToken);
-    }
-
-    internal static Task AppendDeliveryEmailAsync(
-        IProjectDeliveryStore deliveryStore,
-        string projectId,
-        JsonElement metadata,
-        EmailSendResult emailResult,
-        CancellationToken cancellationToken)
-    {
-        var emailResultJson = JsonSerializer.SerializeToElement(emailResult, DeliveryJsonOptions);
-        return deliveryStore.AppendDeliveryEmailAsync(projectId, metadata, emailResultJson, cancellationToken);
-    }
-
-    private static Task UpdateProjectStatusAsync(
-        IProjectDeliveryStore deliveryStore,
-        string projectId,
-        string statusKey,
-        CancellationToken cancellationToken)
-    {
-        return deliveryStore.UpdateProjectStatusAsync(projectId, statusKey, cancellationToken);
-    }
-
     private string ResolveDomainRootPath(string domainKey)
     {
         var raw = domainKey switch
@@ -2083,26 +1743,6 @@ public sealed class ProjectDeliverer
         return Path.Combine(targetPath, "01_Deliverables", "Final");
     }
 
-    private static string? ResolveLogoUrl(IConfiguration configuration)
-    {
-        return configuration["Integrations:Email:Branding:LogoUrl"];
-    }
-
-    private static string ResolveFromName(IConfiguration configuration)
-    {
-        return configuration["Integrations:Email:FromName"] ?? "MG Films";
-    }
-
-    private static bool ReadBoolean(JsonElement root, string name, bool defaultValue)
-    {
-        if (root.TryGetProperty(name, out var element) && element.ValueKind is JsonValueKind.True or JsonValueKind.False)
-        {
-            return element.GetBoolean();
-        }
-
-        return defaultValue;
-    }
-
     private static string? TryGetString(JsonElement element, string name)
     {
         if (!element.TryGetProperty(name, out var prop))
@@ -2127,63 +1767,6 @@ public sealed class ProjectDeliverer
         }
 
         return DateTimeOffset.TryParse(raw, out var parsed) ? parsed : null;
-    }
-
-    private static IReadOnlyList<string> ReadEditorInitials(JsonElement root)
-    {
-        if (!root.TryGetProperty("editorInitials", out var element))
-        {
-            return Array.Empty<string>();
-        }
-
-        if (element.ValueKind == JsonValueKind.Array)
-        {
-            return element
-                .EnumerateArray()
-                .Where(e => e.ValueKind == JsonValueKind.String)
-                .Select(e => e.GetString() ?? string.Empty)
-                .SelectMany(value => value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        if (element.ValueKind == JsonValueKind.String)
-        {
-            var raw = element.GetString() ?? string.Empty;
-            return raw
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        return Array.Empty<string>();
-    }
-
-    private static IReadOnlyList<string> ReadEmailAddresses(JsonElement root, string name)
-    {
-        if (!root.TryGetProperty(name, out var element))
-        {
-            return Array.Empty<string>();
-        }
-
-        if (element.ValueKind == JsonValueKind.Array)
-        {
-            var values = element
-                .EnumerateArray()
-                .Where(e => e.ValueKind == JsonValueKind.String)
-                .Select(e => e.GetString() ?? string.Empty);
-            return NormalizeEmailList(values);
-        }
-
-        if (element.ValueKind == JsonValueKind.String)
-        {
-            var raw = element.GetString() ?? string.Empty;
-            return NormalizeEmailList(new[] { raw });
-        }
-
-        return Array.Empty<string>();
     }
 
     private static IReadOnlyList<string> NormalizeEmailList(IEnumerable<string> values)
@@ -2372,6 +1955,12 @@ public sealed class ProjectDeliverer
         }
 
         throw new DirectoryNotFoundException($"Templates folder not found at {templatesRoot}.");
+    }
+
+    private static string ResolveDeliveryTemplatePath()
+    {
+        var templatesRoot = ResolveTemplatesRoot();
+        return Path.Combine(templatesRoot, "dropbox_delivery_container.json");
     }
 }
 

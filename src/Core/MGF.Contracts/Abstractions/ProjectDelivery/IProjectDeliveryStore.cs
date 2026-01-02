@@ -1,4 +1,4 @@
-namespace MGF.Data.Stores.Delivery;
+﻿namespace MGF.Contracts.Abstractions.ProjectDelivery;
 
 using System.Text.Json;
 
