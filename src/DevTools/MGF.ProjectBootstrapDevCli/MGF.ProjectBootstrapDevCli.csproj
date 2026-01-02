@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>MGF.ProjectBootstrapDevCli</AssemblyName>
+    <RootNamespace>MGF.ProjectBootstrapCli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
+    <ProjectReference Include="..\..\Services\MGF.Operations.Runtime\MGF.Operations.Runtime.csproj" />
+    <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
+  </ItemGroup>
+
+</Project>

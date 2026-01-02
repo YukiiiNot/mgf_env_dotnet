@@ -26,10 +26,7 @@ public sealed class ArchitectureRulesTests
         var operationsRoot = Path.Combine(SrcRoot, "Operations");
         var projects = Directory.GetFiles(operationsRoot, "*.csproj", SearchOption.AllDirectories);
 
-        var waivers = new Dictionary<string, OperationWaiver>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["MGF.ProjectBootstrapCli.csproj"] = new OperationWaiver(AllowDataReference: true, AllowNpgsql: true)
-        };
+        var waivers = new Dictionary<string, OperationWaiver>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var projectPath in projects)
         {
