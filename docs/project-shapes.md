@@ -52,6 +52,143 @@ Do not create a new project just to group files; use folders and namespaces firs
 - Update `docs/00-index.md` and any affected architecture/onboarding pages.
 - Build/test to confirm no behavior change.
 
+## Locked Shape Contracts (src/*)
+These are per-project shape contracts enforced by `tests/MGF.Architecture.Tests`. Top-level folders are immediate
+child directories under each project root (ignore `bin/` and `obj/`).
+
+Deviation policy: any change to a project's allowed/required/forbidden folders must update this section and the
+architecture tests in the same PR.
+
+### MGF.UseCases (`src/Application/MGF.UseCases`)
+- Allowed: `UseCases`
+- Required: `UseCases`
+- Forbidden: `Docs`, `Controllers`, `Services`, `Stores`, `Integrations`
+- Rule: All use-cases live under `UseCases/<Area>/<UseCaseName>/`.
+
+### MGF.Contracts (`src/Core/MGF.Contracts`)
+- Allowed: `Abstractions`
+- Required: `Abstractions`
+- Forbidden: `Docs`, `Controllers`, `Services`, `Stores`
+- Rule: Contracts/DTOs only; no host or persistence concerns.
+
+### MGF.Domain (`src/Core/MGF.Domain`)
+- Allowed: `Entities`
+- Required: `Entities`
+- Forbidden: `Docs`, `Controllers`, `Services`, `Stores`
+- Rule: Domain entities and IDs only.
+
+### MGF.Data (`src/Data/MGF.Data`)
+- Allowed: `Configuration`, `Data`, `Migrations`, `Options`, `Stores`
+- Required: `Data`, `Stores`
+- Forbidden: `Abstractions`, `Docs`, `Controllers`
+- Rule: Repositories in `Data/Repositories`, SQL in `Stores/<Area>`.
+
+### MGF.DataMigrator (`src/Data/MGF.DataMigrator`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: CLI host; keep flat.
+
+### MGF.DbMigrationsInfoCli (`src/DevTools/MGF.DbMigrationsInfoCli`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: CLI host; keep flat.
+
+### MGF.DevSecretsCli (`src/DevTools/MGF.DevSecretsCli`)
+- Allowed: `Models`
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: CLI + models only.
+
+### MGF.LegacyAuditCli (`src/DevTools/MGF.LegacyAuditCli`)
+- Allowed: `Commands`, `Models`, `Properties`, `Reporting`, `Scanning`
+- Required: `Commands`
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Command-driven CLI layout.
+
+### MGF.ProjectBootstrapDevCli (`src/DevTools/MGF.ProjectBootstrapDevCli`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: CLI host; keep flat.
+
+### MGF.SquareImportCli (`src/DevTools/MGF.SquareImportCli`)
+- Allowed: `Commands`, `Guards`, `Importers`, `Normalization`, `Parsing`, `Properties`, `Reporting`
+- Required: `Commands`, `Importers`
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Command + pipeline layout; docs live under `/docs`.
+
+### MGF.Integrations.Dropbox (`src/Integrations/MGF.Integrations.Dropbox`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Integration client only; keep flat unless a stable folder convention emerges.
+
+### MGF.Integrations.Email.Gmail (`src/Integrations/MGF.Integrations.Email.Gmail`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Provider implementation only; keep flat.
+
+### MGF.Integrations.Email.Smtp (`src/Integrations/MGF.Integrations.Email.Smtp`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Provider implementation only; keep flat.
+
+### MGF.ProjectBootstrapCli (`src/Operations/MGF.ProjectBootstrapCli`)
+- Allowed: `Properties`
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `Services`
+- Rule: CLI host; minimal folders.
+
+### MGF.ProvisionerCli (`src/Operations/MGF.ProvisionerCli`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `Services`
+- Rule: CLI host; keep flat.
+
+### MGF.Email (`src/Platform/MGF.Email`)
+- Allowed: `Composition`, `Models`, `Registry`
+- Required: `Composition`
+- Forbidden: `Docs`, `Senders`, `Integrations`
+- Rule: Composition/registry only; no provider logic.
+
+### MGF.FolderProvisioning (`src/Platform/MGF.FolderProvisioning`)
+- Allowed: `Provisioning`
+- Required: `Provisioning`
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Engine + policy under `Provisioning/`.
+
+### MGF.Api (`src/Services/MGF.Api`)
+- Allowed: `Controllers`, `Middleware`, `Properties`, `Services`, `Square`
+- Required: `Controllers`
+- Forbidden: `Docs`, `Stores`
+- Rule: HTTP host; adapters + wiring only.
+
+### MGF.Operations.Runtime (`src/Services/MGF.Operations.Runtime`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Host entrypoint; keep flat.
+
+### MGF.Worker (`src/Services/MGF.Worker`)
+- Allowed: `Email`, `ProjectArchive`, `ProjectBootstrap`, `ProjectDelivery`, `Properties`, `RootIntegrity`, `Square`
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`
+- Rule: Worker host layout (current shape); workflow folders are temporary (see backlog).
+
+### MGF.Desktop.Wpf (`src/Ui/MGF.Desktop.Wpf`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `Stores`
+- Rule: UI host; keep flat.
+
+## Known Non-Compliance Backlog (Planned Slices)
+- `MGF.Worker`: currently contains workflow folders; target shape is host-only with `Jobs/` (migrate each workflow into UseCases, leave only handlers/wiring).
+- `MGF.Api`: currently has `Square/` provider logic; move to Integrations or a Platform verification component.
+
 ## Architecture guardrails (tests/MGF.Architecture.Tests)
 - UseCases and Operations must not depend on Data/EF/Npgsql (exceptions listed in the test file).
 - Contracts remain host-agnostic (no Configuration/Options/DI/Hosting).

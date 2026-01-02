@@ -138,6 +138,54 @@ public sealed class ArchitectureRulesTests
         }
     }
 
+    [Fact]
+    public void ProjectShapes_AreLocked()
+    {
+        var projectPaths = Directory.GetFiles(SrcRoot, "*.csproj", SearchOption.AllDirectories);
+        var projectNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var projectPath in projectPaths)
+        {
+            var projectDir = Path.GetDirectoryName(projectPath) ?? throw new InvalidOperationException(projectPath);
+            var projectName = Path.GetFileName(projectDir);
+            projectNames.Add(projectName);
+
+            Assert.True(ProjectShapes.TryGetValue(projectName, out var contract),
+                $"Missing shape contract for {projectName}.");
+
+            var childDirs = Directory.GetDirectories(projectDir)
+                .Select(Path.GetFileName)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Where(name => !IsIgnoredFolder(name!))
+                .ToArray()!;
+
+            foreach (var required in contract.Required)
+            {
+                Assert.Contains(childDirs, name => string.Equals(name, required, StringComparison.OrdinalIgnoreCase));
+            }
+
+            foreach (var forbidden in contract.Forbidden)
+            {
+                Assert.DoesNotContain(childDirs, name => string.Equals(name, forbidden, StringComparison.OrdinalIgnoreCase));
+            }
+
+            foreach (var actual in childDirs)
+            {
+                Assert.Contains(contract.Allowed, allowed => string.Equals(allowed, actual, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!contract.Allowed.Any(allowed => string.Equals(allowed, "Docs", StringComparison.OrdinalIgnoreCase)))
+            {
+                Assert.DoesNotContain(childDirs, name => string.Equals(name, "Docs", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
+        foreach (var projectName in ProjectShapes.Keys)
+        {
+            Assert.Contains(projectNames, name => string.Equals(name, projectName, StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
     private static string FindRepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -203,8 +251,106 @@ public sealed class ArchitectureRulesTests
         return fullPath.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsIgnoredFolder(string name)
+        => string.Equals(name, "bin", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(name, "obj", StringComparison.OrdinalIgnoreCase);
+
+    private static readonly IReadOnlyDictionary<string, ShapeContract> ProjectShapes =
+        new Dictionary<string, ShapeContract>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["MGF.UseCases"] = new ShapeContract(
+                Allowed: new[] { "UseCases" },
+                Required: new[] { "UseCases" },
+                Forbidden: new[] { "Docs", "Controllers", "Services", "Stores", "Integrations" }),
+            ["MGF.Contracts"] = new ShapeContract(
+                Allowed: new[] { "Abstractions" },
+                Required: new[] { "Abstractions" },
+                Forbidden: new[] { "Docs", "Controllers", "Services", "Stores" }),
+            ["MGF.Domain"] = new ShapeContract(
+                Allowed: new[] { "Entities" },
+                Required: new[] { "Entities" },
+                Forbidden: new[] { "Docs", "Controllers", "Services", "Stores" }),
+            ["MGF.Data"] = new ShapeContract(
+                Allowed: new[] { "Configuration", "Data", "Migrations", "Options", "Stores" },
+                Required: new[] { "Data", "Stores" },
+                Forbidden: new[] { "Abstractions", "Docs", "Controllers" }),
+            ["MGF.DataMigrator"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.DbMigrationsInfoCli"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.DevSecretsCli"] = new ShapeContract(
+                Allowed: new[] { "Models" },
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.LegacyAuditCli"] = new ShapeContract(
+                Allowed: new[] { "Commands", "Models", "Properties", "Reporting", "Scanning" },
+                Required: new[] { "Commands" },
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.ProjectBootstrapDevCli"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.SquareImportCli"] = new ShapeContract(
+                Allowed: new[] { "Commands", "Guards", "Importers", "Normalization", "Parsing", "Properties", "Reporting" },
+                Required: new[] { "Commands", "Importers" },
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.Integrations.Dropbox"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.Integrations.Email.Gmail"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.Integrations.Email.Smtp"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.ProjectBootstrapCli"] = new ShapeContract(
+                Allowed: new[] { "Properties" },
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "Services" }),
+            ["MGF.ProvisionerCli"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "Services" }),
+            ["MGF.Email"] = new ShapeContract(
+                Allowed: new[] { "Composition", "Models", "Registry" },
+                Required: new[] { "Composition" },
+                Forbidden: new[] { "Docs", "Senders", "Integrations" }),
+            ["MGF.FolderProvisioning"] = new ShapeContract(
+                Allowed: new[] { "Provisioning" },
+                Required: new[] { "Provisioning" },
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.Api"] = new ShapeContract(
+                Allowed: new[] { "Controllers", "Middleware", "Properties", "Services", "Square" },
+                Required: new[] { "Controllers" },
+                Forbidden: new[] { "Docs", "Stores" }),
+            ["MGF.Operations.Runtime"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.Worker"] = new ShapeContract(
+                Allowed: new[] { "Email", "ProjectArchive", "ProjectBootstrap", "ProjectDelivery", "Properties", "RootIntegrity", "Square" },
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers" }),
+            ["MGF.Desktop.Wpf"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "Stores" }),
+        };
+
     private sealed record OperationWaiver(
         bool AllowDataReference = false,
         bool AllowEfCore = false,
         bool AllowNpgsql = false);
+
+    private sealed record ShapeContract(
+        IReadOnlyList<string> Allowed,
+        IReadOnlyList<string> Required,
+        IReadOnlyList<string> Forbidden);
 }
