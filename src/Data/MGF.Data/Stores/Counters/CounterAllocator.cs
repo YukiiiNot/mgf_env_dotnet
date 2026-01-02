@@ -1,6 +1,8 @@
 namespace MGF.Data.Stores.Counters;
 
+using System.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using MGF.Data.Data;
 
 public sealed class CounterAllocator : ICounterAllocator
@@ -14,20 +16,56 @@ public sealed class CounterAllocator : ICounterAllocator
 
     public Task<string> AllocateProjectCodeAsync(CancellationToken cancellationToken = default)
     {
-        return db.Database
-            .SqlQueryRaw<string>(CounterSql.AllocateProjectCodeQuery)
-            .SingleAsync(cancellationToken);
+        return ExecuteScalarAsync(CounterSql.AllocateProjectCodeQuery, cancellationToken);
     }
 
     public async Task<string> AllocateInvoiceNumberAsync(
         short year2,
         CancellationToken cancellationToken = default)
     {
-        var seq = await db.Database
-            .SqlQuery<int>(CounterSql.BuildAllocateInvoiceNumberQuery(year2))
-            .SingleAsync(cancellationToken);
+        var seqString = await ExecuteScalarAsync(
+            CounterSql.BuildAllocateInvoiceNumberQuery(year2).ToString(),
+            cancellationToken);
+        var seq = int.Parse(seqString);
 
         return $"MGF-INV-{year2:00}-{seq:000000}";
+    }
+
+    private async Task<string> ExecuteScalarAsync(string sql, CancellationToken cancellationToken)
+    {
+        var connection = db.Database.GetDbConnection();
+        var shouldClose = connection.State != ConnectionState.Open;
+
+        if (shouldClose)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = sql;
+
+            if (db.Database.CurrentTransaction?.GetDbTransaction() is { } transaction)
+            {
+                command.Transaction = transaction;
+            }
+
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            if (result is null)
+            {
+                throw new InvalidOperationException("Counter allocation returned no results.");
+            }
+
+            return result.ToString() ?? throw new InvalidOperationException("Counter allocation returned null string.");
+        }
+        finally
+        {
+            if (shouldClose)
+            {
+                await connection.CloseAsync();
+            }
+        }
     }
 }
 
@@ -47,7 +85,7 @@ internal static class CounterSql
           RETURNING year_2, (next_seq - 1) AS allocated_seq
         )
         SELECT 'MGF' || lpad(year_2::text, 2, '0') || '-' || lpad(allocated_seq::text, 4, '0')
-        FROM updated;
+        FROM updated
         """;
 
     internal static FormattableString BuildAllocateInvoiceNumberQuery(short year2)
@@ -65,7 +103,7 @@ internal static class CounterSql
           RETURNING (next_seq - 1) AS allocated_seq
         )
         SELECT allocated_seq
-        FROM updated;
+        FROM updated
         """;
     }
 }
