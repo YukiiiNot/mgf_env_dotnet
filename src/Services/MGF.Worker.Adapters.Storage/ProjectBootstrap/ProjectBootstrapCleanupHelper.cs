@@ -1,4 +1,4 @@
-namespace MGF.Storage.ProjectBootstrap;
+namespace MGF.Worker.Adapters.Storage.ProjectBootstrap;
 
 public static class ProjectBootstrapCleanupHelper
 {

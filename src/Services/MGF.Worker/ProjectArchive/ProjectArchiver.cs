@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using MGF.Data.Data;
 using MGF.FolderProvisioning;
-using MGF.Storage.ProjectBootstrap;
+using MGF.Worker.Adapters.Storage.ProjectBootstrap;
 
 public sealed class ProjectArchiver
 {

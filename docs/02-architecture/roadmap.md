@@ -59,7 +59,7 @@ Short, daily-readable map of what exists, what is partial, and what we do next.
 - Avoid overlapping files. Use ownership zones:
   - Email subsystem: `src/Platform/MGF.Email/`
   - Delivery: `src/Services/MGF.Worker/ProjectDelivery/`
-  - Bootstrap: `src/Application/MGF.UseCases/UseCases/Operations/ProjectBootstrap/` + `src/Platform/MGF.Storage/ProjectBootstrap/`
+  - Bootstrap: `src/Application/MGF.UseCases/UseCases/Operations/ProjectBootstrap/` + `src/Services/MGF.Worker.Adapters.Storage/ProjectBootstrap/`
   - Archive: `src/Services/MGF.Worker/ProjectArchive/`
   - Templates/Contracts: `artifacts/templates/`, `docs/03-contracts/storage/infra-contracts.md`
 - Communicate changes in ROADMAP + README docs index.

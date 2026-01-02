@@ -1,5 +1,5 @@
 using System.IO;
-using MGF.Storage.ProjectBootstrap;
+using MGF.Worker.Adapters.Storage.ProjectBootstrap;
 using Xunit;
 
 namespace MGF.Worker.Tests;

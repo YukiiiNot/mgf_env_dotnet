@@ -162,7 +162,7 @@ architecture tests in the same PR.
 - Rule: Composition/registry only; no provider logic.
 
 ### MGF.Storage (`src/Platform/MGF.Storage`)
-- Allowed: `ProjectBootstrap`, `RootIntegrity`
+- Allowed: `RootIntegrity`
 - Required: *(none)*
 - Forbidden: `Docs`, `Controllers`, `UseCases`
 - Rule: Storage/local filesystem adapters only; keep IO out of hosts and UseCases.
@@ -184,6 +184,12 @@ architecture tests in the same PR.
 - Required: *(none)*
 - Forbidden: `Docs`, `Controllers`, `UseCases`
 - Rule: Host entrypoint; keep flat.
+
+### MGF.Worker.Adapters.Storage (`src/Services/MGF.Worker.Adapters.Storage`)
+- Allowed: `ProjectBootstrap`
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Host adapter for storage/provisioning IO; implements Contracts gateways for Worker.
 
 ### MGF.Worker (`src/Services/MGF.Worker`)
 - Allowed: `ProjectArchive`, `ProjectDelivery`, `Properties`

@@ -1,4 +1,4 @@
-namespace MGF.Storage.ProjectBootstrap;
+namespace MGF.Worker.Adapters.Storage.ProjectBootstrap;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
