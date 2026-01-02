@@ -1,6 +1,7 @@
-namespace MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
+namespace MGF.Email.Composition;
 
 using MGF.Contracts.Abstractions;
+using MGF.Email.Models;
 
 public interface IWorkerEmailGateway
 {

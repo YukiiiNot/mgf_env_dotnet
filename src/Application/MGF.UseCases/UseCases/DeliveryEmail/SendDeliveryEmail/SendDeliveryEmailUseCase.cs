@@ -2,6 +2,8 @@ namespace MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 
 using System.Text.Json;
 using MGF.Contracts.Abstractions;
+using MGF.Email.Composition;
+using MGF.Email.Models;
 using MGF.FolderProvisioning;
 
 public sealed class SendDeliveryEmailUseCase : ISendDeliveryEmailUseCase

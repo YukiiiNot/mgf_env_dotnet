@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\Services\MGF.Worker\Email\Templates\**\*.*">
+    <Content Include="..\..\Platform\MGF.Email\Composition\Templates\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>Email\Templates\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </Content>

@@ -4,14 +4,13 @@ using MGF.Data.Data;
 using Microsoft.Extensions.Logging;
 using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Contracts.Abstractions.Email;
+using MGF.Email.Composition;
 using MGF.Integrations.Dropbox;
 using MGF.Integrations.Email.Gmail;
 using MGF.Integrations.Email.Smtp;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 using MGF.Worker;
-using MGF.Worker.Email;
-using MGF.Worker.Email.Sending;
 using MGF.Worker.ProjectBootstrap;
 using MGF.Worker.Square;
 

@@ -1,9 +1,9 @@
-namespace MGF.Worker.Email.Sending;
+namespace MGF.Email.Composition;
 
 using Microsoft.Extensions.Configuration;
 using MGF.Contracts.Abstractions.Email;
 
-internal static class EmailSenderFactory
+public static class EmailSenderFactory
 {
     public static IEmailSender Create(
         IConfiguration configuration,

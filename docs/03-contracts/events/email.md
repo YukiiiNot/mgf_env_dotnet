@@ -1,7 +1,7 @@
 ﻿MGF Email Contract (Internal)
 =============================
 
-Source of truth: `src/Services/MGF.Worker/Email/**`, `src/Operations/MGF.ProjectBootstrapCli`, `tests/MGF.Worker.Tests/EmailSnapshots`
+Source of truth: `src/Platform/MGF.Email/**`, `src/Integrations/MGF.Integrations.Email.*`, `src/Operations/MGF.ProjectBootstrapCli`, `tests/MGF.Worker.Tests/EmailSnapshots`
 Change control: Update when email metadata contract, allowlist, or template versions change.
 Last verified: 2025-12-30
 
@@ -75,14 +75,14 @@ Ergonomics enforcement (design contract for refactor)
 After the email subsystem refactor:
 - All sends go through one entry point: EmailService.SendAsync(kind, context, overrides?).
 - Delivery code must not build HTML/text strings directly.
-- Phase 1 refactor should NOT move templates or introduce a template engine.
+- Templates live under src/Platform/MGF.Email/Composition/Templates and must remain stable unless explicitly changed.
 
 MGF Email Kit (templates + theme)
 ---------------------------------
 Templates live under:
-- src/Services/MGF.Worker/Email/Templates/
-- src/Services/MGF.Worker/Email/Templates/partials/
-- src/Services/MGF.Worker/Email/Templates/theme.json
+- src/Platform/MGF.Email/Composition/Templates/
+- src/Platform/MGF.Email/Composition/Templates/partials/
+- src/Platform/MGF.Email/Composition/Templates/theme.json
 
 The delivery-ready HTML template is assembled from partials:
 layout_start â†’ header_block â†’ headline_block â†’ rule â†’ CTA â†’ link â†’ rule â†’ details â†’ rule â†’ files â†’ footer â†’ layout_end.

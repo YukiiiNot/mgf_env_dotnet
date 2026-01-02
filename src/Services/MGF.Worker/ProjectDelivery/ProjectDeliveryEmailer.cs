@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using MGF.Data.Data;
 using MGF.Data.Stores.Delivery;
 using MGF.Contracts.Abstractions.Email;
-using MGF.Worker.Email;
 using MGF.Email.Composition;
 using MGF.Email.Models;
 using MGF.Email.Registry;

@@ -1,6 +1,6 @@
 ﻿# Delivery Runbook (Dev/Test)
 
-Source of truth: `src/Operations/MGF.ProjectBootstrapCli`, `src/DevTools/MGF.ProjectBootstrapDevCli`, `src/Services/MGF.Worker`, `src/Services/MGF.Worker/Email`
+Source of truth: `src/Operations/MGF.ProjectBootstrapCli`, `src/DevTools/MGF.ProjectBootstrapDevCli`, `src/Services/MGF.Worker`, `src/Platform/MGF.Email`
 Change control: Update when delivery CLI flags, job flow, or email behavior changes.
 Last verified: 2025-12-30
 

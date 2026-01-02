@@ -30,7 +30,7 @@ Email composition/registry lives under `src/Platform/MGF.Email/`. Provider sende
 `src/Core/MGF.Contracts/Abstractions/Email/`. Worker wires selection at runtime.
 Add new emails by:
 1. Create context model + composer
-2. Add templates (.html/.txt) under `src/Services/MGF.Worker/Email/Templates/`
+2. Add templates (.html/.txt) under `src/Platform/MGF.Email/Composition/Templates/`
 3. Register composer in the registry
 4. Add/extend tests and preview fixtures
 

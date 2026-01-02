@@ -9,7 +9,8 @@ This guide gets a second developer productive without touching production.
 - `src/Operations/MGF.ProjectBootstrapCli` — CLI for bootstrap/archive/delivery/email/preview
 - `src/Data/MGF.DataMigrator` — migrations + lookup seeding
 - `src/Application/MGF.UseCases` ? use-case boundary for business workflows
-- `src/Services/MGF.Worker/Email` — email subsystem (templates, senders, preview)
+- `src/Platform/MGF.Email` — email composition + templates
+- `src/Integrations/MGF.Integrations.Email.*` — email senders (Gmail/SMTP)
 - `docs/` — runbooks, workflow, templates, contracts
 - `tests/` — unit + contract tests
 

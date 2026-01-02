@@ -12,6 +12,7 @@ using MGF.Data.Data;
 using MGF.Data.Stores.Counters;
 using MGF.Data.Stores.Delivery;
 using MGF.Data.Stores.Jobs;
+using MGF.Email.Models;
 using MGF.Worker.Square;
 using MGF.Worker.ProjectArchive;
 using MGF.Worker.ProjectBootstrap;
