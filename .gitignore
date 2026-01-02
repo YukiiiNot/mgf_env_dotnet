@@ -37,6 +37,9 @@ runtime/
 runtime/email_preview/
 TestResults/
 
+## Validation artifacts (transient)
+docs/validation/
+
 ## Dev secrets export files (never commit)
 dev-secrets.export.json
 *.export.json
