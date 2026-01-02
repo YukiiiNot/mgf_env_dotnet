@@ -8,6 +8,7 @@ using MGF.Contracts.Abstractions.Operations.Jobs;
 using MGF.Contracts.Abstractions.Operations.People;
 using MGF.Contracts.Abstractions.Operations.Projects;
 using MGF.Contracts.Abstractions.Operations.StorageRoots;
+using MGF.Contracts.Abstractions.ProjectArchive;
 using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.Contracts.Abstractions.Projects;
 using MGF.Contracts.Abstractions.RootIntegrity;
@@ -20,6 +21,7 @@ using MGF.Data.Stores.Jobs;
 using MGF.Data.Stores.Counters;
 using MGF.Data.Stores.Operations;
 using MGF.Data.Stores.Projects;
+using MGF.Data.Stores.ProjectArchive;
 using MGF.Data.Stores.ProjectBootstrap;
 using MGF.Data.Stores.RootIntegrity;
 
@@ -44,10 +46,12 @@ public static class DependencyInjection
         services.AddScoped<IPersonRepository, EfPersonRepository>();
         services.AddScoped<IDeliveryEmailData, DeliveryEmailData>();
         services.AddScoped<IProjectDeliveryData, ProjectDeliveryData>();
+        services.AddScoped<IProjectArchiveData, ProjectArchiveData>();
         services.AddScoped<ISquareWebhookStore, SquareWebhookStore>();
         services.AddScoped<IJobQueueStore, JobQueueStore>();
         services.AddScoped<ICounterAllocator, CounterAllocator>();
         services.AddScoped<IProjectDeliveryStore, ProjectDeliveryStore>();
+        services.AddScoped<IProjectArchiveStore, ProjectArchiveStore>();
         services.AddScoped<IProjectBootstrapStore, ProjectBootstrapStore>();
         services.AddScoped<IProjectCreationStore, ProjectCreationStore>();
         services.AddScoped<IJobOpsStore, JobOpsStore>();

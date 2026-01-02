@@ -186,13 +186,13 @@ architecture tests in the same PR.
 - Rule: Host entrypoint; keep flat.
 
 ### MGF.Worker.Adapters.Storage (`src/Services/MGF.Worker.Adapters.Storage`)
-- Allowed: `ProjectBootstrap`, `ProjectDelivery`
+- Allowed: `ProjectBootstrap`, `ProjectDelivery`, `ProjectArchive`
 - Required: *(none)*
 - Forbidden: `Docs`, `Controllers`, `UseCases`
 - Rule: Host adapter for storage/provisioning IO; implements Contracts gateways for Worker.
 
 ### MGF.Worker (`src/Services/MGF.Worker`)
-- Allowed: `ProjectArchive`, `Properties`
+- Allowed: `Properties`
 - Required: *(none)*
 - Forbidden: `Docs`, `Controllers`
 - Rule: Worker host layout (current shape); workflow folders are temporary (see backlog).
@@ -204,7 +204,7 @@ architecture tests in the same PR.
 - Rule: UI host; keep flat.
 
 ## Known Non-Compliance Backlog (Planned Slices)
-- `MGF.Worker`: currently contains `ProjectArchive`; target shape is host-only with `Jobs/` (migrate each workflow into UseCases, leave only handlers/wiring).
+- `MGF.Worker`: target shape is host-only with `Jobs/` (migrate each workflow into UseCases, leave only handlers/wiring).
 
 ## Architecture guardrails (tests/MGF.Architecture.Tests)
 - UseCases and Operations must not depend on Data/EF/Npgsql (exceptions listed in the test file).

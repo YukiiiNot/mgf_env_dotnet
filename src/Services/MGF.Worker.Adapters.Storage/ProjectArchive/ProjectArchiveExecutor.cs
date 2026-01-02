@@ -1,196 +1,46 @@
-namespace MGF.Worker.ProjectArchive;
+namespace MGF.Worker.Adapters.Storage.ProjectArchive;
 
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using MGF.Data.Data;
+using MGF.Contracts.Abstractions.ProjectArchive;
 using MGF.FolderProvisioning;
 using MGF.Worker.Adapters.Storage.ProjectBootstrap;
 
-public sealed class ProjectArchiver
+public sealed class ProjectArchiveExecutor : IProjectArchiveExecutor
 {
-    private const int MaxRunsToKeep = 10;
     private readonly IConfiguration configuration;
     private readonly FolderTemplateLoader templateLoader = new();
     private readonly FolderTemplatePlanner planner = new();
     private readonly FolderPlanExecutor executor;
     private readonly LocalFileStore fileStore = new();
 
-    public ProjectArchiver(IConfiguration configuration)
+    public ProjectArchiveExecutor(IConfiguration configuration)
     {
         this.configuration = configuration;
         executor = new FolderPlanExecutor(fileStore);
     }
 
-    private sealed record ArchivePathTemplates(
-        string DropboxActiveRelpath,
-        string DropboxToArchiveRelpath,
-        string DropboxArchiveRelpath,
-        string NasArchiveRelpath
-    );
-
-    public async Task<ProjectArchiveRunResult> RunAsync(
-        AppDbContext db,
-        ProjectArchivePayload payload,
-        string jobId,
-        CancellationToken cancellationToken)
+    public Task<string> ResolveProjectFolderNameAsync(
+        ProjectArchiveTokens tokens,
+        CancellationToken cancellationToken = default)
     {
-        var project = await db.Projects.AsNoTracking()
-            .SingleOrDefaultAsync(p => p.ProjectId == payload.ProjectId, cancellationToken);
-
-        if (project is null)
-        {
-            throw new InvalidOperationException($"Project not found: {payload.ProjectId}");
-        }
-
-        var startedAt = DateTimeOffset.UtcNow;
-        var results = new List<ProjectArchiveDomainResult>();
-
-        if (!payload.AllowNonReal && !string.Equals(project.DataProfile, "real", StringComparison.OrdinalIgnoreCase))
-        {
-            var blocked = BuildBlockedResults(
-                "blocked_non_real",
-                $"Project data_profile='{project.DataProfile}' is not eligible for archive."
-            );
-            var blockedResult = new ProjectArchiveRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
-                StartedAtUtc: startedAt,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                Domains: blocked,
-                HasErrors: true,
-                LastError: $"Project data_profile='{project.DataProfile}' is not eligible for archive."
-            );
-
-            await AppendArchiveRunAsync(db, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
-            return blockedResult;
-        }
-
-        if (!ProjectArchiveGuards.TryValidateStart(project.StatusKey, payload.Force, out var statusError, out var alreadyArchiving))
-        {
-            var rootState = alreadyArchiving ? "blocked_already_archiving" : "blocked_status_not_ready";
-            var blocked = BuildBlockedResults(rootState, statusError ?? "Project status not eligible for archiving.");
-            var blockedResult = new ProjectArchiveRunResult(
-                JobId: jobId,
-                ProjectId: payload.ProjectId,
-                EditorInitials: payload.EditorInitials,
-                StartedAtUtc: startedAt,
-                TestMode: payload.TestMode,
-                AllowTestCleanup: payload.AllowTestCleanup,
-                AllowNonReal: payload.AllowNonReal,
-                Force: payload.Force,
-                Domains: blocked,
-                HasErrors: true,
-                LastError: statusError
-            );
-
-            await AppendArchiveRunAsync(db, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
-            return blockedResult;
-        }
-
-        await UpdateProjectStatusAsync(db, project.ProjectId, ProjectArchiveGuards.StatusArchiving, cancellationToken);
-
-        var clientName = await db.Clients.AsNoTracking()
-            .Where(c => c.ClientId == project.ClientId)
-            .Select(c => c.DisplayName)
-            .SingleOrDefaultAsync(cancellationToken);
-
-        var tokens = ProvisioningTokens.Create(project.ProjectCode, project.Name, clientName, payload.EditorInitials);
+        var provisioningTokens = ToProvisioningTokens(tokens);
         var templatesRoot = ResolveTemplatesRoot();
-        var pathTemplates = await LoadPathTemplatesAsync(db, cancellationToken);
-
-        var projectFolderName = await ResolveProjectFolderNameAsync(
-            Path.Combine(templatesRoot, "dropbox_project_container.json"),
-            tokens,
-            cancellationToken
-        );
-
-        var dropboxResult = await ProcessDropboxAsync(payload, projectFolderName, pathTemplates, cancellationToken);
-        var lucidlinkResult = await ProcessLucidlinkAsync(payload, projectFolderName);
-        var nasResult = await ProcessNasAsync(
-            payload,
-            templatesRoot,
-            projectFolderName,
-            lucidlinkResult,
-            tokens,
-            pathTemplates,
-            cancellationToken
-        );
-
-        results.Add(dropboxResult);
-        results.Add(lucidlinkResult);
-        results.Add(nasResult);
-
-        if (IsDomainSuccess(nasResult)
-            && dropboxResult.RootState is "ready_to_archive" or "already_archived")
-        {
-            var updatedDropbox = await FinalizeDropboxArchiveAsync(
-                dropboxResult,
-                payload,
-                projectFolderName,
-                pathTemplates,
-                cancellationToken
-            );
-            results[0] = updatedDropbox;
-            dropboxResult = updatedDropbox;
-        }
-
-        var hasErrors = results.Any(IsDomainError);
-        var lastError = hasErrors ? BuildLastError(results) : null;
-
-        var runResult = new ProjectArchiveRunResult(
-            JobId: jobId,
-            ProjectId: payload.ProjectId,
-            EditorInitials: payload.EditorInitials,
-            StartedAtUtc: startedAt,
-            TestMode: payload.TestMode,
-            AllowTestCleanup: payload.AllowTestCleanup,
-            AllowNonReal: payload.AllowNonReal,
-            Force: payload.Force,
-            Domains: results,
-            HasErrors: hasErrors,
-            LastError: lastError
-        );
-
-        await AppendArchiveRunAsync(db, project.ProjectId, project.Metadata, runResult, cancellationToken);
-
-        var finalStatus = hasErrors ? ProjectArchiveGuards.StatusArchiveFailed : ProjectArchiveGuards.StatusArchived;
-        await UpdateProjectStatusAsync(db, project.ProjectId, finalStatus, cancellationToken);
-
-        return runResult;
+        var templatePath = Path.Combine(templatesRoot, "dropbox_project_container.json");
+        return ResolveProjectFolderNameAsync(templatePath, provisioningTokens, cancellationToken);
     }
 
-    public static ProjectArchivePayload ParsePayload(string payloadJson)
+    private static ProvisioningTokens ToProvisioningTokens(ProjectArchiveTokens tokens)
     {
-        using var doc = JsonDocument.Parse(payloadJson);
-        var root = doc.RootElement;
-
-        var projectId = root.TryGetProperty("projectId", out var projectIdElement) ? projectIdElement.GetString() : null;
-        if (string.IsNullOrWhiteSpace(projectId))
-        {
-            throw new InvalidOperationException("projectId is required in project.archive payload.");
-        }
-
-        var editorInitials = ReadEditorInitials(root);
-
-        return new ProjectArchivePayload(
-            ProjectId: projectId,
-            EditorInitials: editorInitials,
-            TestMode: ReadBoolean(root, "testMode", false),
-            AllowTestCleanup: ReadBoolean(root, "allowTestCleanup", false),
-            AllowNonReal: ReadBoolean(root, "allowNonReal", false),
-            Force: ReadBoolean(root, "force", false)
-        );
+        return ProvisioningTokens.Create(
+            tokens.ProjectCode,
+            tokens.ProjectName,
+            tokens.ClientName,
+            tokens.EditorInitials);
     }
-    private async Task<ProjectArchiveDomainResult> ProcessDropboxAsync(
+    public async Task<ProjectArchiveDomainResult> ProcessDropboxAsync(
         ProjectArchivePayload payload,
         string projectFolderName,
-        ArchivePathTemplates pathTemplates,
+        ProjectArchivePathTemplates pathTemplates,
         CancellationToken cancellationToken)
     {
         var notes = new List<string>();
@@ -353,11 +203,11 @@ public sealed class ProjectArchiver
         }
     }
 
-    private async Task<ProjectArchiveDomainResult> FinalizeDropboxArchiveAsync(
+    public async Task<ProjectArchiveDomainResult> FinalizeDropboxArchiveAsync(
         ProjectArchiveDomainResult dropboxResult,
         ProjectArchivePayload payload,
         string projectFolderName,
-        ArchivePathTemplates pathTemplates,
+        ProjectArchivePathTemplates pathTemplates,
         CancellationToken cancellationToken)
     {
         _ = cancellationToken;
@@ -412,7 +262,7 @@ public sealed class ProjectArchiver
             return dropboxResult with { RootState = "archive_move_failed", Actions = actions, Notes = notes };
         }
     }
-    private Task<ProjectArchiveDomainResult> ProcessLucidlinkAsync(
+    public Task<ProjectArchiveDomainResult> ProcessLucidlinkAsync(
         ProjectArchivePayload payload,
         string projectFolderName)
     {
@@ -459,17 +309,18 @@ public sealed class ProjectArchiver
         ));
     }
 
-    private async Task<ProjectArchiveDomainResult> ProcessNasAsync(
+    public async Task<ProjectArchiveDomainResult> ProcessNasAsync(
         ProjectArchivePayload payload,
-        string templatesRoot,
         string projectFolderName,
         ProjectArchiveDomainResult lucidlinkResult,
-        ProvisioningTokens tokens,
-        ArchivePathTemplates pathTemplates,
+        ProjectArchiveTokens tokens,
+        ProjectArchivePathTemplates pathTemplates,
         CancellationToken cancellationToken)
     {
         var notes = new List<string>();
         var actions = new List<ArchiveActionSummary>();
+        var provisioningTokens = ToProvisioningTokens(tokens);
+        var templatesRoot = ResolveTemplatesRoot();
 
         var rootPath = ResolveDomainRootPath("nas");
         if (string.IsNullOrWhiteSpace(rootPath))
@@ -543,7 +394,7 @@ public sealed class ProjectArchiver
             _ = await ExecuteTemplateAsync(
                 templatePath: Path.Combine(templatesRoot, "nas_archive_container.json"),
                 basePath: baseRoot,
-                tokens: tokens,
+                tokens: provisioningTokens,
                 mode: ProvisioningMode.Apply,
                 forceOverwrite: false,
                 rootNameOverride: null,
@@ -553,7 +404,7 @@ public sealed class ProjectArchiver
             verified = await ExecuteTemplateAsync(
                 templatePath: Path.Combine(templatesRoot, "nas_archive_container.json"),
                 basePath: baseRoot,
-                tokens: tokens,
+                tokens: provisioningTokens,
                 mode: ProvisioningMode.Verify,
                 forceOverwrite: false,
                 rootNameOverride: null,
@@ -655,45 +506,6 @@ public sealed class ProjectArchiver
         );
     }
 
-    private static async Task<ArchivePathTemplates> LoadPathTemplatesAsync(
-        AppDbContext db,
-        CancellationToken cancellationToken)
-    {
-        var keys = new[]
-        {
-            "dropbox_active_container_root",
-            "dropbox_to_archive_container_root",
-            "dropbox_archive_container_root",
-            "nas_archive_root",
-        };
-
-        var templateRows = await db.Set<Dictionary<string, object>>("path_templates")
-            .Where(row => keys.Contains(EF.Property<string>(row, "path_key")))
-            .Select(row => new
-            {
-                Key = EF.Property<string>(row, "path_key"),
-                Relpath = EF.Property<string>(row, "relpath"),
-            })
-            .ToListAsync(cancellationToken);
-
-        string Resolve(string key, string fallback)
-        {
-            var match = templateRows.FirstOrDefault(row => string.Equals(row.Key, key, StringComparison.OrdinalIgnoreCase));
-            if (match is null || string.IsNullOrWhiteSpace(match.Relpath))
-            {
-                return fallback;
-            }
-
-            return match.Relpath.Trim();
-        }
-
-        return new ArchivePathTemplates(
-            DropboxActiveRelpath: Resolve("dropbox_active_container_root", "02_Projects_Active"),
-            DropboxToArchiveRelpath: Resolve("dropbox_to_archive_container_root", "03_Projects_ToArchive"),
-            DropboxArchiveRelpath: Resolve("dropbox_archive_container_root", "98_Archive"),
-            NasArchiveRelpath: Resolve("nas_archive_root", "01_Projects_Archive")
-        );
-    }
     private async Task<ProvisioningResult> ExecuteTemplateAsync(
         string templatePath,
         string basePath,
@@ -833,109 +645,6 @@ public sealed class ProjectArchiver
         }
     }
 
-    private async Task AppendArchiveRunAsync(
-        AppDbContext db,
-        string projectId,
-        JsonElement metadata,
-        ProjectArchiveRunResult runResult,
-        CancellationToken cancellationToken)
-    {
-        var root = JsonNode.Parse(metadata.GetRawText()) as JsonObject ?? new JsonObject();
-        var archiving = root["archiving"] as JsonObject ?? new JsonObject();
-        var runs = archiving["runs"] as JsonArray ?? new JsonArray();
-
-        var runNode = JsonSerializer.SerializeToNode(runResult, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        if (runNode is not null)
-        {
-            runs.Add(runNode);
-        }
-
-        while (runs.Count > MaxRunsToKeep)
-        {
-            runs.RemoveAt(0);
-        }
-
-        archiving["runs"] = runs;
-        root["archiving"] = archiving;
-
-        var updatedJson = root.ToJsonString(new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.projects
-            SET metadata = {updatedJson}::jsonb,
-                updated_at = now()
-            WHERE project_id = {projectId};
-            """,
-            cancellationToken
-        );
-    }
-
-    private static async Task UpdateProjectStatusAsync(
-        AppDbContext db,
-        string projectId,
-        string statusKey,
-        CancellationToken cancellationToken)
-    {
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"""
-            UPDATE public.projects
-            SET status_key = {statusKey},
-                updated_at = now()
-            WHERE project_id = {projectId};
-            """,
-            cancellationToken
-        );
-    }
-    private static bool ReadBoolean(JsonElement root, string name, bool defaultValue)
-    {
-        if (root.TryGetProperty(name, out var element) && element.ValueKind is JsonValueKind.True or JsonValueKind.False)
-        {
-            return element.GetBoolean();
-        }
-
-        return defaultValue;
-    }
-
-    private static IReadOnlyList<string> ReadEditorInitials(JsonElement root)
-    {
-        if (!root.TryGetProperty("editorInitials", out var element))
-        {
-            return Array.Empty<string>();
-        }
-
-        if (element.ValueKind == JsonValueKind.Array)
-        {
-            return element
-                .EnumerateArray()
-                .Where(e => e.ValueKind == JsonValueKind.String)
-                .Select(e => e.GetString() ?? string.Empty)
-                .SelectMany(value => value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        if (element.ValueKind == JsonValueKind.String)
-        {
-            var raw = element.GetString() ?? string.Empty;
-            return raw
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        return Array.Empty<string>();
-    }
-
     private static ProvisioningSummary ToSummary(ProvisioningResult result)
     {
         return new ProvisioningSummary(
@@ -948,31 +657,6 @@ public sealed class ProjectArchiver
             Errors: result.Errors.ToArray(),
             Warnings: result.Warnings.ToArray()
         );
-    }
-
-    private static bool IsDomainSuccess(ProjectArchiveDomainResult result)
-    {
-        return result.RootState is "archived" or "already_archived" or "archive_verified" or "archive_repaired" or "source_found";
-    }
-
-    private static bool IsDomainError(ProjectArchiveDomainResult result)
-    {
-        if (result.RootState.StartsWith("blocked_", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (result.RootState.EndsWith("_failed", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (result.RootState.StartsWith("cleanup_", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return result.RootState is "container_missing" or "source_missing" or "archive_move_missing";
     }
 
     internal static DropboxMovePlan BuildDropboxMovePlan(bool hasActive, bool hasToArchive, bool hasArchive)
@@ -993,58 +677,6 @@ public sealed class ProjectArchiver
         }
 
         return new DropboxMovePlan("container_missing", ShouldMoveToArchive: false);
-    }
-
-    private static string? BuildLastError(IReadOnlyList<ProjectArchiveDomainResult> results)
-    {
-        foreach (var result in results)
-        {
-            if (result.Notes.Count > 0 && IsDomainError(result))
-            {
-                return result.Notes[0];
-            }
-
-            if (result.TargetProvisioning?.Errors.Count > 0)
-            {
-                return result.TargetProvisioning.Errors[0];
-            }
-        }
-
-        return "project.archive completed with errors.";
-    }
-
-    private static List<ProjectArchiveDomainResult> BuildBlockedResults(string rootState, string note)
-    {
-        return new List<ProjectArchiveDomainResult>
-        {
-            new(
-                DomainKey: "dropbox",
-                RootPath: string.Empty,
-                RootState: rootState,
-                DomainRootProvisioning: null,
-                TargetProvisioning: null,
-                Actions: Array.Empty<ArchiveActionSummary>(),
-                Notes: new[] { note }
-            ),
-            new(
-                DomainKey: "lucidlink",
-                RootPath: string.Empty,
-                RootState: rootState,
-                DomainRootProvisioning: null,
-                TargetProvisioning: null,
-                Actions: Array.Empty<ArchiveActionSummary>(),
-                Notes: new[] { note }
-            ),
-            new(
-                DomainKey: "nas",
-                RootPath: string.Empty,
-                RootState: rootState,
-                DomainRootProvisioning: null,
-                TargetProvisioning: null,
-                Actions: Array.Empty<ArchiveActionSummary>(),
-                Notes: new[] { note }
-            )
-        };
     }
 
     private string ResolveDomainRootPath(string domainKey)

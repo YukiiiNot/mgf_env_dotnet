@@ -1,5 +1,5 @@
 using MGF.FolderProvisioning;
-using MGF.Worker.ProjectArchive;
+using MGF.Worker.Adapters.Storage.ProjectArchive;
 using MGF.Worker.Adapters.Storage.ProjectBootstrap;
 using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
@@ -53,7 +53,7 @@ public sealed class ManifestPathTests
             }
         );
 
-        var manifestPath = ProjectArchiver.ResolveManifestPath(plan);
+        var manifestPath = ProjectArchiveExecutor.ResolveManifestPath(plan);
         var expectedSuffix = Path.Combine("00_Admin", ".mgf", "manifest", "folder_manifest.json");
 
         Assert.EndsWith(expectedSuffix, manifestPath, StringComparison.OrdinalIgnoreCase);

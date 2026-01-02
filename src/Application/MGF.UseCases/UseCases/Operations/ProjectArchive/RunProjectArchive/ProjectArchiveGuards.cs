@@ -1,4 +1,4 @@
-namespace MGF.Worker.ProjectArchive;
+namespace MGF.UseCases.Operations.ProjectArchive.RunProjectArchive;
 
 internal static class ProjectArchiveGuards
 {

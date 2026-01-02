@@ -375,11 +375,11 @@ public sealed class ArchitectureRulesTests
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Worker.Adapters.Storage"] = new ShapeContract(
-                Allowed: new[] { "ProjectBootstrap", "ProjectDelivery" },
+                Allowed: new[] { "ProjectBootstrap", "ProjectDelivery", "ProjectArchive" },
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Worker"] = new ShapeContract(
-                Allowed: new[] { "ProjectArchive", "Properties" },
+                Allowed: new[] { "Properties" },
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers" }),
             ["MGF.Desktop.Wpf"] = new ShapeContract(

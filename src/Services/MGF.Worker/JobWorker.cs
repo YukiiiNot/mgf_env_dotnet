@@ -8,6 +8,7 @@ using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Contracts.Abstractions.Email;
 using MGF.Domain.Entities;
 using MGF.Contracts.Abstractions.Integrations.Square;
+using MGF.Contracts.Abstractions.ProjectArchive;
 using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.Contracts.Abstractions.ProjectBootstrap;
 using MGF.Contracts.Abstractions.RootIntegrity;
@@ -17,10 +18,10 @@ using MGF.Data.Stores.Jobs;
 using MGF.Email.Models;
 using MGF.Integrations.Square;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
+using MGF.UseCases.Operations.ProjectArchive.RunProjectArchive;
 using MGF.UseCases.Operations.ProjectDelivery.RunProjectDelivery;
 using MGF.UseCases.Operations.ProjectBootstrap.BootstrapProject;
 using MGF.UseCases.Operations.RootIntegrity.RunRootIntegrity;
-using MGF.Worker.ProjectArchive;
 
 public sealed class JobWorker : BackgroundService
 {
@@ -241,7 +242,8 @@ public sealed class JobWorker : BackgroundService
 
             if (string.Equals(job.JobTypeKey, "project.archive", StringComparison.Ordinal))
             {
-                var succeeded = await HandleProjectArchiveAsync(db, jobQueueStore, job, cancellationToken);
+                var useCase = services.GetRequiredService<IRunProjectArchiveUseCase>();
+                var succeeded = await HandleProjectArchiveAsync(jobQueueStore, useCase, job, cancellationToken);
                 if (succeeded)
                 {
                     await MarkSucceededAsync(jobQueueStore, job.JobId, cancellationToken);
@@ -397,15 +399,15 @@ public sealed class JobWorker : BackgroundService
     }
 
     private async Task<bool> HandleProjectArchiveAsync(
-        AppDbContext db,
         IJobQueueStore jobQueueStore,
+        IRunProjectArchiveUseCase useCase,
         ClaimedJob job,
         CancellationToken cancellationToken)
     {
         ProjectArchivePayload payload;
         try
         {
-            payload = ProjectArchiver.ParsePayload(job.PayloadJson);
+            payload = ProjectArchivePayload.Parse(job.PayloadJson);
         }
         catch (Exception ex)
         {
@@ -422,23 +424,23 @@ public sealed class JobWorker : BackgroundService
 
         try
         {
-            var archiver = new ProjectArchiver(configuration);
-            var result = await archiver.RunAsync(db, payload, job.JobId, cancellationToken);
+            var request = new RunProjectArchiveRequest(payload, job.JobId);
+            var result = await useCase.ExecuteAsync(request, cancellationToken);
 
             logger.LogInformation(
                 "MGF.Worker: project.archive completed (job_id={JobId}, project_id={ProjectId}, domains={Domains}, errors={HasErrors})",
-                result.JobId,
-                result.ProjectId,
-                result.Domains.Count,
-                result.HasErrors
+                result.Result.JobId,
+                result.Result.ProjectId,
+                result.Result.Domains.Count,
+                result.Result.HasErrors
             );
 
-            if (result.HasErrors)
+            if (result.Result.HasErrors)
             {
                 await MarkFailedAsync(
                     jobQueueStore,
                     job,
-                    new InvalidOperationException(result.LastError ?? "project.archive completed with errors."),
+                    new InvalidOperationException(result.Result.LastError ?? "project.archive completed with errors."),
                     cancellationToken
                 );
                 return false;

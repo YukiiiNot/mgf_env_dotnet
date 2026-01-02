@@ -45,7 +45,7 @@ Source: `src/Services/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 ## Payload shapes (JSONB)
 - `dropbox.create_project_structure`: `{ projectId?, clientId?, templateKey? }` (read directly in `JobWorker`).
 - `project.bootstrap`: `ProjectBootstrapPayload` in `src/Core/MGF.Contracts/Abstractions/ProjectBootstrap/ProjectBootstrapModels.cs`.
-- `project.archive`: `ProjectArchivePayload` in `src/Services/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`.
+- `project.archive`: `ProjectArchivePayload` in `src/Core/MGF.Contracts/Abstractions/ProjectArchive/ProjectArchiveModels.cs`.
 - `project.delivery`: `ProjectDeliveryPayload` in `src/Core/MGF.Contracts/Abstractions/ProjectDelivery/ProjectDeliveryModels.cs`.
 - `project.delivery_email`: `ProjectDeliveryEmailPayload` in `src/Core/MGF.Contracts/Abstractions/ProjectDelivery/ProjectDeliveryModels.cs`.
 - `domain.root_integrity`: `RootIntegrityPayload` in `src/Core/MGF.Contracts/Abstractions/RootIntegrity/RootIntegrityModels.cs`.
@@ -58,6 +58,6 @@ Source: `src/Services/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 
 ## References
 - Worker dispatch: `src/Services/MGF.Worker/JobWorker.cs`
-- Payload models: `src/Core/MGF.Contracts/Abstractions/ProjectBootstrap/ProjectBootstrapModels.cs`, `src/Services/MGF.Worker/ProjectArchive/ProjectArchiveModels.cs`, `src/Core/MGF.Contracts/Abstractions/ProjectDelivery/ProjectDeliveryModels.cs`, `src/Core/MGF.Contracts/Abstractions/RootIntegrity/RootIntegrityModels.cs`
+- Payload models: `src/Core/MGF.Contracts/Abstractions/ProjectBootstrap/ProjectBootstrapModels.cs`, `src/Core/MGF.Contracts/Abstractions/ProjectArchive/ProjectArchiveModels.cs`, `src/Core/MGF.Contracts/Abstractions/ProjectDelivery/ProjectDeliveryModels.cs`, `src/Core/MGF.Contracts/Abstractions/RootIntegrity/RootIntegrityModels.cs`
 - Job types seed: `src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs`
 
