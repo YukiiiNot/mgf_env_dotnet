@@ -20,7 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Services\MGF.Worker\MGF.Worker.csproj" />
-    <ProjectReference Include="..\..\src\Services\MGF.Worker.Adapters.Storage\MGF.Worker.Adapters.Storage.csproj" />
     <ProjectReference Include="..\..\src\Platform\MGF.Storage\MGF.Storage.csproj" />
   </ItemGroup>
 

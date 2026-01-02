@@ -23,7 +23,6 @@
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Dropbox\MGF.Integrations.Dropbox.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Square\MGF.Integrations.Square.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Storage\MGF.Storage.csproj" />
-    <ProjectReference Include="..\MGF.Worker.Adapters.Storage\MGF.Worker.Adapters.Storage.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.FolderProvisioning\MGF.FolderProvisioning.csproj" />
     <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
   </ItemGroup>

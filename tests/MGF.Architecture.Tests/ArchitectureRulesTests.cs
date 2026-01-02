@@ -291,8 +291,8 @@ public sealed class ArchitectureRulesTests
         new Dictionary<string, ShapeContract>(StringComparer.OrdinalIgnoreCase)
         {
             ["MGF.UseCases"] = new ShapeContract(
-                Allowed: new[] { "UseCases" },
-                Required: new[] { "UseCases" },
+                Allowed: new[] { "UseCases", "Properties" },
+                Required: new[] { "UseCases", "Properties" },
                 Forbidden: new[] { "Docs", "Controllers", "Services", "Stores", "Integrations" }),
             ["MGF.Contracts"] = new ShapeContract(
                 Allowed: new[] { "Abstractions" },
@@ -303,88 +303,84 @@ public sealed class ArchitectureRulesTests
                 Required: new[] { "Entities" },
                 Forbidden: new[] { "Docs", "Controllers", "Services", "Stores" }),
             ["MGF.Data"] = new ShapeContract(
-                Allowed: new[] { "Configuration", "Data", "Migrations", "Options", "Stores" },
-                Required: new[] { "Data", "Stores" },
+                Allowed: new[] { "Configuration", "Data", "Migrations", "Options", "Stores", "Properties" },
+                Required: new[] { "Configuration", "Data", "Migrations", "Options", "Stores", "Properties" },
                 Forbidden: new[] { "Abstractions", "Docs", "Controllers" }),
             ["MGF.DataMigrator"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Commands" },
+                Required: new[] { "Commands" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.DbMigrationsInfoCli"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Commands" },
+                Required: new[] { "Commands" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.DevSecretsCli"] = new ShapeContract(
-                Allowed: new[] { "Models" },
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Commands", "Models" },
+                Required: new[] { "Commands", "Models" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.LegacyAuditCli"] = new ShapeContract(
                 Allowed: new[] { "Commands", "Models", "Properties", "Reporting", "Scanning" },
-                Required: new[] { "Commands" },
+                Required: new[] { "Commands", "Models", "Properties", "Reporting", "Scanning" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.ProjectBootstrapDevCli"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Commands" },
+                Required: new[] { "Commands" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.SquareImportCli"] = new ShapeContract(
                 Allowed: new[] { "Commands", "Guards", "Importers", "Normalization", "Parsing", "Properties", "Reporting" },
-                Required: new[] { "Commands", "Importers" },
+                Required: new[] { "Commands", "Guards", "Importers", "Normalization", "Parsing", "Properties", "Reporting" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Integrations.Dropbox"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Clients" },
+                Required: new[] { "Clients" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Integrations.Square"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Clients" },
+                Required: new[] { "Clients" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Integrations.Email.Gmail"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Clients" },
+                Required: new[] { "Clients" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Integrations.Email.Smtp"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Clients" },
+                Required: new[] { "Clients" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.ProjectBootstrapCli"] = new ShapeContract(
-                Allowed: new[] { "Properties" },
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Commands", "Properties" },
+                Required: new[] { "Commands", "Properties" },
                 Forbidden: new[] { "Docs", "Controllers", "Services" }),
             ["MGF.ProvisionerCli"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Commands" },
+                Required: new[] { "Commands" },
                 Forbidden: new[] { "Docs", "Controllers", "Services" }),
             ["MGF.Email"] = new ShapeContract(
                 Allowed: new[] { "Composition", "Models", "Registry" },
-                Required: new[] { "Composition" },
+                Required: new[] { "Composition", "Models", "Registry" },
                 Forbidden: new[] { "Docs", "Senders", "Integrations" }),
             ["MGF.Storage"] = new ShapeContract(
-                Allowed: new[] { "RootIntegrity" },
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "RootIntegrity", "Properties" },
+                Required: new[] { "RootIntegrity", "Properties" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.FolderProvisioning"] = new ShapeContract(
                 Allowed: new[] { "Provisioning" },
                 Required: new[] { "Provisioning" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Api"] = new ShapeContract(
-                Allowed: new[] { "Controllers", "Middleware", "Properties", "Services" },
-                Required: new[] { "Controllers" },
+                Allowed: new[] { "Controllers", "Middleware", "Properties", "Services", "Hosting" },
+                Required: new[] { "Controllers", "Middleware", "Properties", "Services", "Hosting" },
                 Forbidden: new[] { "Docs", "Stores" }),
             ["MGF.Operations.Runtime"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
-                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
-            ["MGF.Worker.Adapters.Storage"] = new ShapeContract(
-                Allowed: new[] { "ProjectBootstrap", "ProjectDelivery", "ProjectArchive" },
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Hosting" },
+                Required: new[] { "Hosting" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Worker"] = new ShapeContract(
-                Allowed: new[] { "Properties" },
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Properties", "Hosting", "Jobs", "Adapters" },
+                Required: new[] { "Properties", "Hosting", "Jobs", "Adapters" },
                 Forbidden: new[] { "Docs", "Controllers" }),
             ["MGF.Desktop.Wpf"] = new ShapeContract(
-                Allowed: Array.Empty<string>(),
-                Required: Array.Empty<string>(),
+                Allowed: new[] { "Hosting", "Views", "Properties" },
+                Required: new[] { "Hosting", "Views", "Properties" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
         };
 
