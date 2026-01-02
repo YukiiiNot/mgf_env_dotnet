@@ -302,6 +302,10 @@ public sealed class ArchitectureRulesTests
                 Allowed: Array.Empty<string>(),
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.Integrations.Square"] = new ShapeContract(
+                Allowed: Array.Empty<string>(),
+                Required: Array.Empty<string>(),
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Integrations.Email.Gmail"] = new ShapeContract(
                 Allowed: Array.Empty<string>(),
                 Required: Array.Empty<string>(),
@@ -327,7 +331,7 @@ public sealed class ArchitectureRulesTests
                 Required: new[] { "Provisioning" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Api"] = new ShapeContract(
-                Allowed: new[] { "Controllers", "Middleware", "Properties", "Services", "Square" },
+                Allowed: new[] { "Controllers", "Middleware", "Properties", "Services" },
                 Required: new[] { "Controllers" },
                 Forbidden: new[] { "Docs", "Stores" }),
             ["MGF.Operations.Runtime"] = new ShapeContract(
@@ -335,7 +339,7 @@ public sealed class ArchitectureRulesTests
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Worker"] = new ShapeContract(
-                Allowed: new[] { "Email", "ProjectArchive", "ProjectBootstrap", "ProjectDelivery", "Properties", "RootIntegrity", "Square" },
+                Allowed: new[] { "ProjectArchive", "ProjectBootstrap", "ProjectDelivery", "Properties", "RootIntegrity" },
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers" }),
             ["MGF.Desktop.Wpf"] = new ShapeContract(

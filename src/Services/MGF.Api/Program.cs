@@ -1,6 +1,7 @@
 using MGF.Api.Middleware;
 using MGF.Api.Services;
-using MGF.Api.Square;
+using MGF.Contracts.Abstractions.Integrations.Square;
+using MGF.Integrations.Square;
 using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;

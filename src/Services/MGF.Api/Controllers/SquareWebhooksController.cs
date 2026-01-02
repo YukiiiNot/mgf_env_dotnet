@@ -5,7 +5,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
-using MGF.Api.Square;
+using MGF.Contracts.Abstractions.Integrations.Square;
 using MGF.UseCases.Integrations.Square.IngestWebhook;
 
 [ApiController]

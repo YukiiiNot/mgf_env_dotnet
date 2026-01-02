@@ -33,7 +33,7 @@ This document is the canonical source for repo structure conventions. If structu
 ## Email capability layout
 - Platform composition/registry + profile resolution: `src/Platform/MGF.Email`.
 - Provider abstractions/models: `src/Core/MGF.Contracts/Abstractions/Email`.
-- Provider implementations: `src/Integrations/MGF.Integrations.Email.*` (Gmail, SMTP).
+- Provider implementations: `src/Integrations/MGF.Integrations.*` (Dropbox, Email.*, Square).
 - Hosts wire selection; do not implement provider logic in services.
 
 ## When to create a new project?
@@ -125,6 +125,12 @@ architecture tests in the same PR.
 - Forbidden: `Docs`, `Controllers`, `UseCases`
 - Rule: Integration client only; keep flat unless a stable folder convention emerges.
 
+### MGF.Integrations.Square (`src/Integrations/MGF.Integrations.Square`)
+- Allowed: *(none)*
+- Required: *(none)*
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Provider implementation only; keep flat.
+
 ### MGF.Integrations.Email.Gmail (`src/Integrations/MGF.Integrations.Email.Gmail`)
 - Allowed: *(none)*
 - Required: *(none)*
@@ -162,7 +168,7 @@ architecture tests in the same PR.
 - Rule: Engine + policy under `Provisioning/`.
 
 ### MGF.Api (`src/Services/MGF.Api`)
-- Allowed: `Controllers`, `Middleware`, `Properties`, `Services`, `Square`
+- Allowed: `Controllers`, `Middleware`, `Properties`, `Services`
 - Required: `Controllers`
 - Forbidden: `Docs`, `Stores`
 - Rule: HTTP host; adapters + wiring only.
@@ -174,7 +180,7 @@ architecture tests in the same PR.
 - Rule: Host entrypoint; keep flat.
 
 ### MGF.Worker (`src/Services/MGF.Worker`)
-- Allowed: `Email`, `ProjectArchive`, `ProjectBootstrap`, `ProjectDelivery`, `Properties`, `RootIntegrity`, `Square`
+- Allowed: `ProjectArchive`, `ProjectBootstrap`, `ProjectDelivery`, `Properties`, `RootIntegrity`
 - Required: *(none)*
 - Forbidden: `Docs`, `Controllers`
 - Rule: Worker host layout (current shape); workflow folders are temporary (see backlog).
@@ -187,7 +193,6 @@ architecture tests in the same PR.
 
 ## Known Non-Compliance Backlog (Planned Slices)
 - `MGF.Worker`: currently contains workflow folders; target shape is host-only with `Jobs/` (migrate each workflow into UseCases, leave only handlers/wiring).
-- `MGF.Api`: currently has `Square/` provider logic; move to Integrations or a Platform verification component.
 
 ## Architecture guardrails (tests/MGF.Architecture.Tests)
 - UseCases and Operations must not depend on Data/EF/Npgsql (exceptions listed in the test file).

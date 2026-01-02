@@ -1,6 +1,6 @@
 # Integrations Configuration Contract
 
-Source of truth: `src/Integrations/MGF.Integrations.Dropbox/**`, `src/Integrations/MGF.Integrations.Email.*`, `src/Platform/MGF.Email/**`, `src/Services/MGF.Api/Square/**`, `config/appsettings*.json`, `tools/dev-secrets/secrets.required.json`
+Source of truth: `src/Integrations/MGF.Integrations.Dropbox/**`, `src/Integrations/MGF.Integrations.Email.*`, `src/Integrations/MGF.Integrations.Square/**`, `src/Platform/MGF.Email/**`, `config/appsettings*.json`, `tools/dev-secrets/secrets.required.json`
 Change control: Update when integration config keys or behavior changes.
 Last verified: 2025-12-30
 

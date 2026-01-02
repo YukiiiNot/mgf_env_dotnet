@@ -8,11 +8,11 @@ using MGF.Email.Composition;
 using MGF.Integrations.Dropbox;
 using MGF.Integrations.Email.Gmail;
 using MGF.Integrations.Email.Smtp;
+using MGF.Integrations.Square;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
 using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 using MGF.Worker;
 using MGF.Worker.ProjectBootstrap;
-using MGF.Worker.Square;
 
 var mgfEnv = DatabaseConnection.GetEnvironment();
 var mgfDbMode = DatabaseConnection.GetDatabaseMode();

@@ -1,7 +1,8 @@
-namespace MGF.Api.Square;
+namespace MGF.Integrations.Square;
 
 using System.Security.Cryptography;
 using System.Text;
+using MGF.Contracts.Abstractions.Integrations.Square;
 
 public sealed class SquareWebhookVerifier : ISquareWebhookVerifier
 {

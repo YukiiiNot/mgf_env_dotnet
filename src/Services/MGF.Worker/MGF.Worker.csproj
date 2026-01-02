@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Gmail\MGF.Integrations.Email.Gmail.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Smtp\MGF.Integrations.Email.Smtp.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Dropbox\MGF.Integrations.Dropbox.csproj" />
+    <ProjectReference Include="..\..\Integrations\MGF.Integrations.Square\MGF.Integrations.Square.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.FolderProvisioning\MGF.FolderProvisioning.csproj" />
     <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
   </ItemGroup>
