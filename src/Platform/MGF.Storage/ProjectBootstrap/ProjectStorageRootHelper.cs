@@ -1,18 +1,18 @@
-namespace MGF.Worker.ProjectBootstrap;
+namespace MGF.Storage.ProjectBootstrap;
 
-using MGF.UseCases.ProjectBootstrap.BootstrapProject;
+using MGF.Contracts.Abstractions.ProjectBootstrap;
 
-internal static class ProjectStorageRootHelper
+public static class ProjectStorageRootHelper
 {
-    internal const string RootKeyTestRun = "test_run";
-    internal const string RootKeyProjectContainer = "project_container";
+    public const string RootKeyTestRun = "test_run";
+    public const string RootKeyProjectContainer = "project_container";
 
-    internal static string GetRootKey(bool testMode)
+    public static string GetRootKey(bool testMode)
     {
         return testMode ? RootKeyTestRun : RootKeyProjectContainer;
     }
 
-    internal static bool ShouldUpsert(string rootState, ProvisioningSummary? containerSummary)
+    public static bool ShouldUpsert(string rootState, ProvisioningSummary? containerSummary)
     {
         if (containerSummary?.Success != true)
         {
@@ -32,7 +32,7 @@ internal static class ProjectStorageRootHelper
         return true;
     }
 
-    internal static bool TryBuildFolderRelpath(
+    public static bool TryBuildFolderRelpath(
         string rootPath,
         string targetPath,
         out string folderRelpath,

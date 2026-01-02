@@ -1,8 +1,8 @@
-namespace MGF.Worker.ProjectBootstrap;
+namespace MGF.Storage.ProjectBootstrap;
 
 using MGF.FolderProvisioning;
 
-internal static class ProjectBootstrapGuards
+public static class ProjectBootstrapGuards
 {
     private const string StatusReady = "ready_to_provision";
     private const string StatusProvisioning = "provisioning";

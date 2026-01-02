@@ -1,4 +1,4 @@
-namespace MGF.UseCases.ProjectBootstrap.BootstrapProject;
+namespace MGF.Contracts.Abstractions.ProjectBootstrap;
 
 public interface IProjectBootstrapProvisioningGateway
 {

@@ -8,6 +8,7 @@ using MGF.Contracts.Abstractions.Dropbox;
 using MGF.Contracts.Abstractions.Email;
 using MGF.Domain.Entities;
 using MGF.Contracts.Abstractions.Integrations.Square;
+using MGF.Contracts.Abstractions.ProjectBootstrap;
 using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Data.Data;
 using MGF.Data.Stores.Counters;
@@ -15,12 +16,11 @@ using MGF.Data.Stores.Delivery;
 using MGF.Data.Stores.Jobs;
 using MGF.Email.Models;
 using MGF.Integrations.Square;
-using MGF.Worker.ProjectArchive;
-using MGF.Worker.ProjectBootstrap;
-using MGF.Worker.ProjectDelivery;
 using MGF.UseCases.DeliveryEmail.SendDeliveryEmail;
-using MGF.UseCases.ProjectBootstrap.BootstrapProject;
+using MGF.UseCases.Operations.ProjectBootstrap.BootstrapProject;
 using MGF.UseCases.Operations.RootIntegrity.RunRootIntegrity;
+using MGF.Worker.ProjectArchive;
+using MGF.Worker.ProjectDelivery;
 
 public sealed class JobWorker : BackgroundService
 {
@@ -334,7 +334,7 @@ public sealed class JobWorker : BackgroundService
         ProjectBootstrapPayload payload;
         try
         {
-            payload = ProjectBootstrapper.ParsePayload(job.PayloadJson);
+            payload = ProjectBootstrapPayload.Parse(job.PayloadJson);
         }
         catch (Exception ex)
         {

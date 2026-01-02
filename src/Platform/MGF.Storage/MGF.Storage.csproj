@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
+    <ProjectReference Include="..\MGF.FolderProvisioning\MGF.FolderProvisioning.csproj" />
   </ItemGroup>
 
 </Project>

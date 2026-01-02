@@ -353,7 +353,7 @@ public sealed class ArchitectureRulesTests
                 Required: new[] { "Composition" },
                 Forbidden: new[] { "Docs", "Senders", "Integrations" }),
             ["MGF.Storage"] = new ShapeContract(
-                Allowed: new[] { "RootIntegrity" },
+                Allowed: new[] { "ProjectBootstrap", "RootIntegrity" },
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.FolderProvisioning"] = new ShapeContract(
@@ -369,7 +369,7 @@ public sealed class ArchitectureRulesTests
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Worker"] = new ShapeContract(
-                Allowed: new[] { "ProjectArchive", "ProjectBootstrap", "ProjectDelivery", "Properties" },
+                Allowed: new[] { "ProjectArchive", "ProjectDelivery", "Properties" },
                 Required: Array.Empty<string>(),
                 Forbidden: new[] { "Docs", "Controllers" }),
             ["MGF.Desktop.Wpf"] = new ShapeContract(

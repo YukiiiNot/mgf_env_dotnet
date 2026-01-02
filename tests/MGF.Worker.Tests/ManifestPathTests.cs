@@ -1,6 +1,6 @@
 using MGF.FolderProvisioning;
 using MGF.Worker.ProjectArchive;
-using MGF.Worker.ProjectBootstrap;
+using MGF.Storage.ProjectBootstrap;
 using MGF.Worker.ProjectDelivery;
 
 namespace MGF.Worker.Tests;

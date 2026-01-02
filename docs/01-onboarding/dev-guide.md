@@ -48,7 +48,7 @@ project placement and ownership rules.
 ## Where to add new workflows
 
 - Use-cases: `src/Application/MGF.UseCases`
-- Job handlers: `src/Services/MGF.Worker/<Workflow>`
+- Job handlers: `src/Services/MGF.Worker/JobWorker.cs` (dispatch only; workflow logic lives in UseCases)
 - CLI commands: `src/Operations/MGF.ProjectBootstrapCli/Program.cs` (call UseCases, not hosts)
 - Runbooks: `docs/05-runbooks/`
 - Templates/contracts: `artifacts/templates/` and `docs/03-contracts/storage/infra-contracts.md`

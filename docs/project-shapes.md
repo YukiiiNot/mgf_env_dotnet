@@ -162,7 +162,7 @@ architecture tests in the same PR.
 - Rule: Composition/registry only; no provider logic.
 
 ### MGF.Storage (`src/Platform/MGF.Storage`)
-- Allowed: `RootIntegrity`
+- Allowed: `ProjectBootstrap`, `RootIntegrity`
 - Required: *(none)*
 - Forbidden: `Docs`, `Controllers`, `UseCases`
 - Rule: Storage/local filesystem adapters only; keep IO out of hosts and UseCases.
@@ -186,7 +186,7 @@ architecture tests in the same PR.
 - Rule: Host entrypoint; keep flat.
 
 ### MGF.Worker (`src/Services/MGF.Worker`)
-- Allowed: `ProjectArchive`, `ProjectBootstrap`, `ProjectDelivery`, `Properties`
+- Allowed: `ProjectArchive`, `ProjectDelivery`, `Properties`
 - Required: *(none)*
 - Forbidden: `Docs`, `Controllers`
 - Rule: Worker host layout (current shape); workflow folders are temporary (see backlog).

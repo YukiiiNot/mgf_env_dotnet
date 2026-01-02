@@ -1,7 +1,7 @@
-namespace MGF.Worker.ProjectBootstrap;
+namespace MGF.Storage.ProjectBootstrap;
 
 using Microsoft.Extensions.Configuration;
-using MGF.UseCases.ProjectBootstrap.BootstrapProject;
+using MGF.Contracts.Abstractions.ProjectBootstrap;
 
 public sealed class ProjectBootstrapProvisioningGateway : IProjectBootstrapProvisioningGateway
 {

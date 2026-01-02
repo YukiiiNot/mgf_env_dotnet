@@ -1,8 +1,8 @@
-namespace MGF.Worker.ProjectBootstrap;
+namespace MGF.Storage.ProjectBootstrap;
 
-internal static class ProjectBootstrapCleanupHelper
+public static class ProjectBootstrapCleanupHelper
 {
-    internal static readonly TimeSpan[] DefaultBackoff =
+    public static readonly TimeSpan[] DefaultBackoff =
     [
         TimeSpan.FromMilliseconds(100),
         TimeSpan.FromMilliseconds(250),
@@ -11,7 +11,7 @@ internal static class ProjectBootstrapCleanupHelper
         TimeSpan.FromSeconds(2)
     ];
 
-    internal static async Task<CleanupResult> TryDeleteWithRetryAsync(
+    public static async Task<CleanupResult> TryDeleteWithRetryAsync(
         string targetPath,
         CancellationToken cancellationToken,
         Action<string>? deleteAction = null,
@@ -45,4 +45,4 @@ internal static class ProjectBootstrapCleanupHelper
     }
 }
 
-internal sealed record CleanupResult(bool Success, string? Error);
+public sealed record CleanupResult(bool Success, string? Error);

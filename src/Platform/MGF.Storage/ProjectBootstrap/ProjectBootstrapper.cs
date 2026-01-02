@@ -1,10 +1,9 @@
-namespace MGF.Worker.ProjectBootstrap;
+namespace MGF.Storage.ProjectBootstrap;
 
-using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MGF.Contracts.Abstractions.ProjectBootstrap;
 using MGF.FolderProvisioning;
-using MGF.UseCases.ProjectBootstrap.BootstrapProject;
 
 public sealed class ProjectBootstrapper
 {
@@ -173,34 +172,6 @@ public sealed class ProjectBootstrapper
             Domains: results,
             HasErrors: true,
             LastError: note
-        );
-    }
-
-    public static ProjectBootstrapPayload ParsePayload(string payloadJson)
-    {
-        using var doc = JsonDocument.Parse(payloadJson);
-        var root = doc.RootElement;
-
-        var projectId = root.TryGetProperty("projectId", out var projectIdElement) ? projectIdElement.GetString() : null;
-        if (string.IsNullOrWhiteSpace(projectId))
-        {
-            throw new InvalidOperationException("projectId is required in project.bootstrap payload.");
-        }
-
-        var editorInitials = ReadEditorInitials(root);
-
-        return new ProjectBootstrapPayload(
-            ProjectId: projectId,
-            EditorInitials: editorInitials,
-            VerifyDomainRoots: ReadBoolean(root, "verifyDomainRoots", true),
-            CreateDomainRoots: ReadBoolean(root, "createDomainRoots", false),
-            ProvisionProjectContainers: ReadBoolean(root, "provisionProjectContainers", false),
-            AllowRepair: ReadBoolean(root, "allowRepair", false),
-            ForceSandbox: ReadBoolean(root, "forceSandbox", false),
-            AllowNonReal: ReadBoolean(root, "allowNonReal", false),
-            Force: ReadBoolean(root, "force", false),
-            TestMode: ReadBoolean(root, "testMode", false),
-            AllowTestCleanup: ReadBoolean(root, "allowTestCleanup", false)
         );
     }
 
@@ -646,48 +617,6 @@ public sealed class ProjectBootstrapper
         return rootState is "ready_existing_root" or "root_created" or "root_verified";
     }
 
-
-    private static bool ReadBoolean(JsonElement root, string name, bool defaultValue)
-    {
-        if (root.TryGetProperty(name, out var element) && element.ValueKind is JsonValueKind.True or JsonValueKind.False)
-        {
-            return element.GetBoolean();
-        }
-
-        return defaultValue;
-    }
-
-    private static IReadOnlyList<string> ReadEditorInitials(JsonElement root)
-    {
-        if (!root.TryGetProperty("editorInitials", out var element))
-        {
-            return Array.Empty<string>();
-        }
-
-        if (element.ValueKind == JsonValueKind.Array)
-        {
-            return element
-                .EnumerateArray()
-                .Where(e => e.ValueKind == JsonValueKind.String)
-                .Select(e => e.GetString() ?? string.Empty)
-                .SelectMany(value => value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        if (element.ValueKind == JsonValueKind.String)
-        {
-            var raw = element.GetString() ?? string.Empty;
-            return raw
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        return Array.Empty<string>();
-    }
 
     private static void EnsureEditorTokenNotInRoot(FolderNode root)
     {
