@@ -58,6 +58,7 @@ This is the entry point for repo documentation. Every doc should be reachable fr
 ### How-to
 - DB migrations: [04-guides/how-to/db-migrations.md](04-guides/how-to/db-migrations.md)
 - Project bootstrap: [04-guides/how-to/project-bootstrap.md](04-guides/how-to/project-bootstrap.md)
+- E2E email verification: [04-guides/how-to/e2e-email-verification.md](04-guides/how-to/e2e-email-verification.md)
 - Square import: [04-guides/how-to/square-import.md](04-guides/how-to/square-import.md)
 - Dev secrets tool: [04-guides/how-to/dev-secrets-tool.md](04-guides/how-to/dev-secrets-tool.md)
 - Legacy audit: [04-guides/how-to/legacy-audit.md](04-guides/how-to/legacy-audit.md)

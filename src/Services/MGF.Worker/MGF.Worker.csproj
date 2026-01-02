@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\Platform\MGF.Email\MGF.Email.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Gmail\MGF.Integrations.Email.Gmail.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Smtp\MGF.Integrations.Email.Smtp.csproj" />
+    <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Preview\MGF.Integrations.Email.Preview.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Dropbox\MGF.Integrations.Dropbox.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Square\MGF.Integrations.Square.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Storage\MGF.Storage.csproj" />

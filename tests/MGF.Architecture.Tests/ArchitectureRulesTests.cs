@@ -104,6 +104,21 @@ public sealed class ArchitectureRulesTests
     }
 
     [Fact]
+    public void DevTools_SeedE2EDeliveryEmail_Command_Is_Only_In_DevTools()
+    {
+        var devToolsRoot = Path.Combine(SrcRoot, "DevTools");
+        var matches = Directory.GetFiles(SrcRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => File.ReadAllText(path).Contains("seed-e2e-delivery-email", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.NotEmpty(matches);
+        foreach (var match in matches)
+        {
+            Assert.True(IsUnder(match, devToolsRoot), $"seed-e2e-delivery-email command must live under DevTools: {match}");
+        }
+    }
+
+    [Fact]
     public void Tools_DoNotContain_ProjectFiles()
     {
         if (!Directory.Exists(ToolsRoot))
@@ -128,7 +143,8 @@ public sealed class ArchitectureRulesTests
             "MGF.Integrations.Dropbox",
             "MGF.Integrations.Square",
             "MGF.Integrations.Email.Gmail",
-            "MGF.Integrations.Email.Smtp"
+            "MGF.Integrations.Email.Smtp",
+            "MGF.Integrations.Email.Preview"
         };
 
         var projectPaths = Directory.GetFiles(IntegrationsRoot, "*.csproj", SearchOption.AllDirectories);
@@ -343,6 +359,10 @@ public sealed class ArchitectureRulesTests
                 Required: new[] { "Clients" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
             ["MGF.Integrations.Email.Smtp"] = new ShapeContract(
+                Allowed: new[] { "Clients" },
+                Required: new[] { "Clients" },
+                Forbidden: new[] { "Docs", "Controllers", "UseCases" }),
+            ["MGF.Integrations.Email.Preview"] = new ShapeContract(
                 Allowed: new[] { "Clients" },
                 Required: new[] { "Clients" },
                 Forbidden: new[] { "Docs", "Controllers", "UseCases" }),

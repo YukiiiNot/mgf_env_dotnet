@@ -145,6 +145,12 @@ architecture tests in the same PR.
 - Forbidden: `Docs`, `Controllers`, `UseCases`
 - Rule: Provider implementation only; keep flat.
 
+### MGF.Integrations.Email.Preview (`src/Integrations/MGF.Integrations.Email.Preview`)
+- Allowed: `Clients`
+- Required: `Clients`
+- Forbidden: `Docs`, `Controllers`, `UseCases`
+- Rule: Provider implementation only; writes email previews to disk.
+
 ### MGF.ProjectBootstrapCli (`src/Operations/MGF.ProjectBootstrapCli`)
 - Allowed: `Commands`, `Properties`
 - Required: `Commands`, `Properties`

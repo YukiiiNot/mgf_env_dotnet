@@ -5,13 +5,16 @@ using System.CommandLine.Parsing;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using MGF.Data.Configuration;
+using MGF.Data.Stores.Operations;
 using MGF.Operations.Runtime;
 using MGF.UseCases.Operations.Projects.CreateTestProject;
+using MGF.UseCases.Operations.Projects.GetProjectSnapshot;
 using MGF.ProjectBootstrapCli;
 using Npgsql;
 
 var root = new RootCommand("MGF Project Bootstrap Dev Tool");
 root.AddCommand(CreateSeedDeliverablesCommand());
+root.AddCommand(CreateSeedE2EDeliveryEmailCommand());
 root.AddCommand(CreateDevTestCleanCommand());
 root.AddCommand(CreateTestProjectCommand());
 
@@ -68,6 +71,53 @@ static Command CreateSeedDeliverablesCommand()
         var overwrite = context.ParseResult.GetValueForOption(overwriteOption) ?? false;
 
         var exitCode = await SeedDeliverablesAsync(projectId, filePath, target, testMode, overwrite);
+        context.ExitCode = exitCode;
+    });
+
+    return command;
+}
+
+static Command CreateSeedE2EDeliveryEmailCommand()
+{
+    var command = new Command("seed-e2e-delivery-email", "prepare a test project for delivery-email e2e by setting canonical recipients.");
+
+    var emailOption = new Option<string>("--email")
+    {
+        Description = "Recipient email to set on the primary contact.",
+        IsRequired = true
+    };
+
+    var projectIdOption = new Option<string>("--projectId")
+    {
+        Description = "Use an existing project instead of creating/finding the test fixture.",
+        IsRequired = false
+    };
+
+    var testKeyOption = new Option<string>("--testKey")
+    {
+        Description = "Metadata key to identify the test project (default: bootstrap_test).",
+        IsRequired = false
+    };
+    testKeyOption.SetDefaultValue("bootstrap_test");
+
+    var forceNewOption = new Option<bool>("--forceNew")
+    {
+        Description = "Create a new test project even if one already exists.",
+        IsRequired = false
+    };
+
+    command.AddOption(emailOption);
+    command.AddOption(projectIdOption);
+    command.AddOption(testKeyOption);
+    command.AddOption(forceNewOption);
+
+    command.SetHandler(async context =>
+    {
+        var exitCode = await SeedE2EDeliveryEmailAsync(
+            email: context.ParseResult.GetValueForOption(emailOption) ?? string.Empty,
+            projectId: context.ParseResult.GetValueForOption(projectIdOption),
+            testKey: context.ParseResult.GetValueForOption(testKeyOption) ?? "bootstrap_test",
+            forceNew: context.ParseResult.GetValueForOption(forceNewOption));
         context.ExitCode = exitCode;
     });
 
@@ -302,6 +352,110 @@ static async Task<int> SeedDeliverablesAsync(
     return 0;
 }
 
+static async Task<int> SeedE2EDeliveryEmailAsync(
+    string email,
+    string? projectId,
+    string testKey,
+    bool forceNew)
+{
+    if (string.IsNullOrWhiteSpace(email))
+    {
+        Console.Error.WriteLine("bootstrap: seed-e2e-delivery-email missing email.");
+        return 1;
+    }
+
+    try
+    {
+        var config = BuildConfiguration();
+        var runtime = OperationsRuntime.Create(config);
+
+        var resolvedProjectId = string.IsNullOrWhiteSpace(projectId) ? null : projectId.Trim();
+        string? projectCode = null;
+        string? projectName = null;
+        string? clientId = null;
+
+        if (string.IsNullOrWhiteSpace(resolvedProjectId))
+        {
+            var createResult = await runtime.CreateTestProject.ExecuteAsync(new CreateTestProjectRequest(
+                TestKey: testKey,
+                ClientName: "MGF Test Client",
+                ProjectName: "MGF Bootstrap Test",
+                EditorFirstName: "Test",
+                EditorLastName: "Editor",
+                EditorInitials: "TE",
+                ForceNew: forceNew));
+
+            resolvedProjectId = createResult.Created
+                ? createResult.CreatedProject?.ProjectId
+                : createResult.ExistingProject?.ProjectId;
+            projectCode = createResult.Created
+                ? createResult.CreatedProject?.ProjectCode
+                : createResult.ExistingProject?.ProjectCode;
+            projectName = createResult.Created
+                ? createResult.CreatedProject?.ProjectName
+                : createResult.ExistingProject?.ProjectName;
+            clientId = createResult.Created
+                ? createResult.CreatedProject?.ClientId
+                : createResult.ExistingProject?.ClientId;
+        }
+
+        if (string.IsNullOrWhiteSpace(resolvedProjectId))
+        {
+            Console.Error.WriteLine("bootstrap: seed-e2e-delivery-email failed: missing project.");
+            return 1;
+        }
+
+        var snapshot = await runtime.GetProjectSnapshot.ExecuteAsync(
+            new GetProjectSnapshotRequest(resolvedProjectId, IncludeStorageRoots: false));
+
+        if (snapshot is null)
+        {
+            Console.Error.WriteLine($"bootstrap: seed-e2e-delivery-email failed: project not found ({resolvedProjectId}).");
+            return 1;
+        }
+
+        clientId ??= snapshot.Project.ClientId;
+        projectCode ??= snapshot.Project.ProjectCode;
+        projectName ??= snapshot.Project.ProjectName;
+
+        var contactStore = new ProjectContactOpsStore(config);
+        var contactResult = await contactStore.EnsurePrimaryContactEmailAsync(clientId, email);
+        if (contactResult is null)
+        {
+            Console.Error.WriteLine($"bootstrap: seed-e2e-delivery-email failed: client has no primary contact (client_id={clientId}).");
+            return 1;
+        }
+
+        var stableShareUrl = TryReadStableShareUrl(snapshot.Project.MetadataJson);
+        var stableShareUrlExists = !string.IsNullOrWhiteSpace(stableShareUrl);
+
+        Console.WriteLine($"bootstrap: seed-e2e-delivery-email project_id={resolvedProjectId}");
+        if (!string.IsNullOrWhiteSpace(projectCode))
+        {
+            Console.WriteLine($"bootstrap: seed-e2e-delivery-email project_code={projectCode}");
+        }
+        if (!string.IsNullOrWhiteSpace(projectName))
+        {
+            Console.WriteLine($"bootstrap: seed-e2e-delivery-email project_name={projectName}");
+        }
+        Console.WriteLine($"bootstrap: seed-e2e-delivery-email recipients={string.Join(',', new[] { contactResult.Email })}");
+        Console.WriteLine($"bootstrap: seed-e2e-delivery-email stable_share_url_exists={stableShareUrlExists}");
+
+        if (!stableShareUrlExists)
+        {
+            var deliveryCommand = $"dotnet run -c Release --project src\\Operations\\MGF.ProjectBootstrapCli -- deliver --projectId {resolvedProjectId} --editorInitials TE --testMode true";
+            Console.WriteLine($"bootstrap: seed-e2e-delivery-email run: {deliveryCommand}");
+        }
+
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"bootstrap: seed-e2e-delivery-email failed: {ex.Message}");
+        return 1;
+    }
+}
+
 static async Task<int> RunDevTestCleanAsync(
     string providerKey,
     bool dryRun,
@@ -413,6 +567,46 @@ static async Task<int> RunDevTestCleanAsync(
     {
         Console.Error.WriteLine($"devtest-clean: failed: {ex.Message}");
         return 1;
+    }
+}
+
+static string? TryReadStableShareUrl(string metadataJson)
+{
+    if (string.IsNullOrWhiteSpace(metadataJson))
+    {
+        return null;
+    }
+
+    try
+    {
+        using var doc = JsonDocument.Parse(metadataJson);
+        if (!doc.RootElement.TryGetProperty("delivery", out var delivery))
+        {
+            return null;
+        }
+
+        if (!delivery.TryGetProperty("current", out var current))
+        {
+            return null;
+        }
+
+        if (current.TryGetProperty("stableShareUrl", out var stableShareUrl)
+            && stableShareUrl.ValueKind == JsonValueKind.String)
+        {
+            return stableShareUrl.GetString();
+        }
+
+        if (current.TryGetProperty("shareUrl", out var shareUrl)
+            && shareUrl.ValueKind == JsonValueKind.String)
+        {
+            return shareUrl.GetString();
+        }
+
+        return null;
+    }
+    catch
+    {
+        return null;
     }
 }
 

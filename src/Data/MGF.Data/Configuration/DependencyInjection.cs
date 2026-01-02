@@ -57,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<IJobOpsStore, JobOpsStore>();
         services.AddScoped<IPeopleOpsStore, PeopleOpsStore>();
         services.AddScoped<IProjectOpsStore, ProjectOpsStore>();
+        services.AddScoped<IProjectContactOpsStore, ProjectContactOpsStore>();
         services.AddScoped<IStorageRootContractStore, StorageRootContractStore>();
         services.AddScoped<IRootIntegrityStore, RootIntegrityStore>();
 

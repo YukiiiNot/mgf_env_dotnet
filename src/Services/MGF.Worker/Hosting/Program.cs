@@ -10,6 +10,7 @@ using MGF.Contracts.Abstractions.ProjectBootstrap;
 using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Email.Composition;
 using MGF.Integrations.Dropbox;
+using MGF.Integrations.Email.Preview;
 using MGF.Integrations.Email.Gmail;
 using MGF.Integrations.Email.Smtp;
 using MGF.Integrations.Square;
@@ -42,12 +43,14 @@ if (workerSettings.Count > 0)
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddTransient<GmailApiEmailSender>();
 builder.Services.AddTransient<SmtpEmailSender>();
+builder.Services.AddTransient<PreviewEmailSender>();
 builder.Services.AddTransient<IEmailSender>(services =>
 {
     var configuration = services.GetRequiredService<IConfiguration>();
     var gmailSender = services.GetRequiredService<GmailApiEmailSender>();
     var smtpSender = services.GetRequiredService<SmtpEmailSender>();
-    return EmailSenderFactory.Create(configuration, gmailSender, smtpSender);
+    var previewSender = services.GetRequiredService<PreviewEmailSender>();
+    return EmailSenderFactory.Create(configuration, gmailSender, smtpSender, previewSender);
 });
 builder.Services.AddTransient<IDropboxShareLinkClient>(services =>
 {
