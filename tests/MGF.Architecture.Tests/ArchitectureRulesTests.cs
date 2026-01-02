@@ -7,6 +7,7 @@ public sealed class ArchitectureRulesTests
     private static readonly string RepoRoot = FindRepoRoot();
     private static readonly string SrcRoot = Path.Combine(RepoRoot, "src");
     private static readonly string DocsRoot = Path.Combine(RepoRoot, "docs");
+    private static readonly string ToolsRoot = Path.Combine(RepoRoot, "tools");
 
     [Fact]
     public void UseCases_DoNotReference_Data_Or_Ef_Npgsql()
@@ -99,6 +100,18 @@ public sealed class ArchitectureRulesTests
             var projectRefs = GetProjectReferences(projectPath);
             Assert.DoesNotContain(projectRefs, reference => IsUnder(reference, devToolsRoot));
         }
+    }
+
+    [Fact]
+    public void Tools_DoNotContain_ProjectFiles()
+    {
+        if (!Directory.Exists(ToolsRoot))
+        {
+            return;
+        }
+
+        var projectFiles = Directory.GetFiles(ToolsRoot, "*.csproj", SearchOption.AllDirectories);
+        Assert.Empty(projectFiles);
     }
 
     [Fact]

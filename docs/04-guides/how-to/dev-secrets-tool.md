@@ -9,31 +9,31 @@ Inventory and rationale: `docs/03-contracts/configuration/dev-secrets.md`.
 ### Export (from your machine)
 
 ```powershell
-dotnet run --project tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- export --out .\dev-secrets.export.json
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- export --out .\dev-secrets.export.json
 ```
 
 Optional:
 
 ```powershell
-dotnet run --project tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- export --out .\dev-secrets.export.json --verbose
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- export --out .\dev-secrets.export.json --verbose
 ```
 
 ### Import (on a new dev machine)
 
 ```powershell
-dotnet run --project tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in .\dev-secrets.export.json
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in .\dev-secrets.export.json
 ```
 
 Dry run:
 
 ```powershell
-dotnet run --project tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in .\dev-secrets.export.json --dry-run
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in .\dev-secrets.export.json --dry-run
 ```
 
 ### Validate (required keys present)
 
 ```powershell
-dotnet run --project tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- validate
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- validate
 ```
 
 ## Wrapper Scripts
@@ -74,9 +74,9 @@ macOS/Linux (bash):
 dotnet user-secrets set "Database:Dev:DirectConnectionString" "Host=localhost;Database=postgres;Username=postgres;Password=fake" --id 8f8e4093-a213-4629-bbd1-2a67c4e9000e
 
 # Export
-dotnet run --project tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- export --out .\dev-secrets.export.json
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- export --out .\dev-secrets.export.json
 
 # Import (dry-run)
-dotnet run --project tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in .\dev-secrets.export.json --dry-run
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in .\dev-secrets.export.json --dry-run
 ```
 

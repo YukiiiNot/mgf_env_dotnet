@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$ROOT/../.." && pwd)"
-PROJECT="$REPO_ROOT/tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj"
+PROJECT="$REPO_ROOT/src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj"
 REQUIRED="$REPO_ROOT/tools/dev-secrets/secrets.required.json"
 
 if [[ ! -f "$PROJECT" ]]; then

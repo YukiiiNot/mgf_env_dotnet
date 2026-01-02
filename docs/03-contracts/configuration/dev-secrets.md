@@ -1,6 +1,6 @@
 # Dev Secrets Inventory
 
-Source of truth: `tools/dev-secrets/secrets.required.json`, `tools/dev-secrets/src/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj`
+Source of truth: `tools/dev-secrets/secrets.required.json`, `src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj`
 Change control: Update when required/optional keys or secret policy changes.
 Last verified: 2025-12-30
 
