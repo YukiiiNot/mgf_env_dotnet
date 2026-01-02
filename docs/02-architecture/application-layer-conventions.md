@@ -4,6 +4,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 
 ## Rule of ownership
 - Services host workflows; Application owns the workflows; Data owns persistence; Integrations own external adapters.
+- Application (UseCases) depends on Contracts abstractions; Data implements those Contracts.
 - Persistence patterns and store rules live in [../persistence-patterns.md](../persistence-patterns.md).
 
 ## Scope definitions
