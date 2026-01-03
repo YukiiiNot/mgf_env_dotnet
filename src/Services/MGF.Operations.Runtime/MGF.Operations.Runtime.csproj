@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>MGF.Operations.Runtime</AssemblyName>
+    <RootNamespace>MGF.Operations.Runtime</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
+    <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
+  </ItemGroup>
+
+</Project>

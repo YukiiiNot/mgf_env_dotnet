@@ -1,7 +1,8 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
-using MGF.Worker.Integrations.Dropbox;
-using MGF.Worker.ProjectDelivery;
+using MGF.Contracts.Abstractions.Dropbox;
+using MGF.Contracts.Abstractions.Email;
+using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
 
@@ -10,14 +11,14 @@ public sealed class ProjectDeliveryShareLinkTests
     [Fact]
     public void DetermineShareLinkDecision_ReusesWhenFresh()
     {
-        var state = new ProjectDeliverer.DeliveryShareState(
+        var state = new ProjectDeliveryExecutor.DeliveryShareState(
             ShareUrl: "https://dropbox.test/share",
             ShareId: "id:123",
             ShareStatus: "created",
             LastVerifiedAtUtc: DateTimeOffset.UtcNow.AddDays(-1)
         );
 
-        var decision = ProjectDeliverer.DetermineShareLinkDecision(
+        var decision = ProjectDeliveryExecutor.DetermineShareLinkDecision(
             state,
             refreshRequested: false,
             testMode: false,
@@ -31,14 +32,14 @@ public sealed class ProjectDeliveryShareLinkTests
     [Fact]
     public void DetermineShareLinkDecision_RefreshRequested_ForcesCreate()
     {
-        var state = new ProjectDeliverer.DeliveryShareState(
+        var state = new ProjectDeliveryExecutor.DeliveryShareState(
             ShareUrl: "https://dropbox.test/share",
             ShareId: "id:123",
             ShareStatus: "created",
             LastVerifiedAtUtc: DateTimeOffset.UtcNow
         );
 
-        var decision = ProjectDeliverer.DetermineShareLinkDecision(
+        var decision = ProjectDeliveryExecutor.DetermineShareLinkDecision(
             state,
             refreshRequested: true,
             testMode: false,
@@ -52,14 +53,14 @@ public sealed class ProjectDeliveryShareLinkTests
     [Fact]
     public void DetermineShareLinkDecision_FailedStatus_ForcesCreate()
     {
-        var state = new ProjectDeliverer.DeliveryShareState(
+        var state = new ProjectDeliveryExecutor.DeliveryShareState(
             ShareUrl: "https://dropbox.test/share",
             ShareId: "id:123",
             ShareStatus: "failed",
             LastVerifiedAtUtc: DateTimeOffset.UtcNow.AddDays(-2)
         );
 
-        var decision = ProjectDeliverer.DetermineShareLinkDecision(
+        var decision = ProjectDeliveryExecutor.DetermineShareLinkDecision(
             state,
             refreshRequested: false,
             testMode: false,
@@ -72,14 +73,14 @@ public sealed class ProjectDeliveryShareLinkTests
     [Fact]
     public void DetermineShareLinkDecision_TtlExpired_AutomationOnly()
     {
-        var state = new ProjectDeliverer.DeliveryShareState(
+        var state = new ProjectDeliveryExecutor.DeliveryShareState(
             ShareUrl: "https://dropbox.test/share",
             ShareId: "id:123",
             ShareStatus: "created",
             LastVerifiedAtUtc: DateTimeOffset.UtcNow.AddDays(-10)
         );
 
-        var decision = ProjectDeliverer.DetermineShareLinkDecision(
+        var decision = ProjectDeliveryExecutor.DetermineShareLinkDecision(
             state,
             refreshRequested: false,
             testMode: false,
@@ -88,7 +89,7 @@ public sealed class ProjectDeliveryShareLinkTests
 
         Assert.True(decision.ShouldCreate);
 
-        var testModeDecision = ProjectDeliverer.DetermineShareLinkDecision(
+        var testModeDecision = ProjectDeliveryExecutor.DetermineShareLinkDecision(
             state,
             refreshRequested: false,
             testMode: true,
@@ -102,8 +103,8 @@ public sealed class ProjectDeliveryShareLinkTests
     [Fact]
     public void IsStableSharePath_RejectsVersionFolder()
     {
-        var stable = ProjectDeliverer.IsStableSharePath(@"C:\dropbox\Final");
-        var versioned = ProjectDeliverer.IsStableSharePath(@"C:\dropbox\Final\v2");
+        var stable = ProjectDeliveryExecutor.IsStableSharePath(@"C:\dropbox\Final");
+        var versioned = ProjectDeliveryExecutor.IsStableSharePath(@"C:\dropbox\Final\v2");
 
         Assert.True(stable);
         Assert.False(versioned);
@@ -114,7 +115,12 @@ public sealed class ProjectDeliveryShareLinkTests
     {
         var config = new ConfigurationBuilder().Build();
         var capture = new CaptureShareLinkClient();
-        var deliverer = new ProjectDeliverer(config, shareLinkClient: capture, accessTokenProvider: new FakeTokenProvider());
+        var deliverer = new ProjectDeliveryExecutor(
+            config,
+            shareLinkClient: capture,
+            accessTokenProvider: new FakeTokenProvider(),
+            dropboxFilesClient: new FakeFilesClient(),
+            emailSender: new FakeEmailSender());
 
         var dropboxRoot = @"C:\dropbox_root\99_TestRuns";
         var stablePath = Path.Combine(dropboxRoot, "04_Client_Deliveries", "Client", "MGF25-TEST_Project", "01_Deliverables", "Final");
@@ -123,7 +129,7 @@ public sealed class ProjectDeliveryShareLinkTests
             dropboxRoot,
             stablePath,
             "04_Client_Deliveries",
-            new ProjectDeliverer.DeliveryShareState(null, null, null, null),
+            new ProjectDeliveryExecutor.DeliveryShareState(null, null, null, null),
             refreshRequested: false,
             testMode: false,
             cancellationToken: CancellationToken.None);
@@ -146,7 +152,12 @@ public sealed class ProjectDeliveryShareLinkTests
             .Build();
 
         var capture = new CaptureShareLinkClient();
-        var deliverer = new ProjectDeliverer(config, shareLinkClient: capture, accessTokenProvider: new FakeTokenProvider());
+        var deliverer = new ProjectDeliveryExecutor(
+            config,
+            shareLinkClient: capture,
+            accessTokenProvider: new FakeTokenProvider(),
+            dropboxFilesClient: new FakeFilesClient(),
+            emailSender: new FakeEmailSender());
 
         var dropboxRoot = @"C:\dropbox_root\99_TestRuns";
         var stablePath = Path.Combine(dropboxRoot, "04_Client_Deliveries", "Client", "MGF25-TEST_Project", "01_Deliverables", "Final");
@@ -155,7 +166,7 @@ public sealed class ProjectDeliveryShareLinkTests
             dropboxRoot,
             stablePath,
             "04_Client_Deliveries",
-            new ProjectDeliverer.DeliveryShareState(null, null, null, null),
+            new ProjectDeliveryExecutor.DeliveryShareState(null, null, null, null),
             refreshRequested: false,
             testMode: false,
             cancellationToken: CancellationToken.None);
@@ -188,6 +199,36 @@ public sealed class ProjectDeliveryShareLinkTests
         {
             LastPath = dropboxPath;
             return Task.FromResult(new DropboxShareLinkResult("https://dropbox.test/share", "id:123", IsNew: false));
+        }
+    }
+
+    private sealed class FakeFilesClient : IDropboxFilesClient
+    {
+        public Task EnsureFolderAsync(string accessToken, string dropboxPath, CancellationToken cancellationToken)
+            => Task.CompletedTask;
+
+        public Task UploadFileAsync(string accessToken, string dropboxPath, string localFilePath, CancellationToken cancellationToken)
+            => Task.CompletedTask;
+
+        public Task UploadBytesAsync(string accessToken, string dropboxPath, byte[] content, CancellationToken cancellationToken)
+            => Task.CompletedTask;
+    }
+
+    private sealed class FakeEmailSender : IEmailSender
+    {
+        public Task<EmailSendResult> SendAsync(EmailMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new EmailSendResult(
+                Status: "skipped",
+                Provider: "email",
+                FromAddress: request.FromAddress,
+                To: request.To,
+                Subject: request.Subject,
+                SentAtUtc: null,
+                ProviderMessageId: null,
+                Error: "Fake sender",
+                TemplateVersion: request.TemplateVersion,
+                ReplyTo: request.ReplyTo));
         }
     }
 }

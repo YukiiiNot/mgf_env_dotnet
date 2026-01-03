@@ -1,13 +1,22 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
-using MGF.Tools.Provisioner;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Composition;
-using MGF.Worker.ProjectDelivery;
+using MGF.Contracts.Abstractions.Email;
+using MGF.Contracts.Abstractions.ProjectDelivery;
+using MGF.Data.Stores.Delivery;
+using MGF.Email.Composition;
+using MGF.Email.Models;
+using MGF.FolderProvisioning;
+using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
 
 public sealed class ProjectDeliveryEmailTests
 {
+    private static readonly JsonSerializerOptions CamelCaseOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     [Fact]
     public void BuildDeliveryEmailBody_IncludesLinkVersionAndFiles()
     {
@@ -17,7 +26,7 @@ public sealed class ProjectDeliveryEmailTests
             new DeliveryFileSummary("notes.pdf", 20, DateTimeOffset.UtcNow)
         };
 
-        var body = ProjectDeliverer.BuildDeliveryEmailBody(
+        var body = ProjectDeliveryExecutor.BuildDeliveryEmailBody(
             "https://dropbox.test/final",
             "v2",
             new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),
@@ -37,7 +46,7 @@ public sealed class ProjectDeliveryEmailTests
             .Select(index => new DeliveryFileSummary($"file_{index}.mp4", 10, DateTimeOffset.UtcNow))
             .ToArray();
 
-        var html = ProjectDeliverer.BuildDeliveryEmailBodyHtml(
+        var html = ProjectDeliveryExecutor.BuildDeliveryEmailBodyHtml(
             "https://dropbox.test/final",
             "v1",
             new DateTimeOffset(2030, 1, 1, 0, 0, 0, TimeSpan.Zero),
@@ -61,8 +70,8 @@ public sealed class ProjectDeliveryEmailTests
         var tokens = ProvisioningTokens.Create("MGF25-TEST", "Sample Project", "Client", new[] { "TE" });
         var files = new[]
         {
-            new DeliveryFileSummary("final.mp4", 10, DateTimeOffset.UtcNow),
-            new DeliveryFileSummary("notes.pdf", 20, DateTimeOffset.UtcNow)
+            new DeliveryEmailFileSummary("final.mp4", 10, DateTimeOffset.UtcNow),
+            new DeliveryEmailFileSummary("notes.pdf", 20, DateTimeOffset.UtcNow)
         };
 
         var context = new DeliveryReadyEmailContext(
@@ -88,8 +97,8 @@ public sealed class ProjectDeliveryEmailTests
     [Fact]
     public void UpdateDeliveryCurrent_WritesLastEmail()
     {
-        var delivery = new JsonObject();
-        var email = new DeliveryEmailResult(
+        var metadata = JsonDocument.Parse("{}").RootElement;
+        var email = new EmailSendResult(
             Status: "sent",
             Provider: "smtp",
             FromAddress: "deliveries@mgfilms.pro",
@@ -127,25 +136,35 @@ public sealed class ProjectDeliveryEmailTests
             Email: email
         );
 
-        ProjectDeliverer.UpdateDeliveryCurrent(delivery, run);
+        var runResultJson = JsonSerializer.SerializeToElement(run, CamelCaseOptions);
+        var updatedJson = DeliveryMetadataUpdater.AppendDeliveryRun(metadata, runResultJson);
 
-        var current = delivery["current"] as JsonObject;
-        Assert.NotNull(current);
-        var lastEmail = current?["lastEmail"] as JsonObject;
-        Assert.NotNull(lastEmail);
-        Assert.Equal("sent", lastEmail?["status"]?.GetValue<string>());
+        using var updatedDoc = JsonDocument.Parse(updatedJson);
+        var lastEmail = updatedDoc.RootElement
+            .GetProperty("delivery")
+            .GetProperty("current")
+            .GetProperty("lastEmail");
+
+        Assert.Equal("sent", lastEmail.GetProperty("status").GetString());
     }
 
     [Fact]
     public void ApplyLastEmail_PreservesCurrentVersion()
     {
-        var current = new JsonObject
+        var metadataNode = new JsonObject
         {
-            ["currentVersion"] = "v1",
-            ["stablePath"] = @"C:\dropbox\Final"
+            ["delivery"] = new JsonObject
+            {
+                ["current"] = new JsonObject
+                {
+                    ["currentVersion"] = "v1",
+                    ["stablePath"] = @"C:\dropbox\Final"
+                }
+            }
         };
+        var metadata = JsonDocument.Parse(metadataNode.ToJsonString()).RootElement;
 
-        var email = new DeliveryEmailResult(
+        var email = new EmailSendResult(
             Status: "failed",
             Provider: "smtp",
             FromAddress: "deliveries@mgfilms.pro",
@@ -157,13 +176,17 @@ public sealed class ProjectDeliveryEmailTests
             TemplateVersion: "v1-html",
             ReplyTo: null);
 
-        ProjectDeliverer.ApplyLastEmail(current, email);
+        var emailResultJson = JsonSerializer.SerializeToElement(email, CamelCaseOptions);
+        var updatedJson = DeliveryMetadataUpdater.AppendDeliveryEmail(metadata, emailResultJson);
 
-        Assert.Equal("v1", current["currentVersion"]?.GetValue<string>());
-        var lastEmail = current["lastEmail"] as JsonObject;
-        Assert.NotNull(lastEmail);
-        Assert.Equal("failed", lastEmail?["status"]?.GetValue<string>());
+        using var updatedDoc = JsonDocument.Parse(updatedJson);
+        var current = updatedDoc.RootElement.GetProperty("delivery").GetProperty("current");
+
+        Assert.Equal("v1", current.GetProperty("currentVersion").GetString());
+        Assert.Equal("failed", current.GetProperty("lastEmail").GetProperty("status").GetString());
     }
 
     // no extra helpers
 }
+
+

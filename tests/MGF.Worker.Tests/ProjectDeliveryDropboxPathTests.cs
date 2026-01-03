@@ -1,4 +1,4 @@
-using MGF.Worker.ProjectDelivery;
+using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
 
@@ -11,7 +11,7 @@ public sealed class ProjectDeliveryDropboxPathTests
         var stablePath = @"C:\\Users\\dorme\\Dropbox\\MGFILMS.NET\\06_DevTest\\dropbox_root\\99_TestRuns\\04_Client_Deliveries\\Client\\MGF25-TEST_Client_SAMPLE\\01_Deliverables\\Final";
         var relpath = "04_Client_Deliveries";
 
-        var result = ProjectDeliverer.BuildDropboxApiPath(apiRoot, stablePath, relpath);
+        var result = ProjectDeliveryExecutor.BuildDropboxApiPath(apiRoot, stablePath, relpath);
 
         Assert.Equal("/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Client_SAMPLE/01_Deliverables/Final", result);
     }
@@ -22,7 +22,7 @@ public sealed class ProjectDeliveryDropboxPathTests
         var apiRoot = "MGFILMS.DELIVERIES";
         var relpath = "04_Client_Deliveries";
 
-        var result = ProjectDeliverer.BuildDropboxApiContainerRoot(
+        var result = ProjectDeliveryExecutor.BuildDropboxApiContainerRoot(
             apiRoot,
             relpath,
             "Client",
@@ -39,7 +39,7 @@ public sealed class ProjectDeliveryDropboxPathTests
         var relpath = "04_Client_Deliveries";
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            ProjectDeliverer.BuildDropboxApiPath(apiRoot, stablePath, relpath));
+            ProjectDeliveryExecutor.BuildDropboxApiPath(apiRoot, stablePath, relpath));
 
         Assert.Contains("outside Dropbox delivery root", ex.Message, StringComparison.OrdinalIgnoreCase);
     }

@@ -45,11 +45,11 @@ jobs:
         run: New-Item -ItemType Directory -Force -Path .\runtime | Out-Null
 
       - name: Build migrations bundle
-        run: dotnet ef migrations bundle --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator --configuration Release --output .\runtime\efbundle-prod.exe
+        run: dotnet ef migrations bundle --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator --configuration Release --output .\runtime\efbundle-prod.exe
 
       - name: Apply migrations (bundle)
         run: .\runtime\efbundle-prod.exe --connection "$env:Database__Prod__DirectConnectionString" --verbose
 
       - name: Applied migrations (after)
         shell: pwsh
-        run: dotnet run --project src/MGF.Tools.DbMigrationsInfo -c Release -- --connection $env:Database__Prod__DirectConnectionString
+        run: dotnet run --project src/DevTools/MGF.DbMigrationsInfoCli -c Release -- --connection $env:Database__Prod__DirectConnectionString

@@ -2,7 +2,7 @@ namespace MGF.Domain.Tests;
 
 using System.Security.Cryptography;
 using System.Text;
-using MGF.Api.Square;
+using MGF.Integrations.Square;
 
 public sealed class SquareWebhookVerifierTests
 {

@@ -1,4 +1,4 @@
-using MGF.Worker.ProjectDelivery;
+using MGF.UseCases.Operations.ProjectDelivery.RunProjectDelivery;
 
 public sealed class ProjectDeliveryGuardsTests
 {

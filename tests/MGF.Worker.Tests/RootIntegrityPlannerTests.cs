@@ -1,4 +1,5 @@
-using MGF.Worker.RootIntegrity;
+using MGF.Contracts.Abstractions.RootIntegrity;
+using MGF.Storage.RootIntegrity;
 
 public sealed class RootIntegrityPlannerTests
 {

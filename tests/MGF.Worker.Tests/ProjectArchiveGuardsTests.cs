@@ -1,4 +1,4 @@
-using MGF.Worker.ProjectArchive;
+using MGF.UseCases.Operations.ProjectArchive.RunProjectArchive;
 
 public sealed class ProjectArchiveGuardsTests
 {
