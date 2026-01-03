@@ -1,112 +1,123 @@
-# Onboarding (MGF)
 
-This guide gets a second developer productive without touching production.
+````md
+# Getting Started
+
+Purpose  
+Get a new developer productive locally without accidentally affecting production workflows, and teach them where to find the ‚Äúsource of truth‚Äù for architecture, runbooks, and contracts.
+
+Audience  
+New developers onboarding to MGF (including contributors who prefer UI over CLI).
+
+Scope  
+Covers local setup, repo orientation, and safe first steps. Does not replace deep runbooks, nor does it teach every workflow in full detail.
+
+Key takeaways
+- Start by understanding the bucket model and where code belongs.
+- Use DevSecrets to bootstrap local secrets (don‚Äôt hand-type lots of user-secrets).
+- Run safe verification workflows (including email preview) before changing logic.
+- For ‚Äúhow to operate,‚Äù use runbooks; for ‚Äúhow to design,‚Äù use architecture docs.
 
 ## Repo layout (high level)
 
-- `src/Services/MGF.Api` ó internal Web API (DB entrypoint for apps)
-- `src/Services/MGF.Worker` ó background jobs runner
-- `src/Operations/MGF.ProjectBootstrapCli` ó CLI for bootstrap/archive/delivery/email/preview
-- `src/Data/MGF.DataMigrator` ó migrations + lookup seeding
-- `src/Application/MGF.UseCases` ? use-case boundary for business workflows
-- `src/Platform/MGF.Email` ó email composition + templates
-- `src/Integrations/MGF.Integrations.Email.*` ó email senders (Gmail/SMTP)
-- `docs/` ó runbooks, workflow, templates, contracts
-- `tests/` ó unit + contract tests
+The system is organized by buckets. Learn the bucket model first, then learn the projects inside each bucket.
 
+Bucket map (canonical):  
+- ../02-architecture/project-shapes.md
 
-## Use-case boundary (MGF.UseCases)
+Common projects you‚Äôll touch early:
+- API host: src/Services/MGF.Api
+- Worker host: src/Services/MGF.Worker (dispatch + wiring)
+- UseCases: src/Application/MGF.UseCases (workflow orchestration boundary)
+- Contracts: src/Core/MGF.Contracts (interfaces/shared models)
+- Data: src/Data/MGF.Data (EF + stores + migrations)
+- Folder provisioning engine: src/Platform/MGF.FolderProvisioning
+- Email composition: src/Platform/MGF.Email
+- Vendor providers: src/Integrations/MGF.Integrations.*
+- Operations CLI: src/Operations/* (operator tools that call UseCases)
+- Docs: docs/ (canonical documentation)
+- Tests: tests/
 
-MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
+## Local setup (safe defaults)
 
-Examples that belong here:
-- CreateProject
-- CreateDeliveryVersion
-- SendDeliveryEmail
-
-Does not belong here: DbContext, Dropbox SDK, SMTP client.
-
-
-## Local config + precedence
-
-Configuration is built by `AddMgfConfiguration` (see `src/Data/MGF.Data/Configuration/MgfConfiguration.cs`):
-
-1. `MGF_CONFIG_DIR` (if set) -> `appsettings.json` and `appsettings.{ENV}.json`
-2. Local `appsettings.json` / `appsettings.{ENV}.json`
-3. BaseDir `appsettings.json` / `appsettings.{ENV}.json`
-4. User-secrets (if project has UserSecretsId)
-5. Environment variables
-
-Common env vars:
+1) Set environment markers for local development
+Example (PowerShell):
 
 ```powershell
 $env:MGF_ENV = 'Dev'
 $env:MGF_DB_MODE = 'direct'
 $env:MGF_CONFIG_DIR = 'C:\dev\mgf_env_dotnet\config'
+````
+
+2. Bootstrap secrets using DevSecrets (preferred)
+   DevSecrets exists so new devs don‚Äôt manually type many secrets and risk drift.
+
+Read and follow:
+
+* ../04-guides/how-to/dev-secrets-tool.md  (or wherever it lives in your docs tree)
+
+3. Configuration precedence (overview)
+   Configuration is built by AddMgfConfiguration. The full precedence rules are documented here:
+
+* ../03-contracts/configuration/ (configuration contracts)
+* (Optional) link to the exact code path if you want: src/Data/MGF.Data/Configuration/MgfConfiguration.cs
+
+## First verification steps (before you change code)
+
+Run the baseline checks:
+
+* dotnet build MGF.sln -c Release
+* dotnet test MGF.sln -c Release --filter FullyQualifiedName!~MGF.Data.IntegrationTests
+
+Then verify key workflows using the sanctioned verification process:
+
+* ../02-architecture/testing-and-verification.md
+* ../05-runbooks/ (pick the relevant workflow runbook)
+
+If you want a UI-first workflow view (for visual onboarding), start with a ‚Äúdev console‚Äù UI that:
+
+* calls API/Operations surfaces safely
+* shows job queue state and last workflow status
+* never bypasses UseCases
+
+(Implementation guidance for the dev console belongs in UI docs, not here.)
+
+## Core system concepts to learn early
+
+* UseCases are the orchestration boundary: workflows go here.
+* Contracts are the handshake: shared models/interfaces live here.
+* Domain is intentionally small: it does not mirror every DB table.
+* Data owns persistence semantics: EF + SQL stores live here.
+* Services and Operations are adapters: thin entry points, not business logic.
+
+For the detailed map from database tables ‚Üí category ‚Üí representation:
+
+* ../02-architecture/domain-persistence-map.md
+* ../02-architecture/business-concepts-catalog.md
+
+## Where to go next
+
+* Architectural overview and extension guidance:
+
+  * ../02-architecture/system-overview.md
+  * ../02-architecture/extension-playbook.md
+* Operational runbooks:
+
+  * ../05-runbooks/
+* Contracts and templates:
+
+  * ../03-contracts/
+
+Related docs
+
+* ../01-onboarding/contributing.md
+* ../01-onboarding/dev-guide.md
+* ../02-architecture/project-shapes.md
+* ../04-guides/how-to/dev-secrets-tool.md
+* ../02-architecture/testing-and-verification.md
+
+Last updated: 2026-01-02
+Owner: Repo maintainers / Infra owner
+Status: Draft
+
 ```
-
-## Required secrets (Dev)
-
-Store secrets in `MGF.Data` user-secrets (no secrets in git):
-
-```powershell
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-dotnet user-secrets set "Security:ApiKey" "<api key>" --project src/Data/MGF.Data
-```
-
-## Core workflows (Dev)
-
-### Bootstrap / Archive / Delivery
-
-Use the ProjectBootstrap CLI and the delivery runbook:
-
-- `docs/05-runbooks/delivery.md`
-
-Common commands:
-
-```powershell
-# mark ready_to_provision
-dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- ready --projectId <PROJECT_ID>
-
-# bootstrap
-dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- enqueue --projectId <PROJECT_ID> --editors TE --verifyDomainRoots true --createDomainRoots true --provisionProjectContainers true
-
-# deliver (see docs/05-runbooks/delivery.md for the full sequence)
-dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- to-deliver --projectId <PROJECT_ID>
-dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- deliver --projectId <PROJECT_ID> --editorInitials TE
-```
-
-### Email preview (no send)
-
-```powershell
-dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- email-preview --fixture basic --out .\runtime\email_preview
-```
-
-## Tests to run
-
-```powershell
-# Worker tests
-dotnet test -c Release tests\MGF.Worker.Tests\MGF.Worker.Tests.csproj
-
-# ProjectBootstrap CLI tests
-dotnet test -c Release tests\MGF.ProjectBootstrapCli.Tests\MGF.ProjectBootstrapCli.Tests.csproj
-```
-
-## Where to start (new dev)
-
-1. Read `docs/02-architecture/roadmap.md` and pick a small, isolated milestone.
-2. Read `docs/05-runbooks/delivery.md` to understand the current "golden path."
-3. Run the relevant tests for your area.
-4. Make one focused change, update tests/runbook, and keep PRs small.
-
-## Glossary
-
-- **Stable Final**: the delivery folder `...\01_Deliverables\Final` shared with clients.
-- **Version folder**: `Final\vN` under the stable Final folder.
-- **Delivery container**: Dropbox container under `04_Client_Deliveries/<Client>/<ProjectCode>_<ProjectName>`.
-- **EmailKind**: enum identifying an email type (delivery_ready, etc.).
-- **EmailProfile**: sender policy (allowed From addresses, defaults).
-- **Root contract**: required/optional top-level folders for Dropbox/LucidLink/NAS roots.
-
-
 

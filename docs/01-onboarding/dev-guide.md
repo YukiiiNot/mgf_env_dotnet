@@ -1,55 +1,106 @@
-# Developer Guide (MGF)
+# Developer Guide
 
-This repo favors guardrails, contracts, and runbooks over cleverness.
+Purpose  
+Teach contributors how to work inside the system day-to-day: how to add new functionality without violating boundaries, how to reason about workflows, and how to keep changes safe and maintainable as the system expands.
 
-## Conventions
+Audience  
+Developers building features, workflows, UI, integrations, and operational tooling.
 
-- Prefer explicit jobs + status transitions over implicit side effects.
-- Every workflow should have:
-  - explicit job type
-  - idempotent behavior
-  - contract tests
-  - a runbook (docs/)
-- Persistence patterns (repos vs stores) live in [../persistence-patterns.md](../persistence-patterns.md).
-- Structure and naming conventions live in [../project-shapes.md](../project-shapes.md).
+Scope  
+Covers development principles, boundaries, and where changes go. Does not replace runbooks (operational “how to run”) and does not fully enumerate every subsystem (architecture docs do that).
 
-## Integrations
+Key takeaways
+- The system is workflow-driven: UseCases orchestrate; Hosts dispatch; Data persists; Integrations talk to vendors.
+- We preserve consistency by enforcing dependency direction and contract surfaces.
+- “How the business works” belongs in Domain/UseCases; “how data is stored” belongs in Data; “how we talk to vendors” belongs in Integrations.
+- If you’re about to add a feature, start by deciding which bucket owns it.
 
-Add new integrations under `src/Integrations/MGF.Integrations.<Provider>/`.
-Keep APIs behind small interfaces so tests can fake them, with Worker calling the integration.
+## How the system is intended to evolve
 
-## Provisioning engine
+As MGF expands, we avoid drift by keeping a stable separation of concerns:
+- Domain describes business concepts and invariants (small and intentional, not a table mirror).
+- Contracts defines cross-bucket interfaces and shared models (the handshake).
+- UseCases orchestrate workflows using Contracts interfaces (persistence-ignorant).
+- Data implements persistence and stores (EF + SQL) behind Contracts.
+- Services (API/Worker) and Operations (CLI) are adapters that call UseCases.
+- Integrations is vendor-only client code (Square/Dropbox/Gmail/etc.).
+- Platform is reusable technical infrastructure (cross-cutting, non-vendor, non-business).
 
-MGF.FolderProvisioning is the reusable provisioning engine; MGF-specific rules live in
-`src/Platform/MGF.FolderProvisioning/Provisioning/Policy`. See [../02-architecture/provisioning.md](../02-architecture/provisioning.md).
+For the authoritative shapes and dependency direction, see:  
+- ../02-architecture/project-shapes.md  
+- ../02-architecture/extension-playbook.md  
 
-## Email subsystem
+## Working agreements (what we optimize for)
 
-Email composition/registry lives under `src/Platform/MGF.Email/`. Provider senders live under
-`src/Integrations/MGF.Integrations.Email.*` and implement abstractions in
-`src/Core/MGF.Contracts/Abstractions/Email/`. Worker wires selection at runtime.
-Add new emails by:
-1. Create context model + composer
-2. Add templates (.html/.txt) under `src/Platform/MGF.Email/Composition/Templates/`
-3. Register composer in the registry
-4. Add/extend tests and preview fixtures
+- Guardrails over cleverness: prefer tests, contracts, and explicit seams.
+- Explicit workflows: jobs and status transitions are explicit, not “hidden side effects.”
+- Idempotency: job processing should tolerate retries safely.
+- Traceability: when behavior matters, make it observable (logs + stored metadata + docs).
+
+## Where to add things
+
+New workflow / business capability:
+- Define the Contracts surface first (models + interfaces)
+- Implement orchestration in UseCases
+- Implement persistence in Data stores behind Contracts
+- Implement IO adapters in Services adapters (filesystem/storage/email sending)
+- Keep Hosts thin: they parse input, call UseCases, and report results
+
+Common placement map:
+- UseCases: src/Application/MGF.UseCases/UseCases/<Area>/<UseCaseName>/
+- Contracts: src/Core/MGF.Contracts/Abstractions/<Area>/
+- Data stores: src/Data/MGF.Data/Stores/<Area>/
+- Vendor client code: src/Integrations/MGF.Integrations.<Vendor>/
+- Host wiring: src/Services/MGF.Api and src/Services/MGF.Worker
+- CLI adapters: src/Operations/* (calls UseCases, never Data directly)
+- Runbooks: docs/05-runbooks/
+
+## Integrations (vendor-only)
+
+Add new vendor integrations under:
+- src/Integrations/MGF.Integrations.<Provider>/
+
+Rules of thumb:
+- Integrations contains HTTP clients, auth/token handling, provider models, and provider-specific failure translation.
+- Integrations does not contain workflow orchestration.
+- Prefer Contracts abstractions for anything the rest of the system calls.
+
+## Email (conceptual overview)
+
+Email spans multiple buckets:
+- Platform: composition and templates (what we send and how it renders)
+- Integrations: providers (how it’s sent via Gmail/SMTP/etc.)
+- Contracts: abstractions for senders/composers and shared models
+- UseCases: when/why an email is sent (workflow orchestration)
+- Services: wiring and runtime selection
+
+For operational steps and verification, use the runbooks and verification doc:
+- ../02-architecture/testing-and-verification.md
+
+## Folder provisioning (conceptual overview)
+
+MGF.FolderProvisioning is a folder topology engine used by workflows to:
+- plan/apply/verify folder structures across storage containers
+- enforce folder structure rules via policy
+
+It is not a “generic provisioning system,” it’s explicitly about folder trees across storage providers.
+
+Authoritative detail:
+- ../02-architecture/provisioning.md
 
 ## Testing philosophy
 
-- Unit tests for builders/planners
-- Contract tests for policies (e.g., allowlist, stable share path)
-- Avoid destructive DB tests unless explicitly opt-in
+- Unit tests for pure logic (planners, guards, models)
+- Contract tests for “must-not-drift” invariants (stable delivery paths, allowlists, naming rules)
+- Avoid destructive DB tests unless explicitly opted-in and isolated
 
-## Use-case boundary (MGF.UseCases)
+Related docs
+- ../01-onboarding/getting-started.md
+- ../02-architecture/project-shapes.md
+- ../02-architecture/domain-persistence-map.md
+- ../02-architecture/extension-playbook.md
+- ../05-runbooks/ (runbooks index)
 
-MGF.UseCases is the boundary project for business workflows. See [../project-shapes.md](../project-shapes.md) for
-project placement and ownership rules.
-
-## Where to add new workflows
-
-- Use-cases: `src/Application/MGF.UseCases`
-- Job handlers: `src/Services/MGF.Worker/JobWorker.cs` (dispatch only; workflow logic lives in UseCases)
-- CLI commands: `src/Operations/MGF.ProjectBootstrapCli/Program.cs` (call UseCases, not hosts)
-- Runbooks: `docs/05-runbooks/`
-- Templates/contracts: `artifacts/templates/` and `docs/03-contracts/storage/infra-contracts.md`
-
+Last updated: 2026-01-02  
+Owner: Repo maintainers / Infra owner  
+Status: Draft

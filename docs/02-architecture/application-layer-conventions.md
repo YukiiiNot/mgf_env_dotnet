@@ -5,7 +5,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 ## Rule of ownership
 - Services host workflows; Application owns the workflows; Data owns persistence; Integrations own external adapters.
 - Application (UseCases) depends on Contracts abstractions; Data implements those Contracts.
-- Persistence patterns and store rules live in [../persistence-patterns.md](../persistence-patterns.md).
+- Persistence patterns and store rules live in [persistence-patterns.md](persistence-patterns.md).
 
 ## Scope definitions
 - Core (`src/Core/`): domain types, contracts, IDs, and shared rules that have no IO.
@@ -32,7 +32,7 @@ This doc defines where workflow code lives and how runtime hosts should depend o
 - API read endpoints (e.g., people listing) should call use-cases that depend on Contracts stores.
 
 ## Use-case boundary (MGF.UseCases)
-MGF.UseCases is the boundary project for business workflows. See [../project-shapes.md](../project-shapes.md) for
+MGF.UseCases is the boundary project for business workflows. See [project-shapes.md](project-shapes.md) for
 placement rules and naming conventions.
 
 ## Checklist: When adding a new feature, place code in

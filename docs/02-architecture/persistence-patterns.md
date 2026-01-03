@@ -1,5 +1,13 @@
 # Persistence Patterns (EF Repos + Stores)
 
+**Title:** Persistence Patterns (EF Repos + Stores)  
+**Purpose:** Define canonical persistence patterns and where SQL is allowed.  
+**Audience:** Engineers implementing data access or stores.  
+**Scope:** Repository vs store guidance; not a full schema reference.  
+**Last updated:** 2026-01-02  
+**Owner:** Architecture  
+**Related docs:** [project-shapes.md](project-shapes.md), [application-layer-conventions.md](application-layer-conventions.md), [domain-persistence-map.md](domain-persistence-map.md)
+
 This page defines the canonical persistence patterns. Raw SQL is confined to MGF.Data.
 
 ## Default: EF repositories

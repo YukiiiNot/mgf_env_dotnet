@@ -1,5 +1,13 @@
 # Project Shapes and Buckets
 
+**Title:** Project Shapes and Buckets  
+**Purpose:** Define canonical repo structure conventions and prevent shape drift.  
+**Audience:** Engineers structuring projects or updating architecture tests.  
+**Scope:** Project and bucket layout rules; not a runtime behavior guide.  
+**Last updated:** 2026-01-02  
+**Owner:** Architecture  
+**Related docs:** [persistence-patterns.md](persistence-patterns.md), [application-layer-conventions.md](application-layer-conventions.md), [system-overview.md](system-overview.md)
+
 This document is the canonical source for repo structure conventions. If structure changes, update this page and
 `docs/00-index.md` in the same change.
 
@@ -28,7 +36,7 @@ This document is the canonical source for repo structure conventions. If structu
 ## Data access patterns (Repositories vs Stores)
 - Repositories are the default EF-backed access pattern for domain aggregates.
 - Stores are narrow, explicit seams for procedural/atomic/JSON patch/bulk operations and for quarantining raw SQL.
-- See `docs/persistence-patterns.md` for the detailed checklist.
+- See `docs/02-architecture/persistence-patterns.md` for the detailed checklist.
 
 ## Email capability layout
 - Platform composition/registry + profile resolution: `src/Platform/MGF.Email`.

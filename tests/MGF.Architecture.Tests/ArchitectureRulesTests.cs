@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace MGF.Architecture.Tests;
@@ -165,6 +166,65 @@ public sealed class ArchitectureRulesTests
             .ToArray();
 
         Assert.Empty(markdownFiles);
+    }
+
+    [Fact]
+    public void Architecture_Docs_Are_Present()
+    {
+        var requiredDocs = new[]
+        {
+            Path.Combine(DocsRoot, "02-architecture", "business-concepts-catalog.md"),
+            Path.Combine(DocsRoot, "02-architecture", "domain-persistence-map.md"),
+            Path.Combine(DocsRoot, "02-architecture", "extension-playbook.md"),
+            Path.Combine(DocsRoot, "02-architecture", "testing-and-verification.md")
+        };
+
+        foreach (var doc in requiredDocs)
+        {
+            Assert.True(File.Exists(doc), $"Missing required architecture doc: {doc}");
+        }
+    }
+
+    [Fact]
+    public void FirstClass_Concept_Types_Live_In_Domain_Or_Contracts()
+    {
+        var allowedRoots = new[]
+        {
+            Path.Combine(SrcRoot, "Core", "MGF.Domain"),
+            Path.Combine(SrcRoot, "Core", "MGF.Contracts")
+        };
+
+        var concepts = new[]
+        {
+            "Project",
+            "Client",
+            "Person",
+            "Delivery",
+            "Invoice",
+            "Payment",
+            "Booking",
+            "Lead",
+            "WorkItem"
+        };
+
+        var pattern = new Regex(@"\b(class|record|struct)\s+(" + string.Join("|", concepts) + @")\b",
+            RegexOptions.Compiled);
+
+        var files = Directory.GetFiles(SrcRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !allowedRoots.Any(root => IsUnder(path, root)))
+            .ToArray();
+
+        var violations = new List<string>();
+        foreach (var file in files)
+        {
+            var text = File.ReadAllText(file);
+            foreach (Match match in pattern.Matches(text))
+            {
+                violations.Add($"{file}: {match.Value}");
+            }
+        }
+
+        Assert.Empty(violations);
     }
 
     [Fact]
