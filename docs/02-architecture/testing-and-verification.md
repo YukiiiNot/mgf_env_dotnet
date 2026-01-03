@@ -1,5 +1,73 @@
 # Testing and Verification
 
+Purpose  
+Define architecture boundaries and responsibilities for this area.
+
+Audience  
+Engineers extending or refactoring system boundaries.
+
+Scope  
+Covers boundaries, ownership, and dependency direction. Does not include operational steps.
+
+Status  
+Active
+
+---
+
+## Key Takeaways
+
+- This doc defines architecture boundaries for this area.
+- Follow the bucket ownership rules and dependency direction.
+- Use related docs when extending or refactoring.
+
+---
+
+## System Context
+
+Architecture docs define bucket responsibilities and dependency direction.
+
+---
+
+## Core Concepts
+
+This document explains the boundary and responsibilities for this area and how it fits into the bucket model.
+
+---
+
+## How This Evolves Over Time
+
+- Update when bucket boundaries or dependency rules change.
+- Add notes when a new project or workflow is introduced.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Putting workflow logic in hosts instead of UseCases.
+- Introducing vendor logic outside Integrations.
+
+---
+
+## When to Change This Document
+
+- Bucket ownership or dependency rules change.
+- A new workflow impacts the described boundaries.
+
+---
+
+## Related Documents
+
+- system-overview.md
+- application-layer-conventions.md
+- project-shapes.md
+- persistence-patterns.md
+
+---
+
+## Appendix (Optional)
+
+### Prior content (preserved for reference)
+
 **Title:** Testing and Verification  
 **Purpose:** Define the sanctioned, repeatable E2E verification flow and safety rails.  
 **Audience:** Engineers running validation, CI, and DevTools workflows.  
@@ -47,3 +115,14 @@ If the DevTools seed command exists (e.g., `seed-e2e-delivery-email`), use it to
 
 ## Evidence capture
 Record commands and outputs in `/docs/validation/` when an E2E run is part of a formal validation pass.
+
+---
+
+## Metadata
+
+Last updated: 2026-01-02  
+Owner: Architecture  
+Review cadence: on major architecture change  
+
+Change log:
+- 2026-01-02 - Reformatted to the documentation template.

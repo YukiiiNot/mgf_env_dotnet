@@ -1,5 +1,73 @@
 # Extension Playbook
 
+Purpose  
+Define architecture boundaries and responsibilities for this area.
+
+Audience  
+Engineers extending or refactoring system boundaries.
+
+Scope  
+Covers boundaries, ownership, and dependency direction. Does not include operational steps.
+
+Status  
+Active
+
+---
+
+## Key Takeaways
+
+- This doc defines architecture boundaries for this area.
+- Follow the bucket ownership rules and dependency direction.
+- Use related docs when extending or refactoring.
+
+---
+
+## System Context
+
+Architecture docs define bucket responsibilities and dependency direction.
+
+---
+
+## Core Concepts
+
+This document explains the boundary and responsibilities for this area and how it fits into the bucket model.
+
+---
+
+## How This Evolves Over Time
+
+- Update when bucket boundaries or dependency rules change.
+- Add notes when a new project or workflow is introduced.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Putting workflow logic in hosts instead of UseCases.
+- Introducing vendor logic outside Integrations.
+
+---
+
+## When to Change This Document
+
+- Bucket ownership or dependency rules change.
+- A new workflow impacts the described boundaries.
+
+---
+
+## Related Documents
+
+- system-overview.md
+- application-layer-conventions.md
+- project-shapes.md
+- persistence-patterns.md
+
+---
+
+## Appendix (Optional)
+
+### Prior content (preserved for reference)
+
 **Title:** Extension Playbook  
 **Purpose:** Provide a repeatable, low-risk path to add new workflows or concepts without architectural drift.  
 **Audience:** Engineers building new features or integrations.  
@@ -52,3 +120,14 @@ Goal: add a vendor-specific storage provider without leaking details into UseCas
 - Architecture tests updated if new contracts/shapes are introduced
 - UseCases do not reference Data or EF
 - Integrations is vendor-only; Platform remains business-agnostic
+
+---
+
+## Metadata
+
+Last updated: 2026-01-02  
+Owner: Architecture  
+Review cadence: on major architecture change  
+
+Change log:
+- 2026-01-02 - Reformatted to the documentation template.

@@ -1,5 +1,73 @@
 # Square Transactions import: DB mapping (current schema)
 
+Purpose  
+Define the contract boundary and expectations for this area.
+
+Audience  
+Engineers building or consuming contracts and integrations.
+
+Scope  
+Covers contract intent and boundary expectations. Does not describe host wiring.
+
+Status  
+Active
+
+---
+
+## Key Takeaways
+
+- This document describes a canonical contract boundary.
+- Consumers should rely on Contracts rather than host internals.
+- Changes must preserve compatibility or be versioned.
+
+---
+
+## System Context
+
+Contracts define stable boundaries between UseCases, Services, and Data.
+
+---
+
+## Core Concepts
+
+This document describes the contract intent and expected usage. Implementation details belong in code.
+
+---
+
+## How This Evolves Over Time
+
+- Update when schema or interface changes are introduced.
+- Note compatibility expectations when fields evolve.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Changing contract shapes without versioning.
+- Embedding host-specific types into Contracts.
+
+---
+
+## When to Change This Document
+
+- The contract or schema changes.
+- New consumers depend on this boundary.
+
+---
+
+## Related Documents
+
+- ../../02-architecture/system-overview.md
+- ../../02-architecture/application-layer-conventions.md
+- ../api/overview.md
+- schema.md
+
+---
+
+## Appendix (Optional)
+
+### Prior content (preserved for reference)
+
 Source of truth: `src/DevTools/MGF.SquareImportCli/**`, `src/Data/MGF.Data/Migrations/*`
 Change control: Update when Square import mapping or DB schema changes.
 Last verified: 2025-12-30
@@ -35,12 +103,12 @@ There is no `jsonb` metadata/payload column on `payments` or `invoices` in the c
 ## External id fields (candidate natural key)
 
 - `payments.processor_key` (`text`, NULL, FK `payment_processors.processor_key`)
-- `payments.processor_payment_id` (`text`, NULL) — indexed via `IX_payments_processor_payment_id` but **not unique**
+- `payments.processor_payment_id` (`text`, NULL) â€” indexed via `IX_payments_processor_payment_id` but **not unique**
 - `payments.processor_refund_id` (`text`, NULL)
 
 ## Square id storage + idempotency (importer)
 
-- Store the Square export’s `Transaction ID` in `payments.processor_payment_id` with `payments.processor_key = 'square'`.
+- Store the Square exportâ€™s `Transaction ID` in `payments.processor_payment_id` with `payments.processor_key = 'square'`.
 - Enforce idempotency by looking up an existing `payments` row by (`processor_key`, `processor_payment_id`) and reusing its `invoice_id`.
 - Create/update `invoice_integrations_square.square_customer_id` when available.
 
@@ -55,3 +123,13 @@ There is no `jsonb` metadata/payload column on `payments` or `invoices` in the c
 - If `square_customer_id` does not resolve to a client, rows are imported under a single system "unmatched" client (marked via a `clients.notes` marker).
 - Since `invoices.project_id` is NOT NULL, the importer ensures a per-client ledger project named `Square Transactions (Imported)`.
 
+---
+
+## Metadata
+
+Last updated: 2026-01-02  
+Owner: Platform  
+Review cadence: on contract change  
+
+Change log:
+- 2026-01-02 - Reformatted to the documentation template.

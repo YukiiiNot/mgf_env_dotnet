@@ -1,3 +1,71 @@
+# Getting Started
+
+Purpose  
+Help contributors onboard with durable guidance and links.
+
+Audience  
+New contributors and engineers onboarding to the repo.
+
+Scope  
+Covers orientation and links. Does not replace runbooks or detailed guides.
+
+Status  
+Active
+
+---
+
+## Key Takeaways
+
+- This doc helps new contributors get oriented quickly.
+- Follow linked guides for environment setup and workflows.
+- When in doubt, follow the documented process.
+
+---
+
+## System Context
+
+Onboarding docs orient new contributors to the repo and its workflows.
+
+---
+
+## Core Concepts
+
+This document helps contributors understand the repo and where to find deeper guidance.
+
+---
+
+## How This Evolves Over Time
+
+- Update when scope or responsibilities change.
+- Add clarifications when recurring questions appear.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Letting scope creep beyond the stated boundaries.
+- Creating duplicate sources of truth.
+
+---
+
+## When to Change This Document
+
+- Scope or responsibilities change.
+- New related docs are added.
+
+---
+
+## Related Documents
+
+- ../00-index.md
+- ../02-architecture/system-overview.md
+- dev-guide.md
+
+---
+
+## Appendix (Optional)
+
+### Prior content (preserved for reference)
 
 ````md
 # Getting Started
@@ -121,3 +189,13 @@ Status: Draft
 
 ```
 
+---
+
+## Metadata
+
+Last updated: 2026-01-02  
+Owner: Engineering Enablement  
+Review cadence: quarterly  
+
+Change log:
+- 2026-01-02 - Reformatted to the documentation template.
