@@ -1,16 +1,22 @@
 namespace MGF.UseCases.Operations.RootIntegrity.RunRootIntegrity;
 
 using MGF.Contracts.Abstractions.RootIntegrity;
+using MGF.Contracts.Abstractions.ProjectWorkflows;
 
 public sealed class RunRootIntegrityUseCase : IRunRootIntegrityUseCase
 {
     private readonly IRootIntegrityStore store;
     private readonly IRootIntegrityExecutor executor;
+    private readonly IProjectWorkflowLock workflowLock;
 
-    public RunRootIntegrityUseCase(IRootIntegrityStore store, IRootIntegrityExecutor executor)
+    public RunRootIntegrityUseCase(
+        IRootIntegrityStore store,
+        IRootIntegrityExecutor executor,
+        IProjectWorkflowLock workflowLock)
     {
         this.store = store;
         this.executor = executor;
+        this.workflowLock = workflowLock;
     }
 
     public async Task<RunRootIntegrityResult> ExecuteAsync(
@@ -46,8 +52,24 @@ public sealed class RunRootIntegrityUseCase : IRunRootIntegrityUseCase
             return new RunRootIntegrityResult(result);
         }
 
+        var lockScopeId = BuildLockScopeId(payload);
+        await using var lockLease = await workflowLock.TryAcquireAsync(
+            lockScopeId,
+            ProjectWorkflowKinds.StorageMutation,
+            request.JobId,
+            cancellationToken);
+        if (lockLease is null)
+        {
+            throw new ProjectWorkflowLockUnavailableException(lockScopeId, ProjectWorkflowKinds.StorageMutation);
+        }
+
         var runResult = await executor.ExecuteAsync(payload, contract, request.JobId, cancellationToken);
         return new RunRootIntegrityResult(runResult);
+    }
+
+    private static string BuildLockScopeId(RootIntegrityPayload payload)
+    {
+        return $"root_integrity:{payload.ProviderKey}:{payload.RootKey}";
     }
 
     private static RootIntegrityResult BuildResult(

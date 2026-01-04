@@ -11,6 +11,7 @@ using MGF.Contracts.Abstractions.Operations.StorageRoots;
 using MGF.Contracts.Abstractions.ProjectArchive;
 using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.Contracts.Abstractions.Projects;
+using MGF.Contracts.Abstractions.ProjectWorkflows;
 using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
@@ -23,6 +24,7 @@ using MGF.Data.Stores.Operations;
 using MGF.Data.Stores.Projects;
 using MGF.Data.Stores.ProjectArchive;
 using MGF.Data.Stores.ProjectBootstrap;
+using MGF.Data.Stores.ProjectWorkflows;
 using MGF.Data.Stores.RootIntegrity;
 
 namespace MGF.Data;
@@ -54,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectArchiveStore, ProjectArchiveStore>();
         services.AddScoped<IProjectBootstrapStore, ProjectBootstrapStore>();
         services.AddScoped<IProjectCreationStore, ProjectCreationStore>();
+        services.AddScoped<IProjectWorkflowLock, ProjectWorkflowLockStore>();
         services.AddScoped<IJobOpsStore, JobOpsStore>();
         services.AddScoped<IPeopleOpsStore, PeopleOpsStore>();
         services.AddScoped<IProjectOpsStore, ProjectOpsStore>();

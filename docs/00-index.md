@@ -51,6 +51,7 @@ Use this index to navigate the canonical documentation set.
 - Project shapes: [02-architecture/project-shapes.md](02-architecture/project-shapes.md)
 - Persistence patterns: [02-architecture/persistence-patterns.md](02-architecture/persistence-patterns.md)
 - Workflows: [02-architecture/workflows.md](02-architecture/workflows.md)
+- Shared Dev concurrency: [02-architecture/shared-dev-concurrency.md](02-architecture/shared-dev-concurrency.md)
 - Dependencies: [02-architecture/dependencies.md](02-architecture/dependencies.md)
 - Roadmap: [02-architecture/roadmap.md](02-architecture/roadmap.md)
 

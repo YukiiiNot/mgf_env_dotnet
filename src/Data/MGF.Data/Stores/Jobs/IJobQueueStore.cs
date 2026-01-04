@@ -16,6 +16,12 @@ public interface IJobQueueStore
 
     Task MarkSucceededAsync(string jobId, CancellationToken cancellationToken = default);
 
+    Task DeferJobAsync(
+        string jobId,
+        DateTimeOffset runAfter,
+        string reason,
+        CancellationToken cancellationToken = default);
+
     Task MarkFailedAsync(JobFailureUpdate update, CancellationToken cancellationToken = default);
 }
 

@@ -3,6 +3,7 @@ namespace MGF.UseCases.Operations.ProjectArchive.RunProjectArchive;
 using System.Text.Json;
 using MGF.Contracts.Abstractions;
 using MGF.Contracts.Abstractions.ProjectArchive;
+using MGF.Contracts.Abstractions.ProjectWorkflows;
 
 public sealed class RunProjectArchiveUseCase : IRunProjectArchiveUseCase
 {
@@ -16,19 +17,22 @@ public sealed class RunProjectArchiveUseCase : IRunProjectArchiveUseCase
     private readonly IProjectArchiveData archiveData;
     private readonly IProjectArchiveStore archiveStore;
     private readonly IProjectArchiveExecutor archiveExecutor;
+    private readonly IProjectWorkflowLock workflowLock;
 
     public RunProjectArchiveUseCase(
         IProjectRepository projectRepository,
         IClientRepository clientRepository,
         IProjectArchiveData archiveData,
         IProjectArchiveStore archiveStore,
-        IProjectArchiveExecutor archiveExecutor)
+        IProjectArchiveExecutor archiveExecutor,
+        IProjectWorkflowLock workflowLock)
     {
         this.projectRepository = projectRepository;
         this.clientRepository = clientRepository;
         this.archiveData = archiveData;
         this.archiveStore = archiveStore;
         this.archiveExecutor = archiveExecutor;
+        this.workflowLock = workflowLock;
     }
 
     public async Task<RunProjectArchiveResult> ExecuteAsync(
@@ -99,6 +103,16 @@ public sealed class RunProjectArchiveUseCase : IRunProjectArchiveUseCase
 
             await AppendArchiveRunAsync(archiveStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
             return new RunProjectArchiveResult(blockedResult);
+        }
+
+        await using var lockLease = await workflowLock.TryAcquireAsync(
+            project.ProjectId,
+            ProjectWorkflowKinds.StorageMutation,
+            request.JobId,
+            cancellationToken);
+        if (lockLease is null)
+        {
+            throw new ProjectWorkflowLockUnavailableException(project.ProjectId, ProjectWorkflowKinds.StorageMutation);
         }
 
         await archiveStore.UpdateProjectStatusAsync(

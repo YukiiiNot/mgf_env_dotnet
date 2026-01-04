@@ -89,6 +89,17 @@ public sealed class JobQueueStore : IJobQueueStore
             cancellationToken);
     }
 
+    public Task DeferJobAsync(
+        string jobId,
+        DateTimeOffset runAfter,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        return db.Database.ExecuteSqlInterpolatedAsync(
+            JobQueueSql.BuildDeferCommand(jobId, runAfter, reason),
+            cancellationToken);
+    }
+
     public Task MarkFailedAsync(JobFailureUpdate update, CancellationToken cancellationToken = default)
     {
         return db.Database.ExecuteSqlInterpolatedAsync(
@@ -205,6 +216,21 @@ internal static class JobQueueSql
             last_error = {update.ErrorText},
             payload = jsonb_set(payload, ARRAY['lastError'], to_jsonb({update.ErrorText}::text), true)
         WHERE job_id = {update.JobId};
+        """;
+    }
+
+    internal static FormattableString BuildDeferCommand(string jobId, DateTimeOffset runAfter, string reason)
+    {
+        return $"""
+        UPDATE public.jobs
+        SET status_key = {"queued"},
+            run_after = {runAfter},
+            finished_at = NULL,
+            locked_by = NULL,
+            locked_until = NULL,
+            last_error = {reason},
+            payload = jsonb_set(payload, ARRAY['lastError'], to_jsonb({reason}::text), true)
+        WHERE job_id = {jobId};
         """;
     }
 }

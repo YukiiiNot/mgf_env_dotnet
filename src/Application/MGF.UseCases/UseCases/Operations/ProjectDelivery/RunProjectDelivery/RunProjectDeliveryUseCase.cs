@@ -4,6 +4,7 @@ using System.Text.Json;
 using MGF.Contracts.Abstractions;
 using MGF.Contracts.Abstractions.Email;
 using MGF.Contracts.Abstractions.ProjectDelivery;
+using MGF.Contracts.Abstractions.ProjectWorkflows;
 
 public sealed class RunProjectDeliveryUseCase : IRunProjectDeliveryUseCase
 {
@@ -17,19 +18,22 @@ public sealed class RunProjectDeliveryUseCase : IRunProjectDeliveryUseCase
     private readonly IProjectDeliveryData deliveryData;
     private readonly IProjectDeliveryStore deliveryStore;
     private readonly IProjectDeliveryExecutor deliveryExecutor;
+    private readonly IProjectWorkflowLock workflowLock;
 
     public RunProjectDeliveryUseCase(
         IProjectRepository projectRepository,
         IClientRepository clientRepository,
         IProjectDeliveryData deliveryData,
         IProjectDeliveryStore deliveryStore,
-        IProjectDeliveryExecutor deliveryExecutor)
+        IProjectDeliveryExecutor deliveryExecutor,
+        IProjectWorkflowLock workflowLock)
     {
         this.projectRepository = projectRepository;
         this.clientRepository = clientRepository;
         this.deliveryData = deliveryData;
         this.deliveryStore = deliveryStore;
         this.deliveryExecutor = deliveryExecutor;
+        this.workflowLock = workflowLock;
     }
 
     public async Task<RunProjectDeliveryResult> ExecuteAsync(
@@ -125,6 +129,16 @@ public sealed class RunProjectDeliveryUseCase : IRunProjectDeliveryUseCase
 
             await AppendDeliveryRunAsync(deliveryStore, project.ProjectId, project.Metadata, blockedResult, cancellationToken);
             return new RunProjectDeliveryResult(blockedResult);
+        }
+
+        await using var lockLease = await workflowLock.TryAcquireAsync(
+            payload.ProjectId,
+            ProjectWorkflowKinds.StorageMutation,
+            request.JobId,
+            cancellationToken);
+        if (lockLease is null)
+        {
+            throw new ProjectWorkflowLockUnavailableException(payload.ProjectId, ProjectWorkflowKinds.StorageMutation);
         }
 
         await deliveryStore.UpdateProjectStatusAsync(project.ProjectId, ProjectDeliveryGuards.StatusDelivering, cancellationToken);

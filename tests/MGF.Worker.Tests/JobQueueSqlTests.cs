@@ -47,4 +47,21 @@ public sealed class JobQueueSqlTests
         Assert.Equal("error text", args[4]);
         Assert.Equal("job_123", args[5]);
     }
+
+    [Fact]
+    public void BuildDeferCommand_DoesNotIncrementAttempts()
+    {
+        var runAfter = new DateTimeOffset(2024, 5, 1, 8, 30, 0, TimeSpan.Zero);
+        var command = JobQueueSql.BuildDeferCommand("job_456", runAfter, "lock busy");
+
+        Assert.Contains("status_key =", command.Format);
+        Assert.DoesNotContain("attempt_count = attempt_count + 1", command.Format);
+
+        var args = command.GetArguments();
+        Assert.Equal("queued", args[0]);
+        Assert.Equal(runAfter, args[1]);
+        Assert.Equal("lock busy", args[2]);
+        Assert.Equal("lock busy", args[3]);
+        Assert.Equal("job_456", args[4]);
+    }
 }

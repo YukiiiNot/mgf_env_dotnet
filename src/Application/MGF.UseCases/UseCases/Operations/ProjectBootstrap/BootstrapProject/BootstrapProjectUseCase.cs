@@ -4,6 +4,7 @@ using System.Runtime.ExceptionServices;
 using System.Text.Json;
 using MGF.Contracts.Abstractions;
 using MGF.Contracts.Abstractions.ProjectBootstrap;
+using MGF.Contracts.Abstractions.ProjectWorkflows;
 
 public sealed class BootstrapProjectUseCase : IBootstrapProjectUseCase
 {
@@ -21,17 +22,20 @@ public sealed class BootstrapProjectUseCase : IBootstrapProjectUseCase
     private readonly IClientRepository clientRepository;
     private readonly IProjectBootstrapStore bootstrapStore;
     private readonly IProjectBootstrapProvisioningGateway provisioningGateway;
+    private readonly IProjectWorkflowLock workflowLock;
 
     public BootstrapProjectUseCase(
         IProjectRepository projectRepository,
         IClientRepository clientRepository,
         IProjectBootstrapStore bootstrapStore,
-        IProjectBootstrapProvisioningGateway provisioningGateway)
+        IProjectBootstrapProvisioningGateway provisioningGateway,
+        IProjectWorkflowLock workflowLock)
     {
         this.projectRepository = projectRepository;
         this.clientRepository = clientRepository;
         this.bootstrapStore = bootstrapStore;
         this.provisioningGateway = provisioningGateway;
+        this.workflowLock = workflowLock;
     }
 
     public async Task<BootstrapProjectResult> ExecuteAsync(
@@ -77,6 +81,16 @@ public sealed class BootstrapProjectUseCase : IBootstrapProjectUseCase
             var blocked = provisioningGateway.BuildBlockedStatusResult(context, request, statusError, alreadyProvisioning);
             await AppendRunAsync(project.ProjectId, project.Metadata, blocked, cancellationToken);
             return new BootstrapProjectResult(blocked);
+        }
+
+        await using var lockLease = await workflowLock.TryAcquireAsync(
+            project.ProjectId,
+            ProjectWorkflowKinds.StorageMutation,
+            request.JobId,
+            cancellationToken);
+        if (lockLease is null)
+        {
+            throw new ProjectWorkflowLockUnavailableException(project.ProjectId, ProjectWorkflowKinds.StorageMutation);
         }
 
         await bootstrapStore.UpdateProjectStatusAsync(project.ProjectId, StatusProvisioning, cancellationToken);

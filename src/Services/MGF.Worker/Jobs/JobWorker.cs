@@ -11,6 +11,7 @@ using MGF.Contracts.Abstractions.Integrations.Square;
 using MGF.Contracts.Abstractions.ProjectArchive;
 using MGF.Contracts.Abstractions.ProjectDelivery;
 using MGF.Contracts.Abstractions.ProjectBootstrap;
+using MGF.Contracts.Abstractions.ProjectWorkflows;
 using MGF.Contracts.Abstractions.RootIntegrity;
 using MGF.Data.Data;
 using MGF.Data.Stores.Counters;
@@ -28,6 +29,7 @@ public sealed class JobWorker : BackgroundService
     private static readonly TimeSpan DefaultPollInterval = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan LockDuration = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan ErrorBackoff = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan LockDeferralDelay = TimeSpan.FromSeconds(45);
 
     private const string SquareProcessorKey = "square";
     private const string SquarePaymentMethodKey = "square";
@@ -385,6 +387,11 @@ public sealed class JobWorker : BackgroundService
 
             return true;
         }
+        catch (ProjectWorkflowLockUnavailableException ex)
+        {
+            await DeferJobAsync(jobQueueStore, job, ex, cancellationToken);
+            return false;
+        }
         catch (Exception ex)
         {
             logger.LogError(
@@ -448,6 +455,11 @@ public sealed class JobWorker : BackgroundService
 
             return true;
         }
+        catch (ProjectWorkflowLockUnavailableException ex)
+        {
+            await DeferJobAsync(jobQueueStore, job, ex, cancellationToken);
+            return false;
+        }
         catch (Exception ex)
         {
             logger.LogError(
@@ -510,6 +522,11 @@ public sealed class JobWorker : BackgroundService
             }
 
             return true;
+        }
+        catch (ProjectWorkflowLockUnavailableException ex)
+        {
+            await DeferJobAsync(jobQueueStore, job, ex, cancellationToken);
+            return false;
         }
         catch (Exception ex)
         {
@@ -642,6 +659,11 @@ public sealed class JobWorker : BackgroundService
             }
 
             return true;
+        }
+        catch (ProjectWorkflowLockUnavailableException ex)
+        {
+            await DeferJobAsync(jobQueueStore, job, ex, cancellationToken);
+            return false;
         }
         catch (Exception ex)
         {
@@ -2027,6 +2049,26 @@ public sealed class JobWorker : BackgroundService
         await jobQueueStore.MarkSucceededAsync(jobId, cancellationToken);
 
         logger.LogInformation("MGF.Worker: job {JobId} succeeded", jobId);
+    }
+
+    private async Task DeferJobAsync(
+        IJobQueueStore jobQueueStore,
+        ClaimedJob job,
+        ProjectWorkflowLockUnavailableException ex,
+        CancellationToken cancellationToken)
+    {
+        var runAfter = DateTimeOffset.UtcNow.Add(LockDeferralDelay);
+
+        await jobQueueStore.DeferJobAsync(job.JobId, runAfter, ex.Message, cancellationToken);
+
+        logger.LogWarning(
+            ex,
+            "MGF.Worker: job {JobId} deferred (lock busy) (project_id={ProjectId}, workflow={WorkflowKind}, run_after={RunAfter})",
+            job.JobId,
+            ex.ProjectId,
+            ex.WorkflowKind,
+            runAfter
+        );
     }
 
     private async Task MarkFailedAsync(

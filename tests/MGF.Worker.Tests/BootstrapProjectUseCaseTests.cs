@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MGF.Contracts.Abstractions;
 using MGF.Contracts.Abstractions.ProjectBootstrap;
+using MGF.Contracts.Abstractions.ProjectWorkflows;
 using MGF.Domain.Entities;
 using MGF.UseCases.Operations.ProjectBootstrap.BootstrapProject;
 
@@ -28,11 +29,13 @@ public sealed class BootstrapProjectUseCaseTests
 
         var store = new FakeBootstrapStore();
         var gateway = new FakeGateway();
+        var workflowLock = new FakeWorkflowLock();
         var useCase = new BootstrapProjectUseCase(
             new FakeProjectRepository(project),
             new FakeClientRepository(client),
             store,
-            gateway);
+            gateway,
+            workflowLock);
 
         var request = new BootstrapProjectRequest(
             JobId: "job_123",
@@ -60,6 +63,34 @@ public sealed class BootstrapProjectUseCaseTests
                 "status:active"
             },
             store.Calls);
+    }
+
+    private sealed class FakeWorkflowLock : IProjectWorkflowLock
+    {
+        public Task<IProjectWorkflowLease?> TryAcquireAsync(
+            string projectId,
+            string workflowKind,
+            string holderId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IProjectWorkflowLease?>(new FakeWorkflowLease(projectId, workflowKind, holderId));
+        }
+    }
+
+    private sealed class FakeWorkflowLease : IProjectWorkflowLease
+    {
+        public FakeWorkflowLease(string projectId, string workflowKind, string holderId)
+        {
+            ProjectId = projectId;
+            WorkflowKind = workflowKind;
+            HolderId = holderId;
+        }
+
+        public string ProjectId { get; }
+        public string WorkflowKind { get; }
+        public string HolderId { get; }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     private sealed class FakeProjectRepository : IProjectRepository
