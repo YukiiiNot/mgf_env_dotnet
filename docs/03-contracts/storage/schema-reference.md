@@ -68,7 +68,7 @@ This document describes the contract intent and expected usage. Implementation d
 
 ### Prior content (preserved for reference)
 
-﻿# Storage Schema Reference
+# Storage Schema Reference
 
 Source of truth: `artifacts/schemas/mgf.folderTemplate.schema.json`, `artifacts/schemas/mgf.namingRules.schema.json`
 Change control: Update when schema files change.

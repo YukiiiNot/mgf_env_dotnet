@@ -67,7 +67,7 @@ This guide describes the supported workflow and where the authoritative sources 
 
 ### Prior content (preserved for reference)
 
-﻿# Integrations Troubleshooting
+# Integrations Troubleshooting
 
 ## Primary reference
 - Integrations config: [../../03-contracts/configuration/integrations.md](../../03-contracts/configuration/integrations.md)

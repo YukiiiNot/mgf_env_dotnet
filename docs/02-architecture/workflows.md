@@ -68,7 +68,7 @@ This document explains the boundary and responsibilities for this area and how i
 
 ### Prior content (preserved for reference)
 
-﻿# Workflow Overview
+# Workflow Overview
 
 This is a high-level map of core workflows. Detailed step-by-step instructions live in runbooks and how-to guides.
 

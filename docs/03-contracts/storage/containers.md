@@ -68,7 +68,7 @@ This document describes the contract intent and expected usage. Implementation d
 
 ### Prior content (preserved for reference)
 
-﻿# Container Templates
+# Container Templates
 
 Source of truth: `artifacts/templates/*.json`, `artifacts/schemas/*.schema.json`, `src/Operations/MGF.ProvisionerCli`
 Change control: Update when container folder structures or naming rules change.

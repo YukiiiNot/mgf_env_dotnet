@@ -95,7 +95,7 @@ This document explains the boundary and responsibilities for this area and how i
 | WorkItem | Planned | Data tables only | tables: `work_items`, `work_item_statuses`, `work_item_priorities`, `work_item_tags` | Task workflow or assignment rules | Avoid host-local work item models |
 
 ## Notes
-- “First-class concept” does **not** mean a full Domain model today; it marks concepts that need stable ownership.
+- "First-class concept" does **not** mean a full Domain model today; it marks concepts that need stable ownership.
 - When a concept grows shared invariants, promote it into Domain or Contracts, not into hosts.
 
 ---

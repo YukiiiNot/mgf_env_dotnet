@@ -67,7 +67,7 @@ This guide describes the supported workflow and where the authoritative sources 
 
 ### Prior content (preserved for reference)
 
-﻿# Square Import (How-To)
+# Square Import (How-To)
 
 ## Scope
 The Square import tool ingests Square CSV exports into the MGF database.

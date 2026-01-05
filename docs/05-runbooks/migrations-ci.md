@@ -67,7 +67,7 @@ Follow the documented procedure. Context and prerequisites are captured here; th
 
 ### Prior content (preserved for reference)
 
-﻿# Migrations CI Runbook
+# Migrations CI Runbook
 
 Source of truth: `.github/workflows/migrate-staging.yml`, `.github/workflows/migrate-prod.yml`, `.github/workflows/ci.yml`
 Change control: Update when migration pipelines or CI gating changes.

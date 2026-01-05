@@ -68,7 +68,7 @@ This document describes the contract intent and expected usage. Implementation d
 
 ### Prior content (preserved for reference)
 
-﻿MGF Email Contract (Internal)
+MGF Email Contract (Internal)
 =============================
 
 Source of truth: `src/Platform/MGF.Email/**`, `src/Integrations/MGF.Integrations.Email.*`, `src/Operations/MGF.ProjectBootstrapCli`, `tests/MGF.Worker.Tests/EmailSnapshots`
@@ -155,7 +155,7 @@ Templates live under:
 - src/Platform/MGF.Email/Composition/Templates/theme.json
 
 The delivery-ready HTML template is assembled from partials:
-layout_start â†’ header_block â†’ headline_block â†’ rule â†’ CTA â†’ link â†’ rule â†’ details â†’ rule â†’ files â†’ footer â†’ layout_end.
+layout_start -> header_block -> headline_block -> rule -> CTA -> link -> rule -> details -> rule -> files -> footer -> layout_end.
 
 Theme tokens (theme.json) drive typography, spacing, rules, and button styling.
 All values are inline-safe and email-client friendly; missing tokens fall back to

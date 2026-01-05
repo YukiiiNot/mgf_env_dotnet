@@ -67,7 +67,7 @@ Follow the documented procedure. Context and prerequisites are captured here; th
 
 ### Prior content (preserved for reference)
 
-﻿# Delivery Runbook (Dev/Test)
+# Delivery Runbook (Dev/Test)
 
 Source of truth: `src/Operations/MGF.ProjectBootstrapCli`, `src/DevTools/MGF.ProjectBootstrapDevCli`, `src/Services/MGF.Worker`, `src/Platform/MGF.Email`
 Change control: Update when delivery CLI flags, job flow, or email behavior changes.

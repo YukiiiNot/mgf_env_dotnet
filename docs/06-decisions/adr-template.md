@@ -67,7 +67,7 @@ This document records the decision format and how decisions are captured.
 
 ### Prior content (preserved for reference)
 
-﻿# ADR Template
+# ADR Template
 
 ## Status
 - Proposed | Accepted | Superseded | Rejected

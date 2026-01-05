@@ -67,7 +67,7 @@ Follow the documented procedure. Context and prerequisites are captured here; th
 
 ### Prior content (preserved for reference)
 
-﻿# Destructive Operations Audit
+# Destructive Operations Audit
 
 Source of truth: `tests/MGF.Data.IntegrationTests/DatabaseFixture.cs`, `src/DevTools/MGF.SquareImportCli/Importers/CustomersImporter.cs`, `src/DevTools/MGF.SquareImportCli/Commands/CustomersCommand.cs`
 Change control: Update when destructive operations or guardrails change.
@@ -203,8 +203,8 @@ WHERE status_key = 'running'
 
 - All known reset scripts were removed.  
 - Remaining destructive operations are limited to:
-  - Dev integration tests (TRUNCATE) — explicitly gated.
-  - Square-import customer reset — explicitly gated with a destructive flag + prompt + Dev-only checks.  
+  - Dev integration tests (TRUNCATE) -- explicitly gated.
+  - Square-import customer reset -- explicitly gated with a destructive flag + prompt + Dev-only checks.  
 - No destructive actions run by default on build/test/runtime.
 
 ---

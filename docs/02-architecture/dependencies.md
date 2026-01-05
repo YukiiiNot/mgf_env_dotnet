@@ -68,7 +68,7 @@ This document explains the boundary and responsibilities for this area and how i
 
 ### Prior content (preserved for reference)
 
-﻿# Dependencies
+# Dependencies
 
 ## Platform
 - .NET SDK is pinned via `global.json`.

@@ -68,7 +68,7 @@ This document describes the contract intent and expected usage. Implementation d
 
 ### Prior content (preserved for reference)
 
-﻿# Infrastructure Contracts
+# Infrastructure Contracts
 
 Source of truth: `artifacts/templates/*.json`, `artifacts/schemas/*.schema.json`, `src/Operations/MGF.ProvisionerCli`, `src/Operations/MGF.ProjectBootstrapCli`
 Change control: Update when template structure, schemas, or provisioning guarantees change.
@@ -116,7 +116,7 @@ Project Bootstrap:
 - Template structure or naming rules without schema updates + review
 - Token rules (`{PROJECT_CODE}`, `{PROJECT_NAME}`, `{CLIENT_NAME}`, `{EDITOR_INITIALS}`)
 - Manifest format and location
-- Bootstrap defaults that keep it nonâ€‘destructive
+- Bootstrap defaults that keep it non-destructive
 
 ## What may evolve (and how)
 

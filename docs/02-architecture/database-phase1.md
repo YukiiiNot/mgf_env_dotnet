@@ -88,13 +88,13 @@ Phase 1 Core is now implemented as **EF Core migrations** in `src/Data/MGF.Data/
 ### Lookup seeding
 
 - `src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs` seeds stable lookup rows and counters idempotently (UPSERT).
-- `MGF.DataMigrator` runs: migrations → lookup seeding.
+- `MGF.DataMigrator` runs: migrations -> lookup seeding.
 
 ## Notes / intentional deferrals
 
 - **Role scope enforcement**: `project_members.role_key` correctly references global `roles.role_key`, and scopes are modeled via `role_scopes` + `role_scope_roles`, but only project-scoped roles allowed in project_members is not enforced at the DB level yet (would require either a redundant `scope_key` column on the join table, or a trigger). Validate in application logic for now.
 - **client_contacts primary key**: the CSV does not mark `Primary=true`; Phase 1 assumes a composite PK of `(client_id, person_id)` per intended join semantics.
-- **Recommended partial uniques**: some CSV notes recommend partial unique indexes (e.g., “one primary per …”). Phase 1 only implements uniqueness when it is explicitly documented in the `Constraints` field.
+- **Recommended partial uniques**: some CSV notes recommend partial unique indexes (e.g., "one primary per ..."). Phase 1 only implements uniqueness when it is explicitly documented in the `Constraints` field.
 
 ## Quick references
 

@@ -68,7 +68,7 @@ This document describes the contract intent and expected usage. Implementation d
 
 ### Prior content (preserved for reference)
 
-﻿# Schema CSV Index
+# Schema CSV Index
 
 Source of truth: `docs/db_design/schema_csv/**`, `docs/db_design/schema_csv/_notes/schema_inventory.json`
 Change control: Update when schema CSVs or inventory generation changes.

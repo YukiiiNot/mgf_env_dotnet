@@ -103,12 +103,12 @@ There is no `jsonb` metadata/payload column on `payments` or `invoices` in the c
 ## External id fields (candidate natural key)
 
 - `payments.processor_key` (`text`, NULL, FK `payment_processors.processor_key`)
-- `payments.processor_payment_id` (`text`, NULL) — indexed via `IX_payments_processor_payment_id` but **not unique**
+- `payments.processor_payment_id` (`text`, NULL) -- indexed via `IX_payments_processor_payment_id` but **not unique**
 - `payments.processor_refund_id` (`text`, NULL)
 
 ## Square id storage + idempotency (importer)
 
-- Store the Square export’s `Transaction ID` in `payments.processor_payment_id` with `payments.processor_key = 'square'`.
+- Store the Square export's `Transaction ID` in `payments.processor_payment_id` with `payments.processor_key = 'square'`.
 - Enforce idempotency by looking up an existing `payments` row by (`processor_key`, `processor_payment_id`) and reusing its `invoice_id`.
 - Create/update `invoice_integrations_square.square_customer_id` when available.
 

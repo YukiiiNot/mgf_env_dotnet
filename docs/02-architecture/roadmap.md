@@ -68,7 +68,7 @@ This document explains the boundary and responsibilities for this area and how i
 
 ### Prior content (preserved for reference)
 
-﻿# MGF Roadmap
+# MGF Roadmap
 
 Short, daily-readable map of what exists, what is partial, and what we do next.
 
@@ -76,17 +76,17 @@ Short, daily-readable map of what exists, what is partial, and what we do next.
 
 | Workflow | Status | Key commands/jobs | Next concrete milestone |
 | --- | --- | --- | --- |
-| Project lifecycle (create → bootstrap/provision → active) | Done (v1) | `project.bootstrap` job, `MGF.ProjectBootstrapCli` | Reduce manual steps for new project setup (UI/ops console) |
-| Archive (active → to_archive → archived) | Done (v1) | `project.archive` job | Add retention reporting (report-only) |
+| Project lifecycle (create -> bootstrap/provision -> active) | Done (v1) | `project.bootstrap` job, `MGF.ProjectBootstrapCli` | Reduce manual steps for new project setup (UI/ops console) |
+| Archive (active -> to_archive -> archived) | Done (v1) | `project.archive` job | Add retention reporting (report-only) |
 | Delivery (versioned exports + share + email) | Done (v1.3) | `project.delivery`, `project.delivery_email` | Delivery runs table + retention report (no deletes) |
-| Asset ingest | Not Started | — | Define ingest contract + guardrails |
-| Review exports / approvals loop | Not Started | — | Decide approval model (simple status + notes) |
-| Billing gates (invoice issued/paid) | Partial | lookups + schema exist | Define minimal “invoice ready” gate |
+| Asset ingest | Not Started | -- | Define ingest contract + guardrails |
+| Review exports / approvals loop | Not Started | -- | Decide approval model (simple status + notes) |
+| Billing gates (invoice issued/paid) | Partial | lookups + schema exist | Define minimal "invoice ready" gate |
 | Scheduling/due dates/milestones | Partial | schema exists | Define minimal milestone model |
 | Retention reporting (report-only) | Partial | delivery metadata | Add a report-only job + runbook |
 | Observability (jobs dashboard) | Partial | `public.jobs` + CLI show | Add lightweight WPF/CLI dashboard |
-| Client portal publishing (Notion later) | Not Started | — | Define data contract + publish trigger |
-| Desktop tooling (WPF) | Not Started | — | Minimal Ops Console MVP |
+| Client portal publishing (Notion later) | Not Started | -- | Define data contract + publish trigger |
+| Desktop tooling (WPF) | Not Started | -- | Minimal Ops Console MVP |
 
 ## Next 30 / 60 / 90 Days
 
@@ -104,7 +104,7 @@ Short, daily-readable map of what exists, what is partial, and what we do next.
 
 ### Next 60 days (reduce friction)
 1. Add a minimal review/approval loop
-   - Acceptance: project can enter “ready_to_deliver” via a single explicit action.
+   - Acceptance: project can enter "ready_to_deliver" via a single explicit action.
 2. Add delivery runs table (optional) + UI read
    - Acceptance: runs are queryable without reading JSON metadata.
 3. Add a basic jobs dashboard (CLI or WPF)

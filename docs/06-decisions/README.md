@@ -67,7 +67,7 @@ This document records the decision format and how decisions are captured.
 
 ### Prior content (preserved for reference)
 
-﻿# Architecture Decisions (ADR)
+# Architecture Decisions (ADR)
 
 Use ADRs to capture decisions that affect architecture, contracts, or operations.
 

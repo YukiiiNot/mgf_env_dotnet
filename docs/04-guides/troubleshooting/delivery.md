@@ -67,7 +67,7 @@ This guide describes the supported workflow and where the authoritative sources 
 
 ### Prior content (preserved for reference)
 
-﻿# Delivery Troubleshooting
+# Delivery Troubleshooting
 
 ## Primary reference
 - Delivery runbook: [../../05-runbooks/delivery.md](../../05-runbooks/delivery.md)

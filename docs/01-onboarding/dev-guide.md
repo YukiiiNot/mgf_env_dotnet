@@ -74,13 +74,13 @@ Audience
 Developers building features, workflows, UI, integrations, and operational tooling.
 
 Scope  
-Covers development principles, boundaries, and where changes go. Does not replace runbooks (operational “how to run”) and does not fully enumerate every subsystem (architecture docs do that).
+Covers development principles, boundaries, and where changes go. Does not replace runbooks (operational "how to run") and does not fully enumerate every subsystem (architecture docs do that).
 
 Key takeaways
 - The system is workflow-driven: UseCases orchestrate; Hosts dispatch; Data persists; Integrations talk to vendors.
 - We preserve consistency by enforcing dependency direction and contract surfaces.
-- “How the business works” belongs in Domain/UseCases; “how data is stored” belongs in Data; “how we talk to vendors” belongs in Integrations.
-- If you’re about to add a feature, start by deciding which bucket owns it.
+- "How the business works" belongs in Domain/UseCases; "how data is stored" belongs in Data; "how we talk to vendors" belongs in Integrations.
+- If you're about to add a feature, start by deciding which bucket owns it.
 
 ## How the system is intended to evolve
 
@@ -100,7 +100,7 @@ For the authoritative shapes and dependency direction, see:
 ## Working agreements (what we optimize for)
 
 - Guardrails over cleverness: prefer tests, contracts, and explicit seams.
-- Explicit workflows: jobs and status transitions are explicit, not “hidden side effects.”
+- Explicit workflows: jobs and status transitions are explicit, not "hidden side effects."
 - Idempotency: job processing should tolerate retries safely.
 - Traceability: when behavior matters, make it observable (logs + stored metadata + docs).
 
@@ -136,7 +136,7 @@ Rules of thumb:
 
 Email spans multiple buckets:
 - Platform: composition and templates (what we send and how it renders)
-- Integrations: providers (how it’s sent via Gmail/SMTP/etc.)
+- Integrations: providers (how it's sent via Gmail/SMTP/etc.)
 - Contracts: abstractions for senders/composers and shared models
 - UseCases: when/why an email is sent (workflow orchestration)
 - Services: wiring and runtime selection
@@ -150,7 +150,7 @@ MGF.FolderProvisioning is a folder topology engine used by workflows to:
 - plan/apply/verify folder structures across storage containers
 - enforce folder structure rules via policy
 
-It is not a “generic provisioning system,” it’s explicitly about folder trees across storage providers.
+It is not a "generic provisioning system," it's explicitly about folder trees across storage providers.
 
 Authoritative detail:
 - ../02-architecture/provisioning.md
@@ -158,7 +158,7 @@ Authoritative detail:
 ## Testing philosophy
 
 - Unit tests for pure logic (planners, guards, models)
-- Contract tests for “must-not-drift” invariants (stable delivery paths, allowlists, naming rules)
+- Contract tests for "must-not-drift" invariants (stable delivery paths, allowlists, naming rules)
 - Avoid destructive DB tests unless explicitly opted-in and isolated
 
 Related docs

@@ -215,7 +215,7 @@ dotnet ef migrations remove --project src/Data/MGF.Data --startup-project src/Da
 ```
 
 Notes:
-- If the migration has already been applied to a database, roll back first (or create a new “revert” migration) to avoid drift.
+- If the migration has already been applied to a database, roll back first (or create a new "revert" migration) to avoid drift.
 
 ### Roll back to a previous migration
 

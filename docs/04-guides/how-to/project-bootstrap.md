@@ -67,7 +67,7 @@ This guide describes the supported workflow and where the authoritative sources 
 
 ### Prior content (preserved for reference)
 
-﻿# Project Bootstrap (How-To)
+# Project Bootstrap (How-To)
 
 ## Scope
 The ProjectBootstrap CLI manages provisioning, delivery, and related jobs.

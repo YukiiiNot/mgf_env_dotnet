@@ -71,7 +71,7 @@ This document helps contributors understand the repo and where to find deeper gu
 # Getting Started
 
 Purpose  
-Get a new developer productive locally without accidentally affecting production workflows, and teach them where to find the “source of truth” for architecture, runbooks, and contracts.
+Get a new developer productive locally without accidentally affecting production workflows, and teach them where to find the "source of truth" for architecture, runbooks, and contracts.
 
 Audience  
 New developers onboarding to MGF (including contributors who prefer UI over CLI).
@@ -81,9 +81,9 @@ Covers local setup, repo orientation, and safe first steps. Does not replace dee
 
 Key takeaways
 - Start by understanding the bucket model and where code belongs.
-- Use DevSecrets to bootstrap local secrets (don’t hand-type lots of user-secrets).
+- Use DevSecrets to bootstrap local secrets (don't hand-type lots of user-secrets).
 - Run safe verification workflows (including email preview) before changing logic.
-- For “how to operate,” use runbooks; for “how to design,” use architecture docs.
+- For "how to operate," use runbooks; for "how to design," use architecture docs.
 
 ## Repo layout (high level)
 
@@ -92,7 +92,7 @@ The system is organized by buckets. Learn the bucket model first, then learn the
 Bucket map (canonical):  
 - ../02-architecture/project-shapes.md
 
-Common projects you’ll touch early:
+Common projects you'll touch early:
 - API host: src/Services/MGF.Api
 - Worker host: src/Services/MGF.Worker (dispatch + wiring)
 - UseCases: src/Application/MGF.UseCases (workflow orchestration boundary)
@@ -117,7 +117,7 @@ $env:MGF_CONFIG_DIR = 'C:\dev\mgf_env_dotnet\config'
 ````
 
 2. Bootstrap secrets using DevSecrets (preferred)
-   DevSecrets exists so new devs don’t manually type many secrets and risk drift.
+   DevSecrets exists so new devs don't manually type many secrets and risk drift.
 
 Read and follow:
 
@@ -141,7 +141,7 @@ Then verify key workflows using the sanctioned verification process:
 * ../02-architecture/testing-and-verification.md
 * ../05-runbooks/ (pick the relevant workflow runbook)
 
-If you want a UI-first workflow view (for visual onboarding), start with a “dev console” UI that:
+If you want a UI-first workflow view (for visual onboarding), start with a "dev console" UI that:
 
 * calls API/Operations surfaces safely
 * shows job queue state and last workflow status
@@ -157,7 +157,7 @@ If you want a UI-first workflow view (for visual onboarding), start with a “de
 * Data owns persistence semantics: EF + SQL stores live here.
 * Services and Operations are adapters: thin entry points, not business logic.
 
-For the detailed map from database tables → category → representation:
+For the detailed map from database tables -> category -> representation:
 
 * ../02-architecture/domain-persistence-map.md
 * ../02-architecture/business-concepts-catalog.md

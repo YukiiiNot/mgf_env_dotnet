@@ -68,7 +68,7 @@ This document describes the contract intent and expected usage. Implementation d
 
 ### Prior content (preserved for reference)
 
-﻿# Storage Templates Contract
+# Storage Templates Contract
 
 Source of truth: `artifacts/templates/*.json`, `artifacts/schemas/*.schema.json`, `tests/MGF.TemplateValidation.Tests/**`
 Change control: Update when template structures, required folders, or schema validation rules change.
