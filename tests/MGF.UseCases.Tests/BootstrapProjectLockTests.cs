@@ -29,7 +29,7 @@ public sealed class BootstrapProjectLockTests
         await Assert.ThrowsAsync<ProjectWorkflowLockUnavailableException>(() => useCase.ExecuteAsync(request));
 
         Assert.Single(workflowLock.Requests);
-        Assert.Equal((project.ProjectId, ProjectWorkflowKinds.StorageMutation, "job_bootstrap"), workflowLock.Requests[0]);
+        Assert.Equal((StorageMutationScopes.ForProject(project.ProjectId), ProjectWorkflowKinds.StorageMutation, "job_bootstrap"), workflowLock.Requests[0]);
         Assert.Empty(store.Calls);
         Assert.False(gateway.Called);
     }
@@ -40,7 +40,7 @@ public sealed class BootstrapProjectLockTests
         var project = BuildProject("prj_bootstrap_ok");
         var store = new FakeBootstrapStore();
         var gateway = new FakeGateway();
-        var lease = new FakeWorkflowLease(project.ProjectId, ProjectWorkflowKinds.StorageMutation, "job_bootstrap_ok");
+        var lease = new FakeWorkflowLease(StorageMutationScopes.ForProject(project.ProjectId), ProjectWorkflowKinds.StorageMutation, "job_bootstrap_ok");
         var workflowLock = new FakeWorkflowLock { NextLease = lease };
 
         var useCase = new BootstrapProjectUseCase(
@@ -64,7 +64,7 @@ public sealed class BootstrapProjectLockTests
         var project = BuildProject("prj_bootstrap_fail");
         var store = new FakeBootstrapStore();
         var gateway = new FakeGateway { Exception = new InvalidOperationException("boom") };
-        var lease = new FakeWorkflowLease(project.ProjectId, ProjectWorkflowKinds.StorageMutation, "job_bootstrap_fail");
+        var lease = new FakeWorkflowLease(StorageMutationScopes.ForProject(project.ProjectId), ProjectWorkflowKinds.StorageMutation, "job_bootstrap_fail");
         var workflowLock = new FakeWorkflowLock { NextLease = lease };
 
         var useCase = new BootstrapProjectUseCase(

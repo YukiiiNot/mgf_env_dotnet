@@ -19,7 +19,7 @@ public sealed class RunRootIntegrityLockTests
             new RunRootIntegrityRequest(BuildPayload(), "job_root")));
 
         Assert.Single(workflowLock.Requests);
-        Assert.Equal(("root_integrity:dropbox:root", ProjectWorkflowKinds.StorageMutation, "job_root"), workflowLock.Requests[0]);
+        Assert.Equal((StorageMutationScopes.ForRoot("dropbox", "root"), ProjectWorkflowKinds.StorageMutation, "job_root"), workflowLock.Requests[0]);
         Assert.False(executor.Called);
     }
 
@@ -28,7 +28,7 @@ public sealed class RunRootIntegrityLockTests
     {
         var store = new FakeRootIntegrityStore(BuildContract());
         var executor = new FakeRootIntegrityExecutor();
-        var lease = new FakeWorkflowLease("root_integrity:dropbox:root", ProjectWorkflowKinds.StorageMutation, "job_root_ok");
+        var lease = new FakeWorkflowLease(StorageMutationScopes.ForRoot("dropbox", "root"), ProjectWorkflowKinds.StorageMutation, "job_root_ok");
         var workflowLock = new FakeWorkflowLock { NextLease = lease };
 
         var useCase = new RunRootIntegrityUseCase(store, executor, workflowLock);
@@ -44,7 +44,7 @@ public sealed class RunRootIntegrityLockTests
     {
         var store = new FakeRootIntegrityStore(BuildContract());
         var executor = new FakeRootIntegrityExecutor { Exception = new InvalidOperationException("boom") };
-        var lease = new FakeWorkflowLease("root_integrity:dropbox:root", ProjectWorkflowKinds.StorageMutation, "job_root_fail");
+        var lease = new FakeWorkflowLease(StorageMutationScopes.ForRoot("dropbox", "root"), ProjectWorkflowKinds.StorageMutation, "job_root_fail");
         var workflowLock = new FakeWorkflowLock { NextLease = lease };
 
         var useCase = new RunRootIntegrityUseCase(store, executor, workflowLock);

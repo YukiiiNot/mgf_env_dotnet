@@ -85,6 +85,7 @@ Lock strategy:
 
 Lock scope:
 - All storage-mutating workflows acquire `ProjectWorkflowKinds.StorageMutation` per project.
+- Project workflows lock `project:{projectId}` scopes; root integrity locks `root:{providerKey}:{rootKey}` scopes.
 
 ### Developer rules of engagement
 
@@ -156,3 +157,4 @@ Review cadence: quarterly
 Change log:
 - 2026-01-02 - Added shared Dev concurrency strategy and workflow lock model.
 - 2026-01-02 - Updated deferral semantics, lock scope, and storage-mutation checklist.
+- 2026-01-02 - Documented scope ids for project vs root integrity locks.

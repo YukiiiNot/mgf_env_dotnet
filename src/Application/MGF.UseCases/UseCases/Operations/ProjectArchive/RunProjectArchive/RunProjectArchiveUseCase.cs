@@ -105,14 +105,15 @@ public sealed class RunProjectArchiveUseCase : IRunProjectArchiveUseCase
             return new RunProjectArchiveResult(blockedResult);
         }
 
+        var scopeId = StorageMutationScopes.ForProject(project.ProjectId);
         await using var lockLease = await workflowLock.TryAcquireAsync(
-            project.ProjectId,
+            scopeId,
             ProjectWorkflowKinds.StorageMutation,
             request.JobId,
             cancellationToken);
         if (lockLease is null)
         {
-            throw new ProjectWorkflowLockUnavailableException(project.ProjectId, ProjectWorkflowKinds.StorageMutation);
+            throw new ProjectWorkflowLockUnavailableException(scopeId, ProjectWorkflowKinds.StorageMutation);
         }
 
         await archiveStore.UpdateProjectStatusAsync(

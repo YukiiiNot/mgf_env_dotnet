@@ -30,7 +30,7 @@ public sealed class RunProjectDeliveryLockTests
             new RunProjectDeliveryRequest(payload, "job_1")));
 
         Assert.Single(leaseStore.Requests);
-        Assert.Equal(("prj_1", ProjectWorkflowKinds.StorageMutation, "job_1"), leaseStore.Requests[0]);
+        Assert.Equal((StorageMutationScopes.ForProject("prj_1"), ProjectWorkflowKinds.StorageMutation, "job_1"), leaseStore.Requests[0]);
         Assert.Empty(store.StatusUpdates);
         Assert.False(executor.ResolveCalled);
     }
@@ -39,7 +39,7 @@ public sealed class RunProjectDeliveryLockTests
     public async Task ExecuteAsync_CallsExecutor_WhenLockAcquired()
     {
         var payload = BuildPayload("prj_3");
-        var lease = new FakeWorkflowLease("prj_3", ProjectWorkflowKinds.StorageMutation, "job_3");
+        var lease = new FakeWorkflowLease(StorageMutationScopes.ForProject("prj_3"), ProjectWorkflowKinds.StorageMutation, "job_3");
         var leaseStore = new FakeProjectWorkflowLock { NextLease = lease };
         var store = new FakeProjectDeliveryStore();
         var executor = new FakeProjectDeliveryExecutor();
@@ -64,7 +64,7 @@ public sealed class RunProjectDeliveryLockTests
     public async Task ExecuteAsync_ReleasesLock_WhenExecutorThrows()
     {
         var payload = BuildPayload("prj_2");
-        var lease = new FakeWorkflowLease("prj_2", ProjectWorkflowKinds.StorageMutation, "job_2");
+        var lease = new FakeWorkflowLease(StorageMutationScopes.ForProject("prj_2"), ProjectWorkflowKinds.StorageMutation, "job_2");
         var leaseStore = new FakeProjectWorkflowLock { NextLease = lease };
         var store = new FakeProjectDeliveryStore();
         var executor = new FakeProjectDeliveryExecutor { ResolveException = new InvalidOperationException("boom") };

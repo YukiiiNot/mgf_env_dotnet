@@ -131,14 +131,15 @@ public sealed class RunProjectDeliveryUseCase : IRunProjectDeliveryUseCase
             return new RunProjectDeliveryResult(blockedResult);
         }
 
+        var scopeId = StorageMutationScopes.ForProject(payload.ProjectId);
         await using var lockLease = await workflowLock.TryAcquireAsync(
-            payload.ProjectId,
+            scopeId,
             ProjectWorkflowKinds.StorageMutation,
             request.JobId,
             cancellationToken);
         if (lockLease is null)
         {
-            throw new ProjectWorkflowLockUnavailableException(payload.ProjectId, ProjectWorkflowKinds.StorageMutation);
+            throw new ProjectWorkflowLockUnavailableException(scopeId, ProjectWorkflowKinds.StorageMutation);
         }
 
         await deliveryStore.UpdateProjectStatusAsync(project.ProjectId, ProjectDeliveryGuards.StatusDelivering, cancellationToken);

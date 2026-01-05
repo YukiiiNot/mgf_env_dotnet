@@ -52,7 +52,7 @@ public sealed class RunRootIntegrityUseCase : IRunRootIntegrityUseCase
             return new RunRootIntegrityResult(result);
         }
 
-        var lockScopeId = BuildLockScopeId(payload);
+        var lockScopeId = StorageMutationScopes.ForRoot(payload.ProviderKey, payload.RootKey);
         await using var lockLease = await workflowLock.TryAcquireAsync(
             lockScopeId,
             ProjectWorkflowKinds.StorageMutation,
@@ -65,11 +65,6 @@ public sealed class RunRootIntegrityUseCase : IRunRootIntegrityUseCase
 
         var runResult = await executor.ExecuteAsync(payload, contract, request.JobId, cancellationToken);
         return new RunRootIntegrityResult(runResult);
-    }
-
-    private static string BuildLockScopeId(RootIntegrityPayload payload)
-    {
-        return $"root_integrity:{payload.ProviderKey}:{payload.RootKey}";
     }
 
     private static RootIntegrityResult BuildResult(

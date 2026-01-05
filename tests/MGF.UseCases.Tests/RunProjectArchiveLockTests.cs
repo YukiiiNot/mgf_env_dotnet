@@ -30,7 +30,7 @@ public sealed class RunProjectArchiveLockTests
             new RunProjectArchiveRequest(BuildPayload(project.ProjectId), "job_archive")));
 
         Assert.Single(workflowLock.Requests);
-        Assert.Equal((project.ProjectId, ProjectWorkflowKinds.StorageMutation, "job_archive"), workflowLock.Requests[0]);
+        Assert.Equal((StorageMutationScopes.ForProject(project.ProjectId), ProjectWorkflowKinds.StorageMutation, "job_archive"), workflowLock.Requests[0]);
         Assert.Empty(store.StatusUpdates);
         Assert.False(executor.Called);
     }
@@ -42,7 +42,7 @@ public sealed class RunProjectArchiveLockTests
         var store = new FakeArchiveStore();
         var executor = new FakeArchiveExecutor();
         var data = new FakeArchiveData();
-        var lease = new FakeWorkflowLease(project.ProjectId, ProjectWorkflowKinds.StorageMutation, "job_archive_ok");
+        var lease = new FakeWorkflowLease(StorageMutationScopes.ForProject(project.ProjectId), ProjectWorkflowKinds.StorageMutation, "job_archive_ok");
         var workflowLock = new FakeWorkflowLock { NextLease = lease };
 
         var useCase = new RunProjectArchiveUseCase(
@@ -69,7 +69,7 @@ public sealed class RunProjectArchiveLockTests
         var store = new FakeArchiveStore();
         var executor = new FakeArchiveExecutor { Exception = new InvalidOperationException("boom") };
         var data = new FakeArchiveData();
-        var lease = new FakeWorkflowLease(project.ProjectId, ProjectWorkflowKinds.StorageMutation, "job_archive_fail");
+        var lease = new FakeWorkflowLease(StorageMutationScopes.ForProject(project.ProjectId), ProjectWorkflowKinds.StorageMutation, "job_archive_fail");
         var workflowLock = new FakeWorkflowLock { NextLease = lease };
 
         var useCase = new RunProjectArchiveUseCase(
