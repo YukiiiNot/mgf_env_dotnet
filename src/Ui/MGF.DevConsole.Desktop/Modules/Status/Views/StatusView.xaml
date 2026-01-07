@@ -19,7 +19,6 @@
                    Text="{Binding ConnectionStatusLine}" />
         <TextBlock Grid.Row="2"
                    Margin="0,8,0,0"
-                   Foreground="DarkRed"
                    Text="{Binding LastError}"
                    TextWrapping="Wrap" />
     </Grid>

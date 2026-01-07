@@ -3,6 +3,7 @@ namespace MGF.DevConsole.Desktop.Modules.Status.ViewModels;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Configuration;
 using MGF.DevConsole.Desktop.Api;
@@ -12,7 +13,6 @@ public sealed class StatusViewModel : ObservableObject
     private readonly IConfiguration config;
     private readonly MetaApiClient metaClient;
     private readonly TimeSpan pollInterval = TimeSpan.FromSeconds(5);
-    private SynchronizationContext? uiContext;
     private CancellationTokenSource? pollCts;
     private bool started;
     private string environmentLine = "Loading environment...";
@@ -52,16 +52,43 @@ public sealed class StatusViewModel : ObservableObject
         }
 
         started = true;
-        uiContext = SynchronizationContext.Current;
         pollCts = new CancellationTokenSource();
         _ = RunAsync(pollCts.Token);
+    }
+
+    public void Stop()
+    {
+        var cts = Interlocked.Exchange(ref pollCts, null);
+        if (cts is null)
+        {
+            return;
+        }
+
+        cts.Cancel();
+        cts.Dispose();
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            await UpdateOnceAsync(cancellationToken);
+            try
+            {
+                await UpdateOnceAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                UpdateUi(() =>
+                {
+                    ConnectionStatusLine = "Disconnected";
+                    LastError = $"Polling failed: {ex.Message}";
+                });
+            }
+
             try
             {
                 await Task.Delay(pollInterval, cancellationToken);
@@ -90,6 +117,10 @@ public sealed class StatusViewModel : ObservableObject
                 EnvironmentLine = $"Local MGF_ENV={localEnv} | API MGF_ENV={meta.MgfEnv} | Api:BaseUrl={baseUrl}";
             });
         }
+        catch (TaskCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex) when (ex is MetaApiException or HttpRequestException or TaskCanceledException)
         {
             var apiEnv = string.IsNullOrWhiteSpace(lastKnownApiEnv) ? "unknown" : lastKnownApiEnv;
@@ -112,12 +143,18 @@ public sealed class StatusViewModel : ObservableObject
 
     private void UpdateUi(Action update)
     {
-        if (uiContext is null)
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null || dispatcher.CheckAccess())
         {
             update();
             return;
         }
 
-        uiContext.Post(_ => update(), null);
+        if (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+        {
+            return;
+        }
+
+        _ = dispatcher.InvokeAsync(update);
     }
 }

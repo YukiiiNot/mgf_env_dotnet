@@ -53,7 +53,9 @@ public static class CompositionRoot
         services.AddSingleton<MainWindow>(sp =>
         {
             var window = new MainWindow();
+            var viewModel = sp.GetRequiredService<StatusViewModel>();
             window.SetMainContent(sp.GetRequiredService<StatusView>());
+            window.Closed += (_, _) => viewModel.Stop();
             return window;
         });
         services.AddSingleton<StartupGate>();
