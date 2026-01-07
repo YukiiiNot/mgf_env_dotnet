@@ -1,0 +1,124 @@
+# Desktop UI Template
+
+> Standard structure for WPF desktop executables and shared UI assets.
+
+---
+
+## MetaData
+
+**Purpose:** Define the canonical folder template for desktop UI executables and shared WPF assets.
+**Scope:** Covers folder structure, ownership boundaries, and hard rules for desktop UI projects. Excludes feature implementation guidance.
+**Doc Type:** Reference
+**Status:** Active
+**Last Updated:** 2026-01-07
+
+---
+
+## TL;DR
+
+- Every desktop executable follows a fixed folder layout.
+- Shared UI assets live in MGF.Desktop.Shared, not in app-specific folders.
+- UI projects must not reference Data or EF/Npgsql.
+
+---
+
+## Main Content
+
+### Executable template (MGF.<Tool>.Desktop)
+
+Top-level folders that must exist in each desktop executable:
+
+```
+src/Ui/MGF.<Tool>.Desktop/
+  Hosting/
+  Api/
+  Modules/
+  Resources/
+  Diagnostics/
+```
+
+#### Hosting
+- App startup, host builder, and DI composition root.
+- WPF App.xaml/App.xaml.cs and host configuration.
+- Must not contain feature UI or business logic.
+
+#### Api
+- API client adapters and DTO mapping for this tool.
+- No WPF types; keep transport and serialization concerns only.
+- Only depends on contracts and shared HTTP abstractions.
+
+#### Modules
+- Tool-specific UI composition (Windows, Views, ViewModels).
+- Feature wiring and UI flow for this executable only.
+- Must not contain API client implementation.
+
+#### Resources
+- App-specific resource dictionaries, styles, and theme overrides.
+- Localized strings or visual assets scoped to this tool.
+- Do not put shared styles here.
+
+#### Diagnostics
+- Logging, tracing, diagnostics views, and health panels.
+- Dev-only debug surfaces or operational readouts.
+- Must not depend on Data or EF/Npgsql.
+
+### Shared library (MGF.Desktop.Shared)
+
+MGF.Desktop.Shared is for reusable WPF assets only:
+
+- Shared Views, Controls, Styles, and Resources.
+- Reusable UI primitives that are tool-agnostic.
+- No API clients, no tool-specific modules, no hosting logic.
+
+### Hard rules
+
+- UI projects must not reference MGF.Data, EF Core, or Npgsql.
+- Api folder must not depend on WPF types.
+- Hosting is the only place for DI registration.
+- Shared is for reusable UI assets only; it must not own tool-specific workflows.
+
+---
+
+## System Context
+
+Desktop executables are thin hosts that compose shared UI assets and tool-specific workflows without owning domain logic.
+
+---
+
+## Core Concepts
+
+- Executables are small, explicit, and composable.
+- Shared UI assets reduce duplication while keeping tool policy isolated.
+
+---
+
+## How This Evolves Over Time
+
+- Add new tools by cloning the executable template and wiring modules.
+- Extend shared assets only when multiple tools reuse the same WPF surface.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Putting API client logic in Shared.
+- Registering services outside Hosting.
+- Adding Data/EF references in UI projects.
+
+---
+
+## When to Change This Document
+
+- The executable folder template changes.
+- Shared vs exe ownership boundaries change.
+
+---
+
+## Related Documents
+
+- project-shapes.md
+- application-layer-conventions.md
+
+## Change Log
+
+- 2026-01-07 - Initial template definition.

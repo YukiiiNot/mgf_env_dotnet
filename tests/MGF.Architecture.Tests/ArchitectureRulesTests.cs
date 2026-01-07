@@ -173,10 +173,10 @@ public sealed class ArchitectureRulesTests
     {
         var requiredDocs = new[]
         {
-            Path.Combine(DocsRoot, "02-architecture", "business-concepts-catalog.md"),
-            Path.Combine(DocsRoot, "02-architecture", "domain-persistence-map.md"),
-            Path.Combine(DocsRoot, "02-architecture", "extension-playbook.md"),
-            Path.Combine(DocsRoot, "02-architecture", "testing-and-verification.md")
+            Path.Combine(DocsRoot, "02-architecture", "overview", "business-concepts-catalog.md"),
+            Path.Combine(DocsRoot, "02-architecture", "persistence", "domain-persistence-map.md"),
+            Path.Combine(DocsRoot, "02-architecture", "layers", "extension-playbook.md"),
+            Path.Combine(DocsRoot, "02-architecture", "workflows", "testing-and-verification.md")
         };
 
         foreach (var doc in requiredDocs)
@@ -475,8 +475,8 @@ public sealed class ArchitectureRulesTests
                 Required: new[] { "Views", "Properties" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
             ["MGF.DevConsole.Desktop"] = new ShapeContract(
-                Allowed: new[] { "Hosting" },
-                Required: new[] { "Hosting" },
+                Allowed: new[] { "Hosting", "Api", "Modules", "Resources", "Diagnostics" },
+                Required: new[] { "Hosting", "Api", "Modules" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
             ["MGF.Website"] = new ShapeContract(
                 Allowed: new[] { "Hosting" },

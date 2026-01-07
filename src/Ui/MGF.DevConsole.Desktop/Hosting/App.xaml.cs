@@ -3,6 +3,7 @@ using System.Windows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MGF.DevConsole.Desktop.Hosting;
 using MGF.Desktop.Views.Shells;
 
 namespace MGF.DevConsole.Desktop;
@@ -24,7 +25,7 @@ public partial class App : System.Windows.Application
             })
             .ConfigureServices((context, services) =>
             {
-                services.AddSingleton<MainWindow>();
+                CompositionRoot.ConfigureServices(context, services);
             })
             .Build();
     }

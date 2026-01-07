@@ -1,20 +1,20 @@
 # Documentation Map
 
-Purpose  
-Provide the canonical index of repository documentation.
-
-Audience  
-Engineers working in this repo.
-
-Scope  
-Links to canonical docs by bucket and topic. Does not replace the content of those docs.
-
-Status  
-Active
+> Canonical index of repository documentation.
 
 ---
 
-## Key Takeaways
+## MetaData
+
+**Purpose:** Provide the canonical index of repository documentation.
+**Scope:** Links to canonical docs by bucket and topic. Does not replace the content of those docs.
+**Doc Type:** Reference
+**Status:** Active
+**Last Updated:** 2026-01-07
+
+---
+
+## TL;DR
 
 - This page is the entry point for repo documentation.
 - If a doc is missing from this map, it is not canonical.
@@ -22,15 +22,7 @@ Active
 
 ---
 
-## System Context
-
-This index links all canonical documentation and reflects the current structure of the repo.
-
----
-
-## Core Concepts
-
-Use this index to navigate the canonical documentation set.
+## Main Content
 
 ### Start here
 - Getting started: [01-onboarding/overview/getting-started.md](01-onboarding/overview/getting-started.md)
@@ -53,13 +45,12 @@ Use this index to navigate the canonical documentation set.
 - Shared Dev concurrency: [02-architecture/workflows/shared-dev-concurrency.md](02-architecture/workflows/shared-dev-concurrency.md)
 - Dependencies: [02-architecture/persistence/dependencies.md](02-architecture/persistence/dependencies.md)
 - Roadmap: [02-architecture/overview/roadmap.md](02-architecture/overview/roadmap.md)
+- Desktop UI template: [02-architecture/desktop-ui-template.md](02-architecture/desktop-ui-template.md)
 
 ### Contracts
 - API overview: [03-contracts/api/overview.md](03-contracts/api/overview.md)
 - Events: [03-contracts/events/jobs.md](03-contracts/events/jobs.md)
-- Database schema: [03-contracts/database/schema.md](03-contracts/database/schema.md)
 - Square import mapping: [03-contracts/database/square-import-mapping.md](03-contracts/database/square-import-mapping.md)
-- Storage templates: [03-contracts/storage/templates.md](03-contracts/storage/templates.md)
 - Configuration: [03-contracts/configuration/config-reference.md](03-contracts/configuration/config-reference.md)
 
 ### Guides
@@ -70,18 +61,22 @@ Use this index to navigate the canonical documentation set.
 ### Runbooks
 - Delivery: [05-runbooks/business-workflows/delivery.md](05-runbooks/business-workflows/delivery.md)
 - Repo workflow: [05-runbooks/operations/repo-workflow.md](05-runbooks/operations/repo-workflow.md)
-- Migrations CI: [05-runbooks/migrations/migrations-ci.md](05-runbooks/migrations/migrations-ci.md)
-
-### Decisions
-- ADR template: [06-decisions/templates/adr-template.md](06-decisions/templates/adr-template.md)
-- ADR index: [06-decisions/index/README.md](06-decisions/index/README.md)
 
 ### Reference
-- Documentation standards: [99-reference/documentation-standards.md](99-reference/documentation-standards.md)
-- Doc impact matrix: [99-reference/doc-impact-matrix.md](99-reference/doc-impact-matrix.md)
-- Naming rules: [99-reference/naming-rules.md](99-reference/naming-rules.md)
-- Glossary: [99-reference/glossary.md](99-reference/glossary.md)
-- Documentation refactor report: [99-reference/documentation-refactor-report.md](99-reference/documentation-refactor-report.md)
+- Documentation standards: [99-reference/templates/documentation-standards.md](99-reference/templates/documentation-standards.md)
+- Doc enumerations: [99-reference/templates/doc-enumerations.md](99-reference/templates/doc-enumerations.md)
+
+---
+
+## System Context
+
+This index links all canonical documentation and reflects the current structure of the repo.
+
+---
+
+## Core Concepts
+
+Use this index to navigate the canonical documentation set.
 
 ---
 
@@ -109,23 +104,6 @@ Use this index to navigate the canonical documentation set.
 
 ## Related Documents
 
-- 02-architecture/overview/system-overview.md
-- 01-onboarding/workflows/dev-guide.md
-- 99-reference/documentation-standards.md
+## Change Log
 
----
-
-## Appendix (Optional)
-
-No appendix content.
-
----
-
-## Metadata
-
-Last updated: 2026-01-02  
-Owner: Documentation  
-Review cadence: quarterly  
-
-Change log:
-- 2026-01-02 - Reformatted to the documentation template and refreshed index links.
+- 2026-01-07 - Reformatted to documentation standards and removed missing references.
