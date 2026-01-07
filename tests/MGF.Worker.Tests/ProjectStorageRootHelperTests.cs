@@ -1,4 +1,5 @@
-using MGF.Worker.ProjectBootstrap;
+using MGF.Contracts.Abstractions.ProjectBootstrap;
+using MGF.Worker.Adapters.Storage.ProjectBootstrap;
 using Xunit;
 
 namespace MGF.Worker.Tests;

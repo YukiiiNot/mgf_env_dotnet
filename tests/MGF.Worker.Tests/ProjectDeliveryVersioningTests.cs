@@ -1,4 +1,5 @@
-using MGF.Worker.ProjectDelivery;
+using MGF.Contracts.Abstractions.ProjectDelivery;
+using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
 public sealed class ProjectDeliveryVersioningTests
 {
@@ -16,10 +17,10 @@ public sealed class ProjectDeliveryVersioningTests
 
         var sourceFiles = new[]
         {
-            new ProjectDeliverer.DeliveryFile(filePath, "sample.mp4", 3, lastWrite)
+            new DeliveryFile(filePath, "sample.mp4", 3, lastWrite)
         };
 
-        var plan = ProjectDeliverer.DetermineVersion(root, sourceFiles);
+        var plan = ProjectDeliveryExecutor.DetermineVersion(root, sourceFiles);
 
         Assert.True(plan.IsNewVersion);
         Assert.Equal("v1", plan.VersionLabel);
@@ -46,10 +47,10 @@ public sealed class ProjectDeliveryVersioningTests
 
         var sourceFiles = new[]
         {
-            new ProjectDeliverer.DeliveryFile(filePath, "sample.mp4", 3, lastWrite)
+            new DeliveryFile(filePath, "sample.mp4", 3, lastWrite)
         };
 
-        var plan = ProjectDeliverer.DetermineVersion(root, sourceFiles);
+        var plan = ProjectDeliveryExecutor.DetermineVersion(root, sourceFiles);
 
         Assert.False(plan.IsNewVersion);
         Assert.Equal("v1", plan.VersionLabel);
@@ -75,10 +76,10 @@ public sealed class ProjectDeliveryVersioningTests
 
         var sourceFiles = new[]
         {
-            new ProjectDeliverer.DeliveryFile(newSource, "new.mp4", 4, lastWrite)
+            new DeliveryFile(newSource, "new.mp4", 4, lastWrite)
         };
 
-        var plan = ProjectDeliverer.DetermineVersion(root, sourceFiles);
+        var plan = ProjectDeliveryExecutor.DetermineVersion(root, sourceFiles);
 
         Assert.True(plan.IsNewVersion);
         Assert.Equal("v2", plan.VersionLabel);
@@ -103,10 +104,10 @@ public sealed class ProjectDeliveryVersioningTests
 
         var sourceFiles = new[]
         {
-            new ProjectDeliverer.DeliveryFile(filePath, "sample.mp4", 3, lastWrite)
+            new DeliveryFile(filePath, "sample.mp4", 3, lastWrite)
         };
 
-        var plan = ProjectDeliverer.DetermineVersion(root, sourceFiles);
+        var plan = ProjectDeliveryExecutor.DetermineVersion(root, sourceFiles);
 
         Assert.False(plan.IsNewVersion);
         Assert.True(plan.LegacyFinalFiles);
@@ -132,10 +133,10 @@ public sealed class ProjectDeliveryVersioningTests
 
         var sourceFiles = new[]
         {
-            new ProjectDeliverer.DeliveryFile(filePath, "new.mp4", 3, lastWrite)
+            new DeliveryFile(filePath, "new.mp4", 3, lastWrite)
         };
 
-        var plan = ProjectDeliverer.DetermineVersion(root, sourceFiles);
+        var plan = ProjectDeliveryExecutor.DetermineVersion(root, sourceFiles);
 
         Assert.True(plan.IsNewVersion);
         Assert.True(plan.LegacyFinalFiles);

@@ -30,7 +30,7 @@ jobs:
       - name: Setup .NET (global.json)
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version-file: global.json
+          global-json-file: global.json
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
@@ -52,8 +52,8 @@ jobs:
               $_.FullName -notlike "*\tools\*" -and
               $_.FullName -notlike "*\docs\*" -and
               $_.FullName -notlike "*\.github\*" -and
-              $_.FullName -notlike "*\src\MGF.Infrastructure\Migrations\*" -and
-              $_.FullName -notlike "*\src\MGF.Infrastructure\Data\SchemaDocs\*"
+              $_.FullName -notlike "*\src\Data\MGF.Data\Migrations\*" -and
+              $_.FullName -notlike "*\src\Data\MGF.Data\Data\SchemaDocs\*"
             }
 
           $matches = $files | Select-String -Pattern $pattern
@@ -75,11 +75,11 @@ jobs:
       - name: Unit tests (Release)
         run: |
           dotnet test .\tests\MGF.Domain.Tests\MGF.Domain.Tests.csproj -c Release --no-build
-          dotnet test .\tests\MGF.Application.Tests\MGF.Application.Tests.csproj -c Release --no-build
+          dotnet test .\tests\MGF.Contracts.Tests\MGF.Contracts.Tests.csproj -c Release --no-build
 
       - name: EF model drift check
         env:
           MGF_ENV: Dev
           MGF_DB_MODE: direct
           Database__Dev__DirectConnectionString: "Host=example.invalid;Port=5432;Database=postgres;Username=postgres;Password=notreal;Ssl Mode=Disable;Pooling=false;Multiplexing=false"
-        run: dotnet ef migrations has-pending-model-changes --project src/MGF.Infrastructure --startup-project src/MGF.Tools.Migrator --configuration Release
+        run: dotnet ef migrations has-pending-model-changes --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator --configuration Release

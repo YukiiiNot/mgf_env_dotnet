@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
-using MGF.Worker.Email.Models;
-using MGF.Worker.Email.Sending;
+using MGF.Contracts.Abstractions.Email;
+using MGF.Integrations.Email.Smtp;
 using System.Net.Mime;
 
 namespace MGF.Worker.Tests;
@@ -19,7 +19,7 @@ public sealed class SmtpEmailSenderTests
             .Build();
 
         var sender = new SmtpEmailSender(config);
-        var request = new DeliveryEmailRequest(
+        var request = new EmailMessage(
             FromAddress: "someone@example.com",
             FromName: "Someone",
             To: new[] { "client@example.com" },
@@ -38,7 +38,7 @@ public sealed class SmtpEmailSenderTests
     [Fact]
     public void BuildMessage_IncludesHtmlAlternateView()
     {
-        var request = new DeliveryEmailRequest(
+        var request = new EmailMessage(
             FromAddress: "deliveries@mgfilms.pro",
             FromName: "MG Films",
             To: new[] { "client@example.com" },

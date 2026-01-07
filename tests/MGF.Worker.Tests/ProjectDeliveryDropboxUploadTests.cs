@@ -1,4 +1,5 @@
-using MGF.Worker.ProjectDelivery;
+using MGF.Contracts.Abstractions.ProjectDelivery;
+using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
 
@@ -10,11 +11,11 @@ public sealed class ProjectDeliveryDropboxUploadTests
         var versionPath = "/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1";
         var files = new[]
         {
-            new ProjectDeliverer.DeliveryFile("C:\\src\\video.mp4", "video.mp4", 10, DateTimeOffset.UtcNow),
-            new ProjectDeliverer.DeliveryFile("C:\\src\\sub\\clip.mp4", "sub\\clip.mp4", 11, DateTimeOffset.UtcNow)
+            new DeliveryFile("C:\\src\\video.mp4", "video.mp4", 10, DateTimeOffset.UtcNow),
+            new DeliveryFile("C:\\src\\sub\\clip.mp4", "sub\\clip.mp4", 11, DateTimeOffset.UtcNow)
         };
 
-        var paths = ProjectDeliverer.BuildDropboxUploadPaths(versionPath, files);
+        var paths = ProjectDeliveryExecutor.BuildDropboxUploadPaths(versionPath, files);
 
         Assert.Contains("/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1/video.mp4", paths);
         Assert.Contains("/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1/sub/clip.mp4", paths);
@@ -26,11 +27,11 @@ public sealed class ProjectDeliveryDropboxUploadTests
         var versionPath = "/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1";
         var files = new[]
         {
-            new ProjectDeliverer.DeliveryFile("C:\\src\\video.mp4", "video.mp4", 10, DateTimeOffset.UtcNow),
-            new ProjectDeliverer.DeliveryFile("C:\\src\\sub\\clip.mp4", "sub\\clip.mp4", 11, DateTimeOffset.UtcNow)
+            new DeliveryFile("C:\\src\\video.mp4", "video.mp4", 10, DateTimeOffset.UtcNow),
+            new DeliveryFile("C:\\src\\sub\\clip.mp4", "sub\\clip.mp4", 11, DateTimeOffset.UtcNow)
         };
 
-        var folders = ProjectDeliverer.BuildDropboxUploadFolders(versionPath, files);
+        var folders = ProjectDeliveryExecutor.BuildDropboxUploadFolders(versionPath, files);
 
         Assert.Contains("/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1/sub", folders);
         Assert.DoesNotContain("/MGFILMS.DELIVERIES/04_Client_Deliveries/Client/MGF25-TEST_Sample/01_Deliverables/Final/v1", folders);
@@ -43,7 +44,7 @@ public sealed class ProjectDeliveryDropboxUploadTests
         var timestamp = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var files = new[]
         {
-            new ProjectDeliverer.DeliveryFile("C:\\src\\video.mp4", "video.mp4", 10, timestamp)
+            new DeliveryFile("C:\\src\\video.mp4", "video.mp4", 10, timestamp)
         };
 
         var history = new
@@ -52,9 +53,9 @@ public sealed class ProjectDeliveryDropboxUploadTests
             LastFiles = new[] { new DeliveryFileSummary("video.mp4", 10, timestamp) }
         };
 
-        var plan = ProjectDeliverer.DetermineVersionFromHistory(
+        var plan = ProjectDeliveryExecutor.DetermineVersionFromHistory(
             versionPath,
-            new ProjectDeliverer.DeliveryHistory(history.CurrentVersion, history.LastFiles),
+            new ProjectDeliveryExecutor.DeliveryHistory(history.CurrentVersion, history.LastFiles),
             files);
 
         Assert.False(plan.IsNewVersion);

@@ -1,4 +1,4 @@
-using MGF.Worker.ProjectBootstrap;
+using MGF.Worker.Adapters.Storage.ProjectBootstrap;
 
 public sealed class ProjectBootstrapGuardsTests
 {
