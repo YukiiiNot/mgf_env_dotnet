@@ -26,6 +26,7 @@ builder.Services.AddScoped<ClientsService>();
 builder.Services.AddScoped<PeopleService>();
 builder.Services.AddScoped<JobsService>();
 builder.Services.AddScoped<ProjectsService>();
+builder.Services.AddScoped<MetaService>();
 builder.Services.AddScoped<ICreateProjectUseCase, CreateProjectUseCase>();
 builder.Services.AddScoped<IIngestSquareWebhookUseCase, IngestSquareWebhookUseCase>();
 builder.Services.AddScoped<IListPeopleUseCase, ListPeopleUseCase>();

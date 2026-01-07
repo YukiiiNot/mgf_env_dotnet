@@ -40,11 +40,14 @@ src/Ui/MGF.<Tool>.Desktop/
 #### Hosting
 - App startup, host builder, and DI composition root.
 - WPF App.xaml/App.xaml.cs and host configuration.
+- All HTTP client wiring lives here (base URL, headers, timeouts).
 - Must not contain feature UI or business logic.
 
 #### Api
 - API client adapters and DTO mapping for this tool.
 - No WPF types; keep transport and serialization concerns only.
+- Api clients are DI-managed typed HttpClients configured in Hosting.
+- Api clients must not read IConfiguration or set headers.
 - Only depends on contracts and shared HTTP abstractions.
 
 #### Modules
@@ -75,6 +78,7 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 - UI projects must not reference MGF.Data, EF Core, or Npgsql.
 - Api folder must not depend on WPF types.
 - Hosting is the only place for DI registration.
+- Hosting configures Api:BaseUrl, Security:ApiKey, and optional Security:Operator headers.
 - Shared is for reusable UI assets only; it must not own tool-specific workflows.
 
 ---
