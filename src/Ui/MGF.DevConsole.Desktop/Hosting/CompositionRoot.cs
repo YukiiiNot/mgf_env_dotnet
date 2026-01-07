@@ -2,6 +2,8 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.DevConsole.Desktop.Api;
+using MGF.DevConsole.Desktop.Modules.Status.ViewModels;
+using MGF.DevConsole.Desktop.Modules.Status.Views;
 using MGF.Desktop.Views.Shells;
 
 namespace MGF.DevConsole.Desktop.Hosting;
@@ -10,8 +12,6 @@ public static class CompositionRoot
 {
     public static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
-        services.AddSingleton<MainWindow>();
-
         services.AddHttpClient<MetaApiClient>(httpClient =>
         {
             var baseUrl = context.Configuration["Api:BaseUrl"];
@@ -43,6 +43,19 @@ public static class CompositionRoot
             }
         });
 
+        services.AddSingleton<StatusViewModel>();
+        services.AddSingleton<StatusView>(sp =>
+        {
+            var view = new StatusView();
+            view.DataContext = sp.GetRequiredService<StatusViewModel>();
+            return view;
+        });
+        services.AddSingleton<MainWindow>(sp =>
+        {
+            var window = new MainWindow();
+            window.SetMainContent(sp.GetRequiredService<StatusView>());
+            return window;
+        });
         services.AddSingleton<StartupGate>();
     }
 }

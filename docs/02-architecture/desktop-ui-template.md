@@ -81,6 +81,13 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 - Hosting configures Api:BaseUrl, Security:ApiKey, and optional Security:Operator headers.
 - Shared is for reusable UI assets only; it must not own tool-specific workflows.
 
+### First read-only slice pattern
+
+- Banner: Local MGF_ENV + Api:BaseUrl + API MGF_ENV (from /api/meta).
+- Connectivity line: Connected/Disconnected with last error.
+- Polling guidance: list surfaces every 2–5 seconds; detail panels 5–10 seconds.
+- Keep polling in a ViewModel; keep transport in Api clients.
+
 ---
 
 ## System Context

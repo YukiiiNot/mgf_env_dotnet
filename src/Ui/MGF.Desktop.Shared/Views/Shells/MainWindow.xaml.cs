@@ -20,4 +20,9 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
     }
+
+    public void SetMainContent(UIElement content)
+    {
+        MainContent.Content = content;
+    }
 }
