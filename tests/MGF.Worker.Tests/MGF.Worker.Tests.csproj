@@ -19,7 +19,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MGF.Worker\MGF.Worker.csproj" />
+    <ProjectReference Include="..\..\src\Services\MGF.Worker\MGF.Worker.csproj" />
+    <ProjectReference Include="..\..\src\Platform\MGF.Storage\MGF.Storage.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\src\Platform\MGF.Email\Composition\Templates\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Email\Templates\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
   </ItemGroup>
 
 </Project>

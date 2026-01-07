@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using Microsoft.Extensions.Configuration;
-using MGF.Worker.Integrations.Dropbox;
+using MGF.Integrations.Dropbox;
 
 namespace MGF.Worker.Tests;
 

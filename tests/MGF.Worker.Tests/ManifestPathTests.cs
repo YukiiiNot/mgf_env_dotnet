@@ -1,7 +1,7 @@
-using MGF.Tools.Provisioner;
-using MGF.Worker.ProjectArchive;
-using MGF.Worker.ProjectBootstrap;
-using MGF.Worker.ProjectDelivery;
+using MGF.FolderProvisioning;
+using MGF.Worker.Adapters.Storage.ProjectArchive;
+using MGF.Worker.Adapters.Storage.ProjectBootstrap;
+using MGF.Worker.Adapters.Storage.ProjectDelivery;
 
 namespace MGF.Worker.Tests;
 
@@ -53,7 +53,7 @@ public sealed class ManifestPathTests
             }
         );
 
-        var manifestPath = ProjectArchiver.ResolveManifestPath(plan);
+        var manifestPath = ProjectArchiveExecutor.ResolveManifestPath(plan);
         var expectedSuffix = Path.Combine("00_Admin", ".mgf", "manifest", "folder_manifest.json");
 
         Assert.EndsWith(expectedSuffix, manifestPath, StringComparison.OrdinalIgnoreCase);
@@ -65,8 +65,10 @@ public sealed class ManifestPathTests
         var root = Path.Combine(Path.GetTempPath(), $"mgf_delivery_{Guid.NewGuid():N}");
         var expectedSuffix = Path.Combine("00_Admin", ".mgf", "manifest", "delivery_manifest.json");
 
-        var manifestPath = ProjectDeliverer.ResolveDeliveryManifestPath(root);
+        var manifestPath = ProjectDeliveryExecutor.ResolveDeliveryManifestPath(root);
 
         Assert.EndsWith(expectedSuffix, manifestPath, StringComparison.OrdinalIgnoreCase);
     }
 }
+
+
