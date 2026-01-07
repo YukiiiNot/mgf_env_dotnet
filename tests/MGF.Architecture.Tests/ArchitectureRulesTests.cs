@@ -344,6 +344,18 @@ public sealed class ArchitectureRulesTests
     {
         var fullPath = Path.GetFullPath(path);
 
+        var readme = Path.Combine(RepoRoot, "README.md");
+        if (string.Equals(fullPath, readme, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var contributing = Path.Combine(RepoRoot, "CONTRIBUTING.md");
+        if (string.Equals(fullPath, contributing, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
         var pullRequestTemplate = Path.Combine(RepoRoot, ".github", "PULL_REQUEST_TEMPLATE.md");
         if (string.Equals(fullPath, pullRequestTemplate, StringComparison.OrdinalIgnoreCase))
         {
@@ -458,9 +470,13 @@ public sealed class ArchitectureRulesTests
                 Allowed: new[] { "Properties", "Hosting", "Jobs", "Adapters" },
                 Required: new[] { "Properties", "Hosting", "Jobs", "Adapters" },
                 Forbidden: new[] { "Docs", "Controllers" }),
-            ["MGF.Desktop"] = new ShapeContract(
-                Allowed: new[] { "Hosting", "Views", "Properties" },
-                Required: new[] { "Hosting", "Views", "Properties" },
+            ["MGF.Desktop.Shared"] = new ShapeContract(
+                Allowed: new[] { "Views", "Properties" },
+                Required: new[] { "Views", "Properties" },
+                Forbidden: new[] { "Docs", "Controllers", "Stores" }),
+            ["MGF.DevConsole.Desktop"] = new ShapeContract(
+                Allowed: new[] { "Hosting" },
+                Required: new[] { "Hosting" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
             ["MGF.Website"] = new ShapeContract(
                 Allowed: new[] { "Hosting" },

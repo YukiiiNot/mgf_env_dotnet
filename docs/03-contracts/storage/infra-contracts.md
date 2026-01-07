@@ -1,87 +1,38 @@
 # Infra Contracts
 
-Purpose  
-Define the contract boundary and expectations for this area.
-
-Audience  
-Engineers building or consuming contracts and integrations.
-
-Scope  
-Covers contract intent and boundary expectations. Does not describe host wiring.
-
-Status  
-Active
+> Contract expectations for provisioning templates, schemas, and storage guarantees.
 
 ---
 
-## Key Takeaways
+## MetaData
 
-- This document describes a canonical contract boundary.
-- Consumers should rely on Contracts rather than host internals.
-- Changes must preserve compatibility or be versioned.
-
----
-
-## System Context
-
-Contracts define stable boundaries between UseCases, Services, and Data.
+**Purpose:** Document the infrastructure contract boundaries for templates, schemas, and provisioning guarantees.
+**Scope:** Covers intent, guarantees, and change control for infrastructure templates. Excludes implementation details.
+**Doc Type:** Reference
+**Status:** Active
+**Last Updated:** 2026-01-07
 
 ---
 
-## Core Concepts
+## TL;DR
 
-This document describes the contract intent and expected usage. Implementation details belong in code.
-
----
-
-## How This Evolves Over Time
-
-- Update when schema or interface changes are introduced.
-- Note compatibility expectations when fields evolve.
+- Templates and schemas under `artifacts/` are stable contracts.
+- Provisioning and bootstrap are deterministic and non-destructive by default.
+- Update this doc when template structure, schema, or provisioning guarantees change.
 
 ---
 
-## Common Pitfalls and Anti-Patterns
-
-- Changing contract shapes without versioning.
-- Embedding host-specific types into Contracts.
-
----
-
-## When to Change This Document
-
-- The contract or schema changes.
-- New consumers depend on this boundary.
-
----
-
-## Related Documents
-
-- ../../02-architecture/system-overview.md
-- ../../02-architecture/application-layer-conventions.md
-- ../api/overview.md
-- ../database/schema.md
-
----
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
-
-# Infrastructure Contracts
+## Main Content
 
 Source of truth: `artifacts/templates/*.json`, `artifacts/schemas/*.schema.json`, `src/Operations/MGF.ProvisionerCli`, `src/Operations/MGF.ProjectBootstrapCli`
-Change control: Update when template structure, schemas, or provisioning guarantees change.
-Last verified: 2025-12-30
 
-
-This document explains the intent behind our infrastructure contracts. It is for humans, not schemas.
+This document explains the intent behind infrastructure contracts for humans, not schemas.
 
 ## Related contracts
 
-- Templates: `templates.md`
-- Containers: `containers.md`
-- Schema reference: `schema-reference.md`
+- Container templates: `artifacts/templates/*.json`
+- Template schemas: `artifacts/schemas/*.schema.json`
+- Containers doc: `containers.md`
 
 ## What templates represent
 
@@ -113,7 +64,7 @@ Project Bootstrap:
 
 ## What must not change silently
 
-- Template structure or naming rules without schema updates + review
+- Template structure or naming rules without schema updates and review
 - Token rules (`{PROJECT_CODE}`, `{PROJECT_NAME}`, `{CLIENT_NAME}`, `{EDITOR_INITIALS}`)
 - Manifest format and location
 - Bootstrap defaults that keep it non-destructive
@@ -130,11 +81,44 @@ If a change could affect existing projects, it must be documented and reviewed.
 
 ---
 
-## Metadata
+## System Context
 
-Last updated: 2026-01-02  
-Owner: Platform  
-Review cadence: on contract change  
+Infrastructure contracts define the stable storage and provisioning boundaries used by services and tooling.
 
-Change log:
-- 2026-01-02 - Reformatted to the documentation template.
+---
+
+## Core Concepts
+
+- Templates and schemas are contracts that guard storage structure.
+- Provisioning is deterministic and non-destructive; manifests record applied changes.
+
+---
+
+## How This Evolves Over Time
+
+- Changes must be additive and reviewed to preserve compatibility.
+- New storage providers require explicit adapter decisions.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Silent template edits without schema or contract updates.
+- Adding destructive behavior to bootstrap or provisioning.
+
+---
+
+## When to Change This Document
+
+- Template structure, schema, or provisioning guarantees change.
+- Storage provider policy changes.
+
+---
+
+## Related Documents
+- containers.md
+- project-shapes.md
+- provisioning.md
+
+## Change Log
+- 2026-01-07 - Reformatted to documentation standards.

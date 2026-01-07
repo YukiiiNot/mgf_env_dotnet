@@ -1,92 +1,80 @@
 # Configuration Reference
 
-Purpose  
-Define the contract boundary and expectations for this area.
-
-Audience  
-Engineers building or consuming contracts and integrations.
-
-Scope  
-Covers contract intent and boundary expectations. Does not describe host wiring.
-
-Status  
-Active
+> Contract for configuration sources, defaults, and option bindings.
 
 ---
 
-## Key Takeaways
+## MetaData
 
-- This document describes a canonical contract boundary.
-- Consumers should rely on Contracts rather than host internals.
-- Changes must preserve compatibility or be versioned.
-
----
-
-## System Context
-
-Contracts define stable boundaries between UseCases, Services, and Data.
+**Purpose:** Document the contract for configuration sources and option bindings used by hosts and tools.
+**Scope:** Covers config file locations, option bindings, and key ownership. Excludes runtime wiring details.
+**Doc Type:** Reference
+**Status:** Active
+**Last Updated:** 2026-01-07
 
 ---
 
-## Core Concepts
+## TL;DR
 
-This document describes the contract intent and expected usage. Implementation details belong in code.
-
----
-
-## How This Evolves Over Time
-
-- Update when schema or interface changes are introduced.
-- Note compatibility expectations when fields evolve.
+- Defaults live under `config/` and per-app `appsettings*.json`.
+- Option bindings live in `src/Data/MGF.Data/Options/Options.cs`.
+- Env vars and user-secrets override config files.
 
 ---
 
-## Common Pitfalls and Anti-Patterns
-
-- Changing contract shapes without versioning.
-- Embedding host-specific types into Contracts.
-
----
-
-## When to Change This Document
-
-- The contract or schema changes.
-- New consumers depend on this boundary.
-
----
-
-## Related Documents
-
-- ../../02-architecture/system-overview.md
-- ../../02-architecture/application-layer-conventions.md
-- ../api/overview.md
-- ../database/schema.md
-
----
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
+## Main Content
 
 Source of truth: `config/appsettings*.json`, `src/Services/MGF.Api/appsettings*.json`, `src/Services/MGF.Worker/appsettings*.json`, `src/Data/MGF.Data/Options/Options.cs`
-Change control: Update when config keys, defaults, or options bindings change.
-Last verified: 2025-12-30
 
 ## Scope
 - App configuration defaults live under `config/` and per-app `appsettings*.json` files.
 - Options bindings live in `src/Data/MGF.Data/Options/Options.cs`.
 
-## Related docs
-- Environment variables: [env-vars.md](env-vars.md)
-- Dev secrets policy: [dev-secrets.md](dev-secrets.md)
+## Related configuration contracts
+- Environment variables and selection: env-vars.md
+- Dev secrets policy: dev-secrets.md
+- Integrations configuration: integrations.md
 
 ---
 
-## Metadata
+## System Context
 
-Last updated: 2026-01-02  
-Owner: Platform  
-Review cadence: on contract change  
+Configuration contracts define how hosts and tools load settings in a consistent, shared way.
 
-Change log:
-- 2026-01-02 - Reformatted to the documentation template.
+---
+
+## Core Concepts
+
+- Configuration files provide committed defaults; secrets and environment-specific values are layered on top.
+- Option bindings in MGF.Data are the contract surface for configuration consumers.
+
+---
+
+## How This Evolves Over Time
+
+- Update when new option bindings are introduced or defaults change.
+- Capture new config file locations or precedence changes.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Adding config keys without documenting their contract or defaults.
+- Hardcoding secrets in appsettings or source.
+
+---
+
+## When to Change This Document
+
+- New configuration sources are introduced.
+- Option bindings or default config files change.
+
+---
+
+## Related Documents
+- env-vars.md
+- dev-secrets.md
+- integrations.md
+
+## Change Log
+- 2026-01-07 - Reformatted to documentation standards.

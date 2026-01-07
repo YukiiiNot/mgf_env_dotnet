@@ -1,85 +1,36 @@
 # Containers
 
-Purpose  
-Define the contract boundary and expectations for this area.
-
-Audience  
-Engineers building or consuming contracts and integrations.
-
-Scope  
-Covers contract intent and boundary expectations. Does not describe host wiring.
-
-Status  
-Active
+> Storage container templates for Dropbox, LucidLink, and NAS roles.
 
 ---
 
-## Key Takeaways
+## MetaData
 
-- This document describes a canonical contract boundary.
-- Consumers should rely on Contracts rather than host internals.
-- Changes must preserve compatibility or be versioned.
-
----
-
-## System Context
-
-Contracts define stable boundaries between UseCases, Services, and Data.
+**Purpose:** Define the storage container template contract for project and domain roots.
+**Scope:** Covers template folder structures and naming expectations. Excludes provisioning implementation details.
+**Doc Type:** Reference
+**Status:** Active
+**Last Updated:** 2026-01-07
 
 ---
 
-## Core Concepts
+## TL;DR
 
-This document describes the contract intent and expected usage. Implementation details belong in code.
-
----
-
-## How This Evolves Over Time
-
-- Update when schema or interface changes are introduced.
-- Note compatibility expectations when fields evolve.
+- Templates under `artifacts/templates/` define storage container structure and naming rules.
+- Dropbox, LucidLink, and NAS containers serve distinct storage roles.
+- Update this doc when template structure or naming rules change.
 
 ---
 
-## Common Pitfalls and Anti-Patterns
-
-- Changing contract shapes without versioning.
-- Embedding host-specific types into Contracts.
-
----
-
-## When to Change This Document
-
-- The contract or schema changes.
-- New consumers depend on this boundary.
-
----
-
-## Related Documents
-
-- ../../02-architecture/system-overview.md
-- ../../02-architecture/application-layer-conventions.md
-- ../api/overview.md
-- ../database/schema.md
-
----
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
-
-# Container Templates
+## Main Content
 
 Source of truth: `artifacts/templates/*.json`, `artifacts/schemas/*.schema.json`, `src/Operations/MGF.ProvisionerCli`
-Change control: Update when container folder structures or naming rules change.
-Last verified: 2025-12-30
 
-
-These templates describe the three storage roles used for MGFilms projects. They are "shells" only and live under `artifacts/templates/`.
+These templates describe the three storage roles used for MGFilms projects. They are shells only and live under `artifacts/templates/`.
 
 ## Dropbox (business + exchange)
 
-Purpose: contracts, intake, client review exports, deliverables, metadata/manifests. Not an editing workspace.
+Purpose: contracts, intake, client review exports, deliverables, metadata, and manifests. Not an editing workspace.
 
 Folder tree:
 
@@ -164,7 +115,7 @@ Policy notes:
 
 ## NAS (cold archive)
 
-Purpose: originals and final deliverables only. Proxies/mezzanine are regenerable and should not live here.
+Purpose: originals and final deliverables only. Proxies and mezzanine assets are regenerable and should not live here.
 
 Folder tree:
 
@@ -192,11 +143,43 @@ Policy notes:
 
 ---
 
-## Metadata
+## System Context
 
-Last updated: 2026-01-02  
-Owner: Platform  
-Review cadence: on contract change  
+Container templates are part of the storage contract used by provisioning and delivery workflows.
 
-Change log:
-- 2026-01-02 - Reformatted to the documentation template.
+---
+
+## Core Concepts
+
+- Templates are contracts, not suggestions; they define stable folder structures.
+- Storage roles map to business workflows and tool expectations.
+
+---
+
+## How This Evolves Over Time
+
+- Allowed changes are additive and reviewed.
+- Template structure changes must be accompanied by schema updates.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Modifying template structures without updating schemas or documentation.
+- Treating Dropbox or NAS containers as editing workspaces.
+
+---
+
+## When to Change This Document
+
+- Template structure, naming rules, or policy notes change.
+
+---
+
+## Related Documents
+- infra-contracts.md
+- provisioning.md
+- project-shapes.md
+
+## Change Log
+- 2026-01-07 - Reformatted to documentation standards.

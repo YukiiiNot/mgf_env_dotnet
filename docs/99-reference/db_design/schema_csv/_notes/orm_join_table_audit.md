@@ -57,15 +57,11 @@ This document records the canonical reference information for the repo.
 
 ## Related Documents
 
-- ../../../documentation-standards.md
-- ../../../naming-rules.md
-- ../../../style-guide.md
+- /docs/99-reference/documentation-standards.md
+- /docs/99-reference/naming-rules.md
+- /docs/99-reference/style-guide.md
 
 ---
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
 
 Generated: 2025-12-14 18:55:31Z
 

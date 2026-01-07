@@ -1,79 +1,36 @@
 # MGF.LegacyAuditCli
 
-Purpose  
-Provide a supported, repeatable workflow for this task.
-
-Audience  
-Engineers performing this task or workflow.
-
-Scope  
-Covers the supported workflow and prerequisites. Does not define low-level implementation.
-
-Status  
-Active
+> How-to for running the legacy audit tool and interpreting outputs.
 
 ---
 
-## Key Takeaways
+## MetaData
 
-- This guide explains the supported workflow for this task.
-- Use linked runbooks and contracts for deeper detail.
-- Avoid ad hoc or undocumented shortcuts.
-
----
-
-## System Context
-
-This guide sits between onboarding and runbooks and references the canonical architecture.
+**Purpose:** Provide a supported workflow for running the legacy audit tool.
+**Scope:** Covers usage, profiles, outputs, and classifications. Excludes tool implementation details.
+**Doc Type:** How-To
+**Status:** Active
+**Last Updated:** 2026-01-07
 
 ---
 
-## Core Concepts
+## TL;DR
 
-This guide describes the supported workflow and where the authoritative sources live. Detailed steps are in the appendix.
-
----
-
-## How This Evolves Over Time
-
-- Expand as new supported workflows are added.
-- Retire sections when they are superseded by new tooling.
+- Run the CLI with `scan --root` to generate JSON and CSV reports.
+- Use profiles to control exclusions.
+- Outputs are written under `runtime/legacy_audit/outputs` by default.
 
 ---
 
-## Common Pitfalls and Anti-Patterns
+## Main Content
 
-- Using ad hoc shortcuts instead of documented workflows.
-- Duplicating guidance that already exists elsewhere.
-
----
-
-## When to Change This Document
-
-- Supported workflow or tooling changes.
-- New prerequisites are required.
-
----
-
-## Related Documents
-
-- ../../01-onboarding/dev-guide.md
-- ../../05-runbooks/repo-workflow.md
-- ../../02-architecture/system-overview.md
-
----
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
-
-Read-only NAS audit tool for legacy cleanup planning. Scans a UNC root and produces JSON + CSV reports in a local output folder.
+Read-only NAS audit tool for legacy cleanup planning. Scans a UNC root and produces JSON and CSV reports in a local output folder.
 
 ## Run
 
 ```powershell
 # Writes are gated: use --apply to write reports.
-# Output defaults under .\runtime\legacy_audit\outputs\<root>_<timestamp>
+# Output defaults under runtime\legacy_audit\outputs\<root>_<timestamp>
 dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --apply
 ```
 
@@ -85,7 +42,7 @@ dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\z
 ## Examples (real NAS roots)
 
 ```powershell
-# OFFLOAD 2 (default output under ./runtime)
+# OFFLOAD 2 (default output under runtime)
 dotnet run --project src/DevTools/MGF.LegacyAuditCli -- scan --root "\\Truenas\zan4k pool\OFFLOAD 2" --apply
 
 # OFDLOAD 3 (spelling as-is)
@@ -120,7 +77,7 @@ The tool does not attempt to label personal vs business. It only surfaces struct
 
 ## Outputs
 
-Outputs are written to `--out` when provided. If omitted, output defaults under `.\runtime\legacy_audit\outputs\...`.
+Outputs are written to `--out` when provided. If omitted, output defaults under `runtime/legacy_audit/outputs/...`.
 CSV exports include `root_share`, `relative_path`, and human-readable size columns:
 
 - `scan_report.json` (full machine-readable report)
@@ -151,11 +108,43 @@ Heuristic and hierarchy scores are still computed and included in `scan_report.j
 
 ---
 
-## Metadata
+## System Context
 
-Last updated: 2026-01-02  
-Owner: Engineering  
-Review cadence: quarterly  
+This guide supports legacy cleanup planning by producing a consistent audit snapshot of storage roots.
 
-Change log:
-- 2026-01-02 - Reformatted to the documentation template.
+---
+
+## Core Concepts
+
+- The audit is read-only and classification-focused.
+- Reports emphasize structural signals rather than business semantics.
+
+---
+
+## How This Evolves Over Time
+
+- Add profiles and classifications as audit needs expand.
+- Update output formats when downstream tools change.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Running without `--apply` and expecting output files.
+- Treating classifications as definitive without manual review.
+
+---
+
+## When to Change This Document
+
+- CLI arguments, profiles, classifications, or output files change.
+
+---
+
+## Related Documents
+- dev-guide.md
+- repo-workflow.md
+- system-overview.md
+
+## Change Log
+- 2026-01-07 - Reformatted to documentation standards.

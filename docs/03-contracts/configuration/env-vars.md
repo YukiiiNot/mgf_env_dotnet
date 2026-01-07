@@ -1,83 +1,34 @@
-# Database environments (Dev / Staging / Prod)
+# Database Environment Variables (Dev / Staging / Prod)
 
-Purpose  
-Define the contract boundary and expectations for this area.
-
-Audience  
-Engineers building or consuming contracts and integrations.
-
-Scope  
-Covers contract intent and boundary expectations. Does not describe host wiring.
-
-Status  
-Active
+> Contract for environment selection and database connection key names.
 
 ---
 
-## Key Takeaways
+## MetaData
 
-- This document describes a canonical contract boundary.
-- Consumers should rely on Contracts rather than host internals.
-- Changes must preserve compatibility or be versioned.
-
----
-
-## System Context
-
-Contracts define stable boundaries between UseCases, Services, and Data.
+**Purpose:** Define environment selection and connection string key contracts for database access.
+**Scope:** Covers MGF_ENV, MGF_DB_MODE, and Database:* connection string keys. Excludes host wiring and appsettings defaults.
+**Doc Type:** Reference
+**Status:** Active
+**Last Updated:** 2026-01-07
 
 ---
 
-## Core Concepts
+## TL;DR
 
-This document describes the contract intent and expected usage. Implementation details belong in code.
-
----
-
-## How This Evolves Over Time
-
-- Update when schema or interface changes are introduced.
-- Note compatibility expectations when fields evolve.
+- Use `MGF_ENV` to select Dev, Staging, or Prod.
+- Use the `Database:<Env>:*ConnectionString` keys; legacy keys are fallback only.
+- Destructive operations are guarded and blocked for non-Dev environments.
 
 ---
 
-## Common Pitfalls and Anti-Patterns
-
-- Changing contract shapes without versioning.
-- Embedding host-specific types into Contracts.
-
----
-
-## When to Change This Document
-
-- The contract or schema changes.
-- New consumers depend on this boundary.
-
----
-
-## Related Documents
-
-- ../../02-architecture/system-overview.md
-- ../../02-architecture/application-layer-conventions.md
-- ../api/overview.md
-- ../database/schema.md
-
----
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
+## Main Content
 
 Source of truth: `src/Data/MGF.Data/Configuration/MgfConfiguration.cs`, `src/Data/MGF.Data/Options/Options.cs`, `config/appsettings*.json`
-Change control: Update when config keys, precedence, or environment selection changes.
-Last verified: 2025-12-30
-
-
-This repo supports selecting which Postgres/Supabase database to use via `MGF_ENV`.
 
 ## Connection string keys
 
-Use **one** of these per environment:
+Use one of these per environment:
 
 - `Database:Dev:ConnectionString`
 - `Database:Dev:DirectConnectionString` (used when `MGF_DB_MODE=direct`)
@@ -89,13 +40,13 @@ Use **one** of these per environment:
 - `Database:Prod:DirectConnectionString` (used when `MGF_DB_MODE=direct`)
 - `Database:Prod:PoolerConnectionString` (used when `MGF_DB_MODE=pooler`)
 
-Legacy fallback (only used when the env-specific key is missing):
+Legacy fallback (only used when env-specific keys are missing):
 
 - `Database:ConnectionString`
 
 ## Recommended: store secrets in user-secrets (local)
 
-User-secrets are per-developer and are **not committed to git**.
+User-secrets are per-developer and are not committed to git.
 
 ```powershell
 dotnet user-secrets init --project src/Data/MGF.Data
@@ -115,9 +66,9 @@ Host=db.YOUR_REF.supabase.co;Port=5432;Database=postgres;Username=postgres;Passw
 Host=YOUR_PROJECT.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.YOUR_REF;Password=YOUR_PASSWORD;Ssl Mode=Require
 ```
 
-## Alternative: environment variables
+## Environment variables
 
-Environment variables override all config files and user-secrets.
+Environment variables override config files and user-secrets.
 
 ```powershell
 $env:MGF_DB_MODE = "direct"
@@ -141,7 +92,6 @@ $env:Database__ConnectionString = "<Npgsql connection string>"
 ## Selecting the DB environment
 
 Allowed values:
-
 - `Dev` (default)
 - `Staging`
 - `Prod`
@@ -167,10 +117,10 @@ dotnet run --project src/Data/MGF.DataMigrator
 
 ## Integration tests (destructive guardrails)
 
-Integration tests **TRUNCATE** core tables in the target DB. Guardrails:
+Integration tests truncate core tables in the target DB. Guardrails:
 
-- If `MGF_ENV == "Prod"`: destructive ops are **blocked always**.
-- If `MGF_ENV != "Prod"`: destructive ops require `MGF_ALLOW_DESTRUCTIVE == "true"` and `MGF_DESTRUCTIVE_ACK == "I_UNDERSTAND"`.
+- If `MGF_ENV == "Prod"`: destructive ops are blocked.
+- If `MGF_ENV != "Prod"`: destructive ops require `MGF_ALLOW_DESTRUCTIVE="true"` and `MGF_DESTRUCTIVE_ACK="I_UNDERSTAND"`.
 
 Run tests safely:
 
@@ -178,18 +128,52 @@ Run tests safely:
 $env:MGF_ENV = "Dev"
 $env:MGF_ALLOW_DESTRUCTIVE = "true"
 $env:MGF_DESTRUCTIVE_ACK = "I_UNDERSTAND"
-dotnet test .\MGF.sln
+dotnet test MGF.sln
 ```
-
-Never set `MGF_ALLOW_DESTRUCTIVE=true` for Prod (Prod blocks it anyway).
 
 ---
 
-## Metadata
+## System Context
 
-Last updated: 2026-01-02  
-Owner: Platform  
-Review cadence: on contract change  
+Configuration contracts define the shared keys used by hosts, tools, and tests to select environments and connection strings.
 
-Change log:
-- 2026-01-02 - Reformatted to the documentation template.
+---
+
+## Core Concepts
+
+- `MGF_ENV` selects which environment block is used for database configuration.
+- `MGF_DB_MODE` selects between direct and pooler connection string keys.
+- Legacy keys are fallback only and should not be relied on for new workflows.
+
+---
+
+## How This Evolves Over Time
+
+- Update when a new environment or connection string key is introduced.
+- Record changes to guardrails and destructive operation gates.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Using legacy `Database:ConnectionString` instead of env-specific keys.
+- Running destructive workflows without setting Dev-only guardrails.
+- Mixing direct and pooler modes without setting `MGF_DB_MODE`.
+
+---
+
+## When to Change This Document
+
+- Environment selection rules or key names change.
+- Destructive guardrail behavior changes.
+
+---
+
+## Related Documents
+- config-reference.md
+- dev-secrets.md
+- db-migrations.md
+- repo-workflow.md
+
+## Change Log
+- 2026-01-07 - Reformatted to documentation standards.

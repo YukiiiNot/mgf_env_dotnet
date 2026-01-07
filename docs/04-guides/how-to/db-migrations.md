@@ -1,112 +1,50 @@
-# Database workflow (Supabase + EF Core)
+# Database Workflow (Supabase + EF Core)
 
-Purpose  
-Provide a supported, repeatable workflow for this task.
-
-Audience  
-Engineers performing this task or workflow.
-
-Scope  
-Covers the supported workflow and prerequisites. Does not define low-level implementation.
-
-Status  
-Active
+> How-to for creating and applying EF Core migrations in MGF.
 
 ---
 
-## Key Takeaways
+## MetaData
 
-- This guide explains the supported workflow for this task.
-- Use linked runbooks and contracts for deeper detail.
-- Avoid ad hoc or undocumented shortcuts.
-
----
-
-## System Context
-
-This guide sits between onboarding and runbooks and references the canonical architecture.
+**Purpose:** Provide the supported workflow for creating and applying EF Core migrations.
+**Scope:** Covers configuration, migration commands, and CI usage. Excludes schema design rationale.
+**Doc Type:** How-To
+**Status:** Active
+**Last Updated:** 2026-01-07
 
 ---
 
-## Core Concepts
+## TL;DR
 
-This guide describes the supported workflow and where the authoritative sources live. Detailed steps are in the appendix.
-
----
-
-## How This Evolves Over Time
-
-- Expand as new supported workflows are added.
-- Retire sections when they are superseded by new tooling.
+- EF Core migrations are the source of truth for schema changes.
+- Use MGF.DataMigrator to apply migrations.
+- Do not edit schema via the Supabase UI.
 
 ---
 
-## Common Pitfalls and Anti-Patterns
+## Main Content
 
-- Using ad hoc shortcuts instead of documented workflows.
-- Duplicating guidance that already exists elsewhere.
-
----
-
-## When to Change This Document
-
-- Supported workflow or tooling changes.
-- New prerequisites are required.
-
----
-
-## Related Documents
-
-- ../../01-onboarding/dev-guide.md
-- ../../05-runbooks/repo-workflow.md
-- ../../02-architecture/system-overview.md
-
----
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
-
-This repo treats **EF Core migrations** as the executable source of truth for the Postgres schema.
-The `MGF.DataMigrator` project is the **only** migration runner; the WPF host does not apply migrations.
+This repo treats EF Core migrations as the executable source of truth for the Postgres schema.
+The MGF.DataMigrator project is the only migration runner; the WPF host does not apply migrations.
 
 ## Principles
 
-- Do **not** make schema changes in the Supabase UI.
-- Apply schema changes via **EF migrations**, executed by `MGF.DataMigrator`.
-- Do **not** commit database secrets to git.
-- Prefer the Supabase **direct DB host** (`db.<project-ref>.supabase.co:5432`) for migrations (`dotnet ef` + `MGF.DataMigrator`).
-- Use the Supabase **session pooler** host (`*.pooler.supabase.com:5432`) for app runtime connections if you need pooling at the edge.
+- Do not make schema changes in the Supabase UI.
+- Apply schema changes via EF migrations, executed by MGF.DataMigrator.
+- Do not commit database secrets to git.
+- Prefer the Supabase direct DB host (db.<project-ref>.supabase.co:5432) for migrations (dotnet ef + MGF.DataMigrator).
+- Use the Supabase session pooler host (*.pooler.supabase.com:5432) for app runtime connections if you need pooling.
 
 ## Configuration sources (precedence)
 
-Both `dotnet ef` (design-time) and `MGF.DataMigrator` (runtime) load config in this order:
+Both dotnet ef (design-time) and MGF.DataMigrator (runtime) load config in this order:
 
-1. `config/appsettings.json` (committed defaults)
-2. `config/appsettings.{Environment}.json` (committed, non-secret overrides)
+1. config/appsettings.json (committed defaults)
+2. config/appsettings.{Environment}.json (committed, non-secret overrides)
 3. user-secrets (local dev)
 4. environment variables (CI/prod)
 
-Connection string keys (selected by `MGF_ENV`, default `Dev`):
-
-- `Database:Dev:ConnectionString`
-- `Database:Dev:DirectConnectionString` (used when `MGF_DB_MODE=direct`)
-- `Database:Dev:PoolerConnectionString` (used when `MGF_DB_MODE=pooler`)
-- `Database:Staging:ConnectionString`
-- `Database:Staging:DirectConnectionString` (used when `MGF_DB_MODE=direct`)
-- `Database:Staging:PoolerConnectionString` (used when `MGF_DB_MODE=pooler`)
-- `Database:Prod:ConnectionString`
-- `Database:Prod:DirectConnectionString` (used when `MGF_DB_MODE=direct`)
-- `Database:Prod:PoolerConnectionString` (used when `MGF_DB_MODE=pooler`)
-
-Database mode selection (optional, defaults to `Auto`):
-
-- `MGF_DB_MODE=direct` (prefer `*DirectConnectionString` keys)
-- `MGF_DB_MODE=pooler` (prefer `*PoolerConnectionString` keys)
-
-Legacy fallback (only used when the env-specific key is missing):
-
-- `Database:ConnectionString` (env var form: `Database__ConnectionString`)
+For the canonical key list (MGF_ENV, MGF_DB_MODE, and Database connection strings), see env-vars.md.
 
 ## Local dev setup (recommended: user-secrets)
 
@@ -117,16 +55,16 @@ dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connectio
 dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
 ```
 
-Example formats (do not commit real secrets; see `config/appsettings.Development.sample.json`):
+Example formats (do not commit real secrets; see config/appsettings.Development.sample.json):
 
 ```text
 Host=db.YOUR_REF.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=YOUR_PASSWORD;Ssl Mode=Require;Pooling=false
 Host=YOUR_PROJECT.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.YOUR_REF;Password=YOUR_PASSWORD;Ssl Mode=Require
 ```
 
-Note: for proper certificate validation use `Ssl Mode=VerifyFull` plus `Root Certificate=...` (Supabase provides a root cert). `Trust Server Certificate` is deprecated/no-op in recent Npgsql versions.
+Note: for proper certificate validation use Ssl Mode=VerifyFull plus Root Certificate=... (Supabase provides a root cert). Trust Server Certificate is deprecated/no-op in recent Npgsql versions.
 
-2) Create/run migrations:
+2) Create and run migrations:
 
 ```powershell
 dotnet ef migrations add <Name> --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
@@ -134,7 +72,7 @@ $env:MGF_DB_MODE = "direct"
 dotnet run --project src/Data/MGF.DataMigrator
 ```
 
-`MGF.DataMigrator` will:
+MGF.DataMigrator will:
 - apply migrations
 - seed core lookup tables idempotently (safe to run multiple times)
 
@@ -155,17 +93,17 @@ Integration tests may truncate data between test classes and require explicit op
 $env:MGF_ENV = "Dev"
 $env:MGF_ALLOW_DESTRUCTIVE = "true"
 $env:MGF_DESTRUCTIVE_ACK = "I_UNDERSTAND"
-dotnet test .\MGF.sln
+dotnet test MGF.sln
 ```
 
 ## Where migrations live
 
-- Folder: `src/Data/MGF.Data/Migrations/`
-- Files: `*_<Name>.cs`, `*_<Name>.Designer.cs`, and `AppDbContextModelSnapshot.cs`
+- Folder: src/Data/MGF.Data/Migrations/
+- Files: *_<Name>.cs, *_<Name>.Designer.cs, and AppDbContextModelSnapshot.cs
 
 ## Preflight: project_storage_roots unique index
 
-Before applying the `project_storage_roots` unique index migration, check for duplicates:
+Before applying the project_storage_roots unique index migration, check for duplicates:
 
 ```sql
 SELECT project_id, storage_provider_key, root_key, COUNT(*) AS dup_count
@@ -178,7 +116,7 @@ HAVING COUNT(*) > 1;
 
 ### List migrations
 
-Shows migrations known to EF in `MGF.Data`:
+Shows migrations known to EF in MGF.Data:
 
 ```powershell
 dotnet ef migrations list --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
@@ -186,7 +124,7 @@ dotnet ef migrations list --project src/Data/MGF.Data --startup-project src/Data
 
 ### Add a migration
 
-Creates new migration files under `src/Data/MGF.Data/Migrations/`:
+Creates new migration files under src/Data/MGF.Data/Migrations/:
 
 ```powershell
 dotnet ef migrations add <Name> --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
@@ -215,7 +153,7 @@ dotnet ef migrations remove --project src/Data/MGF.Data --startup-project src/Da
 ```
 
 Notes:
-- If the migration has already been applied to a database, roll back first (or create a new "revert" migration) to avoid drift.
+- If the migration has already been applied to a database, roll back first (or create a new revert migration) to avoid drift.
 
 ### Roll back to a previous migration
 
@@ -223,22 +161,21 @@ Notes:
 dotnet ef database update <PreviousMigrationName> --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
 
-## Alternative: session env var (ad-hoc)
+## Alternative: session env var (ad hoc)
 
-For one PowerShell session:
+For one PowerShell session, set required connection string env vars per env-vars.md, then run:
 
 ```powershell
 $env:MGF_DB_MODE = "direct"
-$env:Database__Dev__DirectConnectionString = "<Npgsql connection string>"
 $env:MGF_ENV = "Dev"
 dotnet run --project src/Data/MGF.DataMigrator
 ```
 
-Or use `scripts/set-dev-connection.ps1` to set the session env var without committing secrets.
+Or use scripts/set-dev-connection.ps1 to set the session env var without committing secrets.
 
-## CI / production
+## CI and production
 
-Set `Database__Prod__DirectConnectionString`, `MGF_DB_MODE=direct`, and `MGF_ENV=Prod` as secret environment variables in the deployment pipeline, then run:
+Set the required connection string env vars and MGF_ENV per env-vars.md, then run:
 
 ```powershell
 dotnet run --project src/Data/MGF.DataMigrator
@@ -246,20 +183,52 @@ dotnet run --project src/Data/MGF.DataMigrator
 
 ## Teammate-safe commands
 
-These are read-only / local-safe:
+These are read-only and local-safe:
 
 ```powershell
-dotnet build .\MGF.sln
+dotnet build MGF.sln
 dotnet ef migrations list --project src/Data/MGF.Data --startup-project src/Data/MGF.DataMigrator
 ```
 
 ---
 
-## Metadata
+## System Context
 
-Last updated: 2026-01-02  
-Owner: Engineering  
-Review cadence: quarterly  
+This guide governs how schema changes are created, reviewed, and applied across environments.
 
-Change log:
-- 2026-01-02 - Reformatted to the documentation template.
+---
+
+## Core Concepts
+
+- EF migrations are the contract for schema evolution.
+- MGF.DataMigrator is the only supported migration runner.
+
+---
+
+## How This Evolves Over Time
+
+- Update when EF tooling, migration workflow, or CI automation changes.
+- Add new guardrails when destructive workflows change.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Editing schema directly in Supabase UI.
+- Running migrations against prod with local credentials.
+
+---
+
+## When to Change This Document
+
+- Migration workflow, tooling, or guardrails change.
+
+---
+
+## Related Documents
+- env-vars.md
+- repo-workflow.md
+- destructive-ops-audit.md
+
+## Change Log
+- 2026-01-07 - Reformatted to documentation standards.

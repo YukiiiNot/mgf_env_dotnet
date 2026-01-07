@@ -1,76 +1,30 @@
 # Jobs Contract
 
-Purpose  
-Define the contract boundary and expectations for this area.
-
-Audience  
-Engineers building or consuming contracts and integrations.
-
-Scope  
-Covers contract intent and boundary expectations. Does not describe host wiring.
-
-Status  
-Active
+> Contract for job storage, types, and payload shapes in public.jobs.
 
 ---
 
-## Key Takeaways
+## MetaData
 
-- This document describes a canonical contract boundary.
-- Consumers should rely on Contracts rather than host internals.
-- Changes must preserve compatibility or be versioned.
-
----
-
-## System Context
-
-Contracts define stable boundaries between UseCases, Services, and Data.
+**Purpose:** Define the contract for job types, statuses, and payload shapes processed by the worker.
+**Scope:** Covers public.jobs schema, seeded job types, and payload expectations. Excludes worker implementation details.
+**Doc Type:** Reference
+**Status:** Active
+**Last Updated:** 2026-01-07
 
 ---
 
-## Core Concepts
+## TL;DR
 
-This document describes the contract intent and expected usage. Implementation details belong in code.
-
----
-
-## How This Evolves Over Time
-
-- Update when schema or interface changes are introduced.
-- Note compatibility expectations when fields evolve.
+- Jobs are persisted in `public.jobs` and processed by MGF.Worker.
+- Job types and payload shapes must remain compatible across releases.
+- Update this doc when job types, payload models, or schema fields change.
 
 ---
 
-## Common Pitfalls and Anti-Patterns
-
-- Changing contract shapes without versioning.
-- Embedding host-specific types into Contracts.
-
----
-
-## When to Change This Document
-
-- The contract or schema changes.
-- New consumers depend on this boundary.
-
----
-
-## Related Documents
-
-- ../../02-architecture/system-overview.md
-- ../../02-architecture/application-layer-conventions.md
-- ../api/overview.md
-- ../database/schema.md
-
----
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
+## Main Content
 
 Source of truth: `src/Services/MGF.Worker/**`, `src/Data/MGF.Data/Migrations/*`, `src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs`
-Change control: Update when job schema, status transitions, or payload shape changes.
-Last verified: 2025-12-30
 
 ## Scope
 - Jobs are persisted in `public.jobs` and processed by `src/Services/MGF.Worker`.
@@ -82,6 +36,7 @@ Last verified: 2025-12-30
 - Status values (seeded): `queued`, `running`, `succeeded`, `failed`, `cancelled` (`src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs`).
 
 ## Job types (seeded)
+
 Source: `src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs`
 
 - `dropbox.create_project_structure`
@@ -98,6 +53,7 @@ Source: `src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs`
 Note: `notion.sync_booking` is seeded but currently has no handler in `JobWorker`.
 
 ## Worker-handled job types
+
 Source: `src/Services/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 
 - `dropbox.create_project_structure`
@@ -111,6 +67,7 @@ Source: `src/Services/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 - `square.webhook_event.process`
 
 ## Payload shapes (JSONB)
+
 - `dropbox.create_project_structure`: `{ projectId?, clientId?, templateKey? }` (read directly in `JobWorker`).
 - `project.bootstrap`: `ProjectBootstrapPayload` in `src/Core/MGF.Contracts/Abstractions/ProjectBootstrap/ProjectBootstrapModels.cs`.
 - `project.archive`: `ProjectArchivePayload` in `src/Core/MGF.Contracts/Abstractions/ProjectArchive/ProjectArchiveModels.cs`.
@@ -122,20 +79,54 @@ Source: `src/Services/MGF.Worker/JobWorker.cs` (unknown `job_type_key` throws)
 - `square.reconcile.payments`: no payload fields required; behavior is driven by config and reconcile cursor state.
 
 ## Change control notes
-- Update this doc when `job_types` seed list changes, handler dispatch list changes, payload model records change, or `public.jobs` schema changes.
+
+- Update this doc when the `job_types` seed list changes, handler dispatch list changes, payload model records change, or `public.jobs` schema changes.
 
 ## References
+
 - Worker dispatch: `src/Services/MGF.Worker/JobWorker.cs`
 - Payload models: `src/Core/MGF.Contracts/Abstractions/ProjectBootstrap/ProjectBootstrapModels.cs`, `src/Core/MGF.Contracts/Abstractions/ProjectArchive/ProjectArchiveModels.cs`, `src/Core/MGF.Contracts/Abstractions/ProjectDelivery/ProjectDeliveryModels.cs`, `src/Core/MGF.Contracts/Abstractions/RootIntegrity/RootIntegrityModels.cs`
 - Job types seed: `src/Data/MGF.Data/Data/Seeding/LookupSeeder.cs`
 
 ---
 
-## Metadata
+## System Context
 
-Last updated: 2026-01-02  
-Owner: Platform  
-Review cadence: on contract change  
+The jobs contract is the queue boundary between use-case orchestration and worker execution.
 
-Change log:
-- 2026-01-02 - Reformatted to the documentation template.
+---
+
+## Core Concepts
+
+- Jobs are durable records with status, locking, and retry semantics.
+- Job types and payloads are part of the public contract and must be stable.
+
+---
+
+## How This Evolves Over Time
+
+- Add new job types in a backward-compatible way.
+- Update payload shapes with versioning or migration guidance when needed.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Adding a seeded job type without a handler.
+- Changing payload shapes without updating consumers.
+
+---
+
+## When to Change This Document
+
+- The jobs schema, seed list, or payload models change.
+
+---
+
+## Related Documents
+- system-overview.md
+- shared-dev-concurrency.md
+- project-shapes.md
+
+## Change Log
+- 2026-01-07 - Reformatted to documentation standards.

@@ -1,83 +1,34 @@
 # Dev Secrets Inventory
 
-Purpose  
-Define the contract boundary and expectations for this area.
-
-Audience  
-Engineers building or consuming contracts and integrations.
-
-Scope  
-Covers contract intent and boundary expectations. Does not describe host wiring.
-
-Status  
-Active
+> Contract for allowed developer secrets and export/import policy.
 
 ---
 
-## Key Takeaways
+## MetaData
 
-- This document describes a canonical contract boundary.
-- Consumers should rely on Contracts rather than host internals.
-- Changes must preserve compatibility or be versioned.
-
----
-
-## System Context
-
-Contracts define stable boundaries between UseCases, Services, and Data.
+**Purpose:** Define which secrets are allowed for local development and the export/import policy.
+**Scope:** Covers required/optional keys and allowed patterns for dev secrets. Excludes production or staging secrets.
+**Doc Type:** Reference
+**Status:** Active
+**Last Updated:** 2026-01-07
 
 ---
 
-## Core Concepts
+## TL;DR
 
-This document describes the contract intent and expected usage. Implementation details belong in code.
-
----
-
-## How This Evolves Over Time
-
-- Update when schema or interface changes are introduced.
-- Note compatibility expectations when fields evolve.
+- Dev secrets export/import is local-only; prod/staging/CI secrets are never allowed.
+- The only allowed DB secret is `Database:Dev:DirectConnectionString`.
+- Export/import is limited to keys listed in `tools/dev-secrets/secrets.required.json`.
 
 ---
 
-## Common Pitfalls and Anti-Patterns
-
-- Changing contract shapes without versioning.
-- Embedding host-specific types into Contracts.
-
----
-
-## When to Change This Document
-
-- The contract or schema changes.
-- New consumers depend on this boundary.
-
----
-
-## Related Documents
-
-- ../../02-architecture/system-overview.md
-- ../../02-architecture/application-layer-conventions.md
-- ../api/overview.md
-- ../database/schema.md
-
----
-
-## Appendix (Optional)
-
-### Prior content (preserved for reference)
+## Main Content
 
 Source of truth: `tools/dev-secrets/secrets.required.json`, `src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj`
-Change control: Update when required/optional keys or secret policy changes.
-Last verified: 2025-12-30
 
+This inventory lists the developer secrets that can be exported/imported for local dev only.
 
-This inventory lists the developer secrets that can be exported/imported for **local dev only**. The only database secret allowed is the **Dev direct connection string**: `Database:Dev:DirectConnectionString`.
-
-> Policy: do **not** export/import any Prod/Staging/CI secrets. If a key name matches disallowed patterns (Prod/Staging/CI/GitHub), it is rejected.
-
-## Projects with User Secrets
+## Projects with user secrets
 
 ### MGF.Data
 - **UserSecretsId:** `8f8e4093-a213-4629-bbd1-2a67c4e9000e`
@@ -98,9 +49,9 @@ This inventory lists the developer secrets that can be exported/imported for **l
   - `Integrations:Dropbox:*`
   - `Integrations:Email:*`
 
-> Note: The worker loads configuration via `MGF.Data`'s UserSecretsId by default, but we include the Worker ID so local tooling can remain consistent if secrets are stored there.
+Note: The worker loads configuration via MGF.Data's UserSecretsId by default, but the Worker ID is listed so local tooling can remain consistent if secrets are stored there.
 
-## Global Policy
+## Global policy
 
 Allowed DB key (case-insensitive, exact match required):
 - `Database:Dev:DirectConnectionString`
@@ -108,13 +59,13 @@ Allowed DB key (case-insensitive, exact match required):
 Disallowed key patterns:
 - `*Prod*`, `*Production*`, `*Staging*`, `*CI*`, `*Github*`, `*GitHub*`
 
-## Export/Import Behavior
+## Export and import behavior
 
-- Export includes **only** keys listed in `tools/dev-secrets/secrets.required.json`.
-- Keys matching disallowed patterns are **never** exported/imported.
-- DB secrets are only allowed if they are exactly `Database:Dev:DirectConnectionString` (case-insensitive).
+- Export includes only keys listed in `tools/dev-secrets/secrets.required.json`.
+- Keys matching disallowed patterns are never exported/imported.
+- DB secrets are only allowed if they match `Database:Dev:DirectConnectionString` (case-insensitive).
 
-## Where Keys Are Used
+## Where keys are used
 
 - **Database:** `Database:Dev:DirectConnectionString` is used by all local tools and services.
 - **Dropbox:** keys are used by delivery/share-link flows.
@@ -124,11 +75,45 @@ No production or staging secrets should appear in local developer exports.
 
 ---
 
-## Metadata
+## System Context
 
-Last updated: 2026-01-02  
-Owner: Platform  
-Review cadence: on contract change  
+Dev secrets define the local-only configuration boundary used by tools and service hosts without exposing production credentials.
 
-Change log:
-- 2026-01-02 - Reformatted to the documentation template.
+---
+
+## Core Concepts
+
+- Dev secrets are constrained to a small, explicit allowlist.
+- Export/import is driven by a required keys inventory and a denylist of patterns.
+
+---
+
+## How This Evolves Over Time
+
+- Update when required or optional dev secrets change.
+- Revisit disallowed patterns when new environments or providers are added.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Exporting secrets outside the required keys list.
+- Introducing prod or staging keys into local exports.
+
+---
+
+## When to Change This Document
+
+- The required keys inventory changes.
+- Secret policy or tool behavior changes.
+
+---
+
+## Related Documents
+- dev-secrets-tool.md
+- env-vars.md
+- integrations.md
+- config-reference.md
+
+## Change Log
+- 2026-01-07 - Reformatted to documentation standards.
