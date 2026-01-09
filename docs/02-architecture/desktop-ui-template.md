@@ -55,6 +55,12 @@ src/Ui/MGF.<Tool>.Desktop/
 - Feature wiring and UI flow for this executable only.
 - Must not contain API client implementation.
 
+Polling lifecycle ownership:
+- Hosting wires Start/Stop for polling ViewModels.
+- ViewModels must not auto-start in constructors.
+- Poll intervals live in the ViewModel as explicit TimeSpan values.
+- Status module is the canonical example.
+
 #### Resources
 - App-specific resource dictionaries, styles, and theme overrides.
 - Localized strings or visual assets scoped to this tool.

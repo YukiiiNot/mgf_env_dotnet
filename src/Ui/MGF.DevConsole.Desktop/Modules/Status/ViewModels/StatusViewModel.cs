@@ -8,13 +8,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Configuration;
 using MGF.DevConsole.Desktop.Api;
 
+// Lifecycle: started by host when the main window opens; stopped on window close.
 public sealed class StatusViewModel : ObservableObject
 {
     private readonly IConfiguration config;
     private readonly MetaApiClient metaClient;
     private readonly TimeSpan pollInterval = TimeSpan.FromSeconds(5);
     private CancellationTokenSource? pollCts;
-    private bool started;
+    private int stopRequested;
     private string environmentLine = "Loading environment...";
     private string connectionStatusLine = "Disconnected";
     private string? lastError;
@@ -46,18 +47,18 @@ public sealed class StatusViewModel : ObservableObject
 
     public void Start()
     {
-        if (started)
+        if (pollCts is not null || Volatile.Read(ref stopRequested) == 1)
         {
             return;
         }
 
-        started = true;
         pollCts = new CancellationTokenSource();
         _ = RunAsync(pollCts.Token);
     }
 
     public void Stop()
     {
+        Interlocked.Exchange(ref stopRequested, 1);
         var cts = Interlocked.Exchange(ref pollCts, null);
         if (cts is null)
         {
@@ -143,6 +144,11 @@ public sealed class StatusViewModel : ObservableObject
 
     private void UpdateUi(Action update)
     {
+        if (Volatile.Read(ref stopRequested) == 1)
+        {
+            return;
+        }
+
         var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher is null || dispatcher.CheckAccess())
         {
