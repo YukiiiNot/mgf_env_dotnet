@@ -18,6 +18,7 @@ Console.WriteLine($"MGF.Api: MGF_DB_MODE={mgfDbMode}");
 
 builder.Configuration.Sources.Clear();
 builder.Configuration.AddMgfConfiguration(builder.Environment.EnvironmentName, typeof(AppDbContext).Assembly);
+builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();

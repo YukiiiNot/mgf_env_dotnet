@@ -37,7 +37,10 @@ public sealed class StartupGate
         var apiKey = config["Security:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            throw new StartupGateException("Security:ApiKey is not configured. Set the API key before starting DevConsole.");
+            throw new StartupGateException(
+                "Security:ApiKey is not configured. Copy config/appsettings.Development.sample.json to "
+                + "config/appsettings.Development.json and set Security:ApiKey, or set SECURITY__APIKEY. "
+                + "The same key must be configured for MGF.Api because it enforces X-MGF-API-KEY.");
         }
 
         MetaApiClient.MetaDto meta;
