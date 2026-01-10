@@ -87,6 +87,13 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 - Hosting configures Api:BaseUrl, Security:ApiKey, and optional Security:Operator headers.
 - Shared is for reusable UI assets only; it must not own tool-specific workflows.
 
+### Local dev setup
+
+- Copy config/appsettings.Development.sample.json to config/appsettings.Development.json and set Security:ApiKey and Api:BaseUrl.
+- Alternatively set SECURITY__APIKEY (environment variables override JSON).
+- The same Security:ApiKey must be configured for MGF.Api because it enforces X-MGF-API-KEY.
+- config/appsettings.Development.json is local-only (gitignored).
+
 ### First read-only slice pattern
 
 - Banner: Local MGF_ENV + Api:BaseUrl + API MGF_ENV (from /api/meta).

@@ -61,6 +61,7 @@ People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
 - Jobs list uses created_at for the "last 24 hours" window (server UTC).
 - Jobs payload is detail-only and opt-in in the DevConsole UI (truncated at 50 KB).
 - /api/* requires X-MGF-API-KEY; X-MGF-Operator is optional for audit strings.
+- Local dev sets Security:ApiKey via config/appsettings.Development.json or SECURITY__APIKEY; DevConsole and MGF.Api must match.
 
 ### Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.

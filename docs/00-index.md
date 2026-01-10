@@ -10,7 +10,7 @@
 **Scope:** Links to canonical docs by bucket and topic. Does not replace the content of those docs.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -28,6 +28,7 @@
 - Getting started: [01-onboarding/overview/getting-started.md](01-onboarding/overview/getting-started.md)
 - System overview: [02-architecture/overview/system-overview.md](02-architecture/overview/system-overview.md)
 - Repo workflow: [05-runbooks/operations/repo-workflow.md](05-runbooks/operations/repo-workflow.md)
+- DevConsole local API key setup: [02-architecture/desktop-ui-template.md](02-architecture/desktop-ui-template.md)
 
 ### Orientation
 - Developer guide: [01-onboarding/workflows/dev-guide.md](01-onboarding/workflows/dev-guide.md)
