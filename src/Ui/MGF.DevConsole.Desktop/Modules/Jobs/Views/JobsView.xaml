@@ -41,6 +41,7 @@
             <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Text="Job Detail" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <TextBlock Text="{Binding DetailError}" TextWrapping="Wrap" />
 
                     <TextBlock>
                         <Run Text="JobId: " FontWeight="SemiBold" />
@@ -59,11 +60,40 @@
                         <Run Text="{Binding DetailAttemptCount}" />
                     </TextBlock>
                     <TextBlock>
+                        <Run Text="Created At: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailCreatedAt}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Run After: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailRunAfter}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Started At: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailStartedAt}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Finished At: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailFinishedAt}" />
+                    </TextBlock>
+                    <TextBlock>
                         <Run Text="Locked Until: " FontWeight="SemiBold" />
                         <Run Text="{Binding DetailLockedUntil}" />
                     </TextBlock>
+                    <TextBlock>
+                        <Run Text="Last Error: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailLastError}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Entity Type: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailEntityTypeKey}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Entity Key: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailEntityKey}" />
+                    </TextBlock>
 
-                    <TextBlock Text="Payload" FontWeight="SemiBold" Margin="0,8,0,4" />
+                    <CheckBox Content="Show payload" IsChecked="{Binding ShowPayload}" Margin="0,8,0,4" />
+                    <TextBlock Text="Payload" FontWeight="SemiBold" Margin="0,0,0,4" />
                     <TextBlock Text="{Binding JobDetailJson}" TextWrapping="Wrap" />
                 </StackPanel>
             </ScrollViewer>

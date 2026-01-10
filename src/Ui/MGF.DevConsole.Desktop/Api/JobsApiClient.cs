@@ -42,6 +42,13 @@ public sealed class JobsApiClient
         string JobTypeKey,
         string StatusKey,
         int AttemptCount,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset RunAfter,
+        DateTimeOffset? StartedAt,
+        DateTimeOffset? FinishedAt,
+        string? LastError,
+        string? EntityTypeKey,
+        string? EntityKey,
         System.Text.Json.JsonElement Payload,
         DateTimeOffset? LockedUntil
     );

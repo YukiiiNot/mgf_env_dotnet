@@ -20,13 +20,23 @@ public sealed class JobsViewModel : ObservableObject
     private CancellationTokenSource? detailCts;
     private int stopRequested;
     private JobListItem? selectedJob;
+    private bool showPayload;
+    private JsonElement? payloadElement;
     private string connectionStatusLine = "Disconnected";
     private string? lastError;
+    private string? detailError;
     private string? detailJobId;
     private string? detailStatusKey;
     private string? detailJobTypeKey;
     private string? detailAttemptCount;
+    private string? detailCreatedAt;
+    private string? detailRunAfter;
+    private string? detailStartedAt;
+    private string? detailFinishedAt;
     private string? detailLockedUntil;
+    private string? detailLastError;
+    private string? detailEntityTypeKey;
+    private string? detailEntityKey;
     private string? jobDetailJson;
 
     public JobsViewModel(JobsApiClient jobsApi)
@@ -52,13 +62,30 @@ public sealed class JobsViewModel : ObservableObject
             selectedJob = value;
             OnPropertyChanged();
 
+            ShowPayload = false;
+            DetailError = null;
+            ClearDetailFields();
+
             if (selectedJob is null)
             {
-                ClearDetail();
                 return;
             }
 
             _ = FetchDetailAsync(selectedJob.JobId);
+        }
+    }
+
+    public bool ShowPayload
+    {
+        get => showPayload;
+        set
+        {
+            if (!SetProperty(ref showPayload, value))
+            {
+                return;
+            }
+
+            UpdatePayloadDisplay();
         }
     }
 
@@ -72,6 +99,12 @@ public sealed class JobsViewModel : ObservableObject
     {
         get => lastError;
         private set => SetProperty(ref lastError, value);
+    }
+
+    public string? DetailError
+    {
+        get => detailError;
+        private set => SetProperty(ref detailError, value);
     }
 
     public string? DetailJobId
@@ -98,10 +131,52 @@ public sealed class JobsViewModel : ObservableObject
         private set => SetProperty(ref detailAttemptCount, value);
     }
 
+    public string? DetailCreatedAt
+    {
+        get => detailCreatedAt;
+        private set => SetProperty(ref detailCreatedAt, value);
+    }
+
+    public string? DetailRunAfter
+    {
+        get => detailRunAfter;
+        private set => SetProperty(ref detailRunAfter, value);
+    }
+
+    public string? DetailStartedAt
+    {
+        get => detailStartedAt;
+        private set => SetProperty(ref detailStartedAt, value);
+    }
+
+    public string? DetailFinishedAt
+    {
+        get => detailFinishedAt;
+        private set => SetProperty(ref detailFinishedAt, value);
+    }
+
     public string? DetailLockedUntil
     {
         get => detailLockedUntil;
         private set => SetProperty(ref detailLockedUntil, value);
+    }
+
+    public string? DetailLastError
+    {
+        get => detailLastError;
+        private set => SetProperty(ref detailLastError, value);
+    }
+
+    public string? DetailEntityTypeKey
+    {
+        get => detailEntityTypeKey;
+        private set => SetProperty(ref detailEntityTypeKey, value);
+    }
+
+    public string? DetailEntityKey
+    {
+        get => detailEntityKey;
+        private set => SetProperty(ref detailEntityKey, value);
     }
 
     public string? JobDetailJson
@@ -242,7 +317,9 @@ public sealed class JobsViewModel : ObservableObject
             SelectedJob = stillSelected;
             if (stillSelected is null)
             {
-                ClearDetail();
+                DetailError = null;
+                ClearDetailFields();
+                ShowPayload = false;
             }
         });
     }
@@ -271,10 +348,11 @@ public sealed class JobsViewModel : ObservableObject
         {
             UpdateUi(() =>
             {
-                LastError = ex.Failure == JobsApiFailure.Unauthorized
+                DetailError = ex.Failure == JobsApiFailure.Unauthorized
                     ? "Unauthorized (X-MGF-API-KEY rejected)."
                     : ex.Message;
-                ClearDetail();
+                ClearDetailFields();
+                ShowPayload = false;
             });
             return;
         }
@@ -286,10 +364,11 @@ public sealed class JobsViewModel : ObservableObject
         {
             UpdateUi(() =>
             {
-                LastError = ex is TaskCanceledException
+                DetailError = ex is TaskCanceledException
                     ? "API request timed out."
                     : ex.Message;
-                ClearDetail();
+                ClearDetailFields();
+                ShowPayload = false;
             });
             return;
         }
@@ -301,13 +380,39 @@ public sealed class JobsViewModel : ObservableObject
                 return;
             }
 
+            DetailError = null;
             DetailJobId = detail.JobId;
             DetailStatusKey = detail.StatusKey;
             DetailJobTypeKey = detail.JobTypeKey;
             DetailAttemptCount = detail.AttemptCount.ToString();
+            DetailCreatedAt = detail.CreatedAt.ToString("O");
+            DetailRunAfter = detail.RunAfter.ToString("O");
+            DetailStartedAt = detail.StartedAt?.ToString("O") ?? string.Empty;
+            DetailFinishedAt = detail.FinishedAt?.ToString("O") ?? string.Empty;
             DetailLockedUntil = detail.LockedUntil?.ToString("O") ?? string.Empty;
-            JobDetailJson = FormatPayload(detail.Payload);
+            DetailLastError = detail.LastError ?? string.Empty;
+            DetailEntityTypeKey = detail.EntityTypeKey ?? string.Empty;
+            DetailEntityKey = detail.EntityKey ?? string.Empty;
+            payloadElement = detail.Payload;
+            UpdatePayloadDisplay();
         });
+    }
+
+    private void UpdatePayloadDisplay()
+    {
+        if (!ShowPayload)
+        {
+            JobDetailJson = null;
+            return;
+        }
+
+        if (payloadElement is null)
+        {
+            JobDetailJson = null;
+            return;
+        }
+
+        JobDetailJson = FormatPayload(payloadElement.Value);
     }
 
     private string FormatPayload(JsonElement payload)
@@ -321,13 +426,21 @@ public sealed class JobsViewModel : ObservableObject
         return formatted[..MaxPayloadChars] + "...(truncated)";
     }
 
-    private void ClearDetail()
+    private void ClearDetailFields()
     {
+        payloadElement = null;
         DetailJobId = null;
         DetailStatusKey = null;
         DetailJobTypeKey = null;
         DetailAttemptCount = null;
+        DetailCreatedAt = null;
+        DetailRunAfter = null;
+        DetailStartedAt = null;
+        DetailFinishedAt = null;
         DetailLockedUntil = null;
+        DetailLastError = null;
+        DetailEntityTypeKey = null;
+        DetailEntityKey = null;
         JobDetailJson = null;
     }
 

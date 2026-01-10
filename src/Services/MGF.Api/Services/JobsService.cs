@@ -19,6 +19,13 @@ public sealed class JobsService
         string JobTypeKey,
         string StatusKey,
         int AttemptCount,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset RunAfter,
+        DateTimeOffset? StartedAt,
+        DateTimeOffset? FinishedAt,
+        string? LastError,
+        string? EntityTypeKey,
+        string? EntityKey,
         JsonElement Payload,
         DateTimeOffset? LockedUntil
     );
@@ -147,6 +154,13 @@ public sealed class JobsService
                         EF.Property<string>(j, "job_type_key"),
                         EF.Property<string>(j, "status_key"),
                         EF.Property<int>(j, "attempt_count"),
+                        EF.Property<DateTimeOffset>(j, "created_at"),
+                        EF.Property<DateTimeOffset>(j, "run_after"),
+                        EF.Property<DateTimeOffset?>(j, "started_at"),
+                        EF.Property<DateTimeOffset?>(j, "finished_at"),
+                        EF.Property<string?>(j, "last_error"),
+                        EF.Property<string?>(j, "entity_type_key"),
+                        EF.Property<string?>(j, "entity_key"),
                         EF.Property<JsonElement>(j, "payload"),
                         EF.Property<DateTimeOffset?>(j, "locked_until")
                     )

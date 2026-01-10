@@ -10,7 +10,7 @@
 **Scope:** Covers folder structure, ownership boundaries, and hard rules for desktop UI projects. Excludes feature implementation guidance.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -98,6 +98,7 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 
 - List + detail via polling + selection fetch is the default pattern.
 - List endpoint excludes payload; detail endpoint includes payload.
+- Payload display is opt-in; hidden by default until the operator requests it.
 - Payload display must truncate at 50 KB and append "...(truncated)".
 - Default "last 24 hours" window is based on created_at (job creation time).
 - run_after, started_at, finished_at are informational only and do not affect inclusion.
