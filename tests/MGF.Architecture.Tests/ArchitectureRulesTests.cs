@@ -505,7 +505,7 @@ public sealed class ArchitectureRulesTests
                 Required: new[] { "Views", "Properties" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
             ["MGF.DevConsole.Desktop"] = new ShapeContract(
-                Allowed: new[] { "Hosting", "Api", "Modules", "Resources", "Diagnostics" },
+                Allowed: new[] { "Hosting", "Api", "Modules", "Resources", "Diagnostics", "Properties" },
                 Required: new[] { "Hosting", "Api", "Modules" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
             ["MGF.Website"] = new ShapeContract(
