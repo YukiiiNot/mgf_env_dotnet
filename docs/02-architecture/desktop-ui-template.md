@@ -94,6 +94,12 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 - Polling guidance: list surfaces every 2-5 seconds; detail panels 5-10 seconds.
 - Keep polling in a ViewModel; keep transport in Api clients.
 
+### API list endpoints for polled UIs
+
+- List endpoints MUST be bounded by default.
+- List endpoints MUST NOT include payload blobs.
+- Cursor pagination preferred for polled surfaces.
+
 ---
 
 ## System Context
