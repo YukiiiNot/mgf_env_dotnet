@@ -32,59 +32,60 @@ Console.WriteLine($"MGF.Worker: MGF_ENV={mgfEnv}");
 Console.WriteLine($"MGF.Worker: MGF_DB_MODE={mgfDbMode}");
 
 var remainingArgs = ParseWorkerArgs(args, out var workerSettings);
-var builder = Host.CreateApplicationBuilder(remainingArgs);
+using var host = Host.CreateDefaultBuilder(remainingArgs)
+    .ConfigureAppConfiguration((context, config) =>
+    {
+        MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
+        if (workerSettings.Count > 0)
+        {
+            config.AddInMemoryCollection(workerSettings);
+        }
+    })
+    .ConfigureServices((context, services) =>
+    {
+        services.AddInfrastructure(context.Configuration);
+        services.AddTransient<GmailApiEmailSender>();
+        services.AddTransient<SmtpEmailSender>();
+        services.AddTransient<PreviewEmailSender>();
+        services.AddTransient<IEmailSender>(provider =>
+        {
+            var configuration = provider.GetRequiredService<IConfiguration>();
+            var gmailSender = provider.GetRequiredService<GmailApiEmailSender>();
+            var smtpSender = provider.GetRequiredService<SmtpEmailSender>();
+            var previewSender = provider.GetRequiredService<PreviewEmailSender>();
+            return EmailSenderFactory.Create(configuration, gmailSender, smtpSender, previewSender);
+        });
+        services.AddTransient<IDropboxShareLinkClient>(provider =>
+        {
+            var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
+            return new DropboxShareLinkClient(httpClient, provider.GetRequiredService<IConfiguration>());
+        });
+        services.AddTransient<IDropboxFilesClient>(provider =>
+        {
+            var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
+            return new DropboxFilesClient(httpClient, provider.GetRequiredService<IConfiguration>());
+        });
+        services.AddTransient<IDropboxAccessTokenProvider>(provider =>
+        {
+            var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
+            var logger = provider.GetService<ILogger<DropboxAccessTokenProvider>>();
+            return new DropboxAccessTokenProvider(httpClient, provider.GetRequiredService<IConfiguration>(), logger);
+        });
+        services.AddScoped<IWorkerEmailGateway, WorkerEmailGateway>();
+        services.AddScoped<ISendDeliveryEmailUseCase, SendDeliveryEmailUseCase>();
+        services.AddScoped<IProjectArchiveExecutor, ProjectArchiveExecutor>();
+        services.AddScoped<IRunProjectArchiveUseCase, RunProjectArchiveUseCase>();
+        services.AddScoped<IProjectDeliveryExecutor, ProjectDeliveryExecutor>();
+        services.AddScoped<IRunProjectDeliveryUseCase, RunProjectDeliveryUseCase>();
+        services.AddScoped<IProjectBootstrapProvisioningGateway, ProjectBootstrapProvisioningGateway>();
+        services.AddScoped<IBootstrapProjectUseCase, BootstrapProjectUseCase>();
+        services.AddScoped<IRootIntegrityExecutor, RootIntegrityChecker>();
+        services.AddScoped<IRunRootIntegrityUseCase, RunRootIntegrityUseCase>();
+        services.AddHttpClient<SquareApiClient>();
+        services.AddHostedService<JobWorker>();
+    })
+    .Build();
 
-builder.Host.ConfigureAppConfiguration((context, config) =>
-{
-    MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
-});
-if (workerSettings.Count > 0)
-{
-    builder.Configuration.AddInMemoryCollection(workerSettings);
-}
-
-builder.Services.AddInfrastructure(builder.Configuration);
-builder.Services.AddTransient<GmailApiEmailSender>();
-builder.Services.AddTransient<SmtpEmailSender>();
-builder.Services.AddTransient<PreviewEmailSender>();
-builder.Services.AddTransient<IEmailSender>(services =>
-{
-    var configuration = services.GetRequiredService<IConfiguration>();
-    var gmailSender = services.GetRequiredService<GmailApiEmailSender>();
-    var smtpSender = services.GetRequiredService<SmtpEmailSender>();
-    var previewSender = services.GetRequiredService<PreviewEmailSender>();
-    return EmailSenderFactory.Create(configuration, gmailSender, smtpSender, previewSender);
-});
-builder.Services.AddTransient<IDropboxShareLinkClient>(services =>
-{
-    var httpClient = services.GetRequiredService<IHttpClientFactory>().CreateClient();
-    return new DropboxShareLinkClient(httpClient, services.GetRequiredService<IConfiguration>());
-});
-builder.Services.AddTransient<IDropboxFilesClient>(services =>
-{
-    var httpClient = services.GetRequiredService<IHttpClientFactory>().CreateClient();
-    return new DropboxFilesClient(httpClient, services.GetRequiredService<IConfiguration>());
-});
-builder.Services.AddTransient<IDropboxAccessTokenProvider>(services =>
-{
-    var httpClient = services.GetRequiredService<IHttpClientFactory>().CreateClient();
-    var logger = services.GetService<ILogger<DropboxAccessTokenProvider>>();
-    return new DropboxAccessTokenProvider(httpClient, services.GetRequiredService<IConfiguration>(), logger);
-});
-builder.Services.AddScoped<IWorkerEmailGateway, WorkerEmailGateway>();
-builder.Services.AddScoped<ISendDeliveryEmailUseCase, SendDeliveryEmailUseCase>();
-builder.Services.AddScoped<IProjectArchiveExecutor, ProjectArchiveExecutor>();
-builder.Services.AddScoped<IRunProjectArchiveUseCase, RunProjectArchiveUseCase>();
-builder.Services.AddScoped<IProjectDeliveryExecutor, ProjectDeliveryExecutor>();
-builder.Services.AddScoped<IRunProjectDeliveryUseCase, RunProjectDeliveryUseCase>();
-builder.Services.AddScoped<IProjectBootstrapProvisioningGateway, ProjectBootstrapProvisioningGateway>();
-builder.Services.AddScoped<IBootstrapProjectUseCase, BootstrapProjectUseCase>();
-builder.Services.AddScoped<IRootIntegrityExecutor, RootIntegrityChecker>();
-builder.Services.AddScoped<IRunRootIntegrityUseCase, RunRootIntegrityUseCase>();
-builder.Services.AddHttpClient<SquareApiClient>();
-builder.Services.AddHostedService<JobWorker>();
-
-var host = builder.Build();
 host.Run();
 
 static string[] ParseWorkerArgs(string[] args, out Dictionary<string, string?> settings)
