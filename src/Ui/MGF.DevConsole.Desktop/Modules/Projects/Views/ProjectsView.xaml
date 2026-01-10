@@ -48,55 +48,55 @@
 
                     <TextBlock>
                         <Run Text="ProjectId: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailProjectId}" />
+                        <Run Text="{Binding DetailProjectId, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Project Code: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailProjectCode}" />
+                        <Run Text="{Binding DetailProjectCode, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Name: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailName}" />
+                        <Run Text="{Binding DetailName, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="ClientId: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailClientId}" />
+                        <Run Text="{Binding DetailClientId, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Status: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailStatusKey}" />
+                        <Run Text="{Binding DetailStatusKey, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Phase: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailPhaseKey}" />
+                        <Run Text="{Binding DetailPhaseKey, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Priority: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailPriorityKey}" />
+                        <Run Text="{Binding DetailPriorityKey, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Due Date: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailDueDate}" />
+                        <Run Text="{Binding DetailDueDate, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Archived At: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailArchivedAt}" />
+                        <Run Text="{Binding DetailArchivedAt, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Data Profile: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailDataProfile}" />
+                        <Run Text="{Binding DetailDataProfile, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Current Invoice: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailCurrentInvoiceId}" />
+                        <Run Text="{Binding DetailCurrentInvoiceId, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Created At: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailCreatedAt}" />
+                        <Run Text="{Binding DetailCreatedAt, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Updated At: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailUpdatedAt}" />
+                        <Run Text="{Binding DetailUpdatedAt, Mode=OneWay}" />
                     </TextBlock>
                 </StackPanel>
             </ScrollViewer>

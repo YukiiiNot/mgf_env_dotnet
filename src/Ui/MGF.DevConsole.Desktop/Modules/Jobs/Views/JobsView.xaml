@@ -45,56 +45,56 @@
 
                     <TextBlock>
                         <Run Text="JobId: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailJobId}" />
+                        <Run Text="{Binding DetailJobId, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Status: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailStatusKey}" />
+                        <Run Text="{Binding DetailStatusKey, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Type: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailJobTypeKey}" />
+                        <Run Text="{Binding DetailJobTypeKey, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Attempts: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailAttemptCount}" />
+                        <Run Text="{Binding DetailAttemptCount, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Created At: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailCreatedAt}" />
+                        <Run Text="{Binding DetailCreatedAt, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Run After: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailRunAfter}" />
+                        <Run Text="{Binding DetailRunAfter, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Started At: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailStartedAt}" />
+                        <Run Text="{Binding DetailStartedAt, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Finished At: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailFinishedAt}" />
+                        <Run Text="{Binding DetailFinishedAt, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Locked Until: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailLockedUntil}" />
+                        <Run Text="{Binding DetailLockedUntil, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Last Error: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailLastError}" />
+                        <Run Text="{Binding DetailLastError, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Entity Type: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailEntityTypeKey}" />
+                        <Run Text="{Binding DetailEntityTypeKey, Mode=OneWay}" />
                     </TextBlock>
                     <TextBlock>
                         <Run Text="Entity Key: " FontWeight="SemiBold" />
-                        <Run Text="{Binding DetailEntityKey}" />
+                        <Run Text="{Binding DetailEntityKey, Mode=OneWay}" />
                     </TextBlock>
 
                     <CheckBox Content="Show payload" IsChecked="{Binding ShowPayload}" Margin="0,8,0,4" />
                     <TextBlock Text="Payload" FontWeight="SemiBold" Margin="0,0,0,4" />
-                    <TextBlock Text="{Binding JobDetailJson}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding JobDetailJson, Mode=OneWay}" TextWrapping="Wrap" />
                 </StackPanel>
             </ScrollViewer>
         </Grid>
