@@ -89,10 +89,18 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 
 ### Local dev setup
 
+- DevConsole must run with DOTNET_ENVIRONMENT=Development to load config/appsettings.Development.json.
+- API should run with ASPNETCORE_ENVIRONMENT=Development (or DOTNET_ENVIRONMENT) when using development config.
 - Copy config/appsettings.Development.sample.json to config/appsettings.Development.json and set Security:ApiKey and Api:BaseUrl.
 - Alternatively set SECURITY__APIKEY (environment variables override JSON).
 - The same Security:ApiKey must be configured for MGF.Api because it enforces X-MGF-API-KEY.
 - config/appsettings.Development.json is local-only (gitignored).
+
+CLI (PowerShell):
+`$env:DOTNET_ENVIRONMENT="Development"`
+
+CLI (CMD):
+`set DOTNET_ENVIRONMENT=Development`
 
 ### First read-only slice pattern
 
