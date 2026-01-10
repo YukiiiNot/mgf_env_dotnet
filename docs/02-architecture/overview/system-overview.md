@@ -57,6 +57,9 @@ People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
 - Default limit: 200 (bounded list, newest-first).
 - Ordering: created_at desc, project_id desc for stable pagination.
 - Detail: `GET /api/projects/{projectId}` (operator-safe fields only).
+- Jobs list uses created_at for the "last 24 hours" window (server UTC).
+- Jobs payload is detail-only and opt-in in the DevConsole UI (truncated at 50 KB).
+- /api/* requires X-MGF-API-KEY; X-MGF-Operator is optional for audit strings.
 
 ### Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
