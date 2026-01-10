@@ -55,7 +55,7 @@ public static class CompositionRoot
             var window = new MainWindow();
             var viewModel = sp.GetRequiredService<StatusViewModel>();
             window.SetMainContent(sp.GetRequiredService<StatusView>());
-            viewModel.Start();
+            window.Loaded += (_, _) => viewModel.Start();
             window.Closed += (_, _) => viewModel.Stop();
             return window;
         });
