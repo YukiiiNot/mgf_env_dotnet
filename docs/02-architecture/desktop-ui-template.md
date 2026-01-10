@@ -114,7 +114,7 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 
 - Jobs list endpoint: bounded; last 24 hours based on created_at; stable cursor ordering; payload excluded.
 - Jobs detail endpoint: includes status_key, attempt_count, locked_until, run_after, last_error, entity keys, and timestamps; payload is opt-in in the UI and truncated at 50 KB.
-- Projects list endpoint: bounded; stable cursor ordering by created_at/project_id; no heavy blobs. Missing: no created_at time-window filter (since is not implemented).
+- Projects list endpoint: bounded; stable cursor ordering by created_at/project_id; created_at-based window defaults to last 24 hours server-side when since is omitted; no heavy blobs.
 - Projects detail endpoint: exposes project_id, project_code, client_id, name, status_key, phase_key, priority_key, due_date, archived_at, data_profile, current_invoice_id, created_at, updated_at. Missing: none identified in the current DTO.
 
 ### API list endpoints for polled UIs

@@ -24,6 +24,12 @@ Accept: application/json
 
 ###
 
+GET {{MGF.Api_HostAddress}}/api/projects?limit=200
+X-MGF-API-KEY: {{MGF.Api_Key}}
+Accept: application/json
+
+###
+
 GET {{MGF.Api_HostAddress}}/api/projects?since=2026-01-01T00:00:00Z&limit=200
 X-MGF-API-KEY: {{MGF.Api_Key}}
 Accept: application/json

@@ -55,6 +55,7 @@ People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
 ### DevConsole Projects surface
 - Endpoint: `GET /api/projects` (list) with cursorCreatedAt + cursorProjectId pagination.
 - Default limit: 200 (bounded list, newest-first).
+- Default since: server UTC now - 24h, based on created_at (project creation time).
 - Ordering: created_at desc, project_id desc for stable pagination.
 - Detail: `GET /api/projects/{projectId}` (operator-safe fields only).
 - Jobs list uses created_at for the "last 24 hours" window (server UTC).
