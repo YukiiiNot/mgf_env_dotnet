@@ -8,7 +8,7 @@
 **Scope:** Covers boundaries, ownership, and dependency direction. Does not include operational steps.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 **Review Cadence:** on major architecture change
 
 ---
@@ -51,6 +51,12 @@ People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
 - Default since: server UTC now - 24h, based on created_at (job creation time).
 - Ordering: created_at desc, job_id desc for stable pagination.
 - Detail: `GET /api/jobs/{jobId}` (payload lives in detail, not list).
+
+### DevConsole Projects surface
+- Endpoint: `GET /api/projects` (list) with cursorCreatedAt + cursorProjectId pagination.
+- Default limit: 200 (bounded list, newest-first).
+- Ordering: created_at desc, project_id desc for stable pagination.
+- Detail: `GET /api/projects/{projectId}` (operator-safe fields only).
 
 ### Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.

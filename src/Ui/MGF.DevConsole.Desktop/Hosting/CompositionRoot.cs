@@ -1,10 +1,13 @@
 using System;
 using System.Net.Http;
+using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.DevConsole.Desktop.Api;
 using MGF.DevConsole.Desktop.Modules.Jobs.ViewModels;
 using MGF.DevConsole.Desktop.Modules.Jobs.Views;
+using MGF.DevConsole.Desktop.Modules.Projects.ViewModels;
+using MGF.DevConsole.Desktop.Modules.Projects.Views;
 using MGF.DevConsole.Desktop.Modules.Status.ViewModels;
 using MGF.DevConsole.Desktop.Modules.Status.Views;
 using MGF.Desktop.Views.Shells;
@@ -17,6 +20,7 @@ public static class CompositionRoot
     {
         services.AddHttpClient<MetaApiClient>(httpClient => ConfigureApiHttpClient(context, httpClient));
         services.AddHttpClient<JobsApiClient>(httpClient => ConfigureApiHttpClient(context, httpClient));
+        services.AddHttpClient<ProjectsApiClient>(httpClient => ConfigureApiHttpClient(context, httpClient));
 
         services.AddSingleton<StatusViewModel>();
         services.AddSingleton<StatusView>(sp =>
@@ -32,22 +36,43 @@ public static class CompositionRoot
             view.DataContext = sp.GetRequiredService<JobsViewModel>();
             return view;
         });
+        services.AddSingleton<ProjectsViewModel>();
+        services.AddSingleton<ProjectsView>(sp =>
+        {
+            var view = new ProjectsView();
+            view.DataContext = sp.GetRequiredService<ProjectsViewModel>();
+            return view;
+        });
         services.AddSingleton<MainWindow>(sp =>
         {
             var window = new MainWindow();
             var statusViewModel = sp.GetRequiredService<StatusViewModel>();
             var jobsViewModel = sp.GetRequiredService<JobsViewModel>();
+            var projectsViewModel = sp.GetRequiredService<ProjectsViewModel>();
             window.SetStatusContent(sp.GetRequiredService<StatusView>());
-            window.SetMainContent(sp.GetRequiredService<JobsView>());
+            var tabControl = new TabControl();
+            tabControl.Items.Add(new TabItem
+            {
+                Header = "Jobs",
+                Content = sp.GetRequiredService<JobsView>()
+            });
+            tabControl.Items.Add(new TabItem
+            {
+                Header = "Projects",
+                Content = sp.GetRequiredService<ProjectsView>()
+            });
+            window.SetMainContent(tabControl);
             window.Loaded += (_, _) =>
             {
                 statusViewModel.Start();
                 jobsViewModel.Start();
+                projectsViewModel.Start();
             };
             window.Closed += (_, _) =>
             {
                 statusViewModel.Stop();
                 jobsViewModel.Stop();
+                projectsViewModel.Stop();
             };
             return window;
         });

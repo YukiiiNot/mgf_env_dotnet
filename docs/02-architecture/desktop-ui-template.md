@@ -104,6 +104,12 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 - run_after, started_at, finished_at are informational only and do not affect inclusion.
 - Rationale: created_at is stable/immutable, keeps pagination stable, matches operator intent.
 
+### Projects module precedent
+
+- List + detail via polling + selection fetch mirrors the jobs pattern.
+- List endpoints remain bounded; use cursor paging and exclude large blobs (metadata).
+- Project polling cadence is 5 seconds to keep load steady.
+
 ### API list endpoints for polled UIs
 
 - List endpoints MUST be bounded by default.
