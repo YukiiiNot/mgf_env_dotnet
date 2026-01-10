@@ -99,6 +99,9 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 - List + detail via polling + selection fetch is the default pattern.
 - List endpoint excludes payload; detail endpoint includes payload.
 - Payload display must truncate at 50 KB and append "...(truncated)".
+- Default "last 24 hours" window is based on created_at (job creation time).
+- run_after, started_at, finished_at are informational only and do not affect inclusion.
+- Rationale: created_at is stable/immutable, keeps pagination stable, matches operator intent.
 
 ### API list endpoints for polled UIs
 

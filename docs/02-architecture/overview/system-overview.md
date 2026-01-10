@@ -8,7 +8,7 @@
 **Scope:** Covers boundaries, ownership, and dependency direction. Does not include operational steps.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-06
+**Last Updated:** 2026-01-07
 **Review Cadence:** on major architecture change
 
 ---
@@ -45,6 +45,12 @@ Worker/API/CLI -> UseCases -> Contracts -> Data/Integrations (CLIs call UseCases
 Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Contracts store -> Data + `IProjectBootstrapProvisioningGateway` (Services adapter: `src/Services/MGF.Worker/Adapters/Storage/ProjectBootstrap/`).
 Square webhooks: API -> `IIngestSquareWebhookUseCase` -> Contracts store -> Data.
 People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
+
+### DevConsole Jobs surface
+- Endpoint: `GET /api/jobs` (list) with cursorCreatedAt + cursorJobId pagination.
+- Default since: server UTC now - 24h, based on created_at (job creation time).
+- Ordering: created_at desc, job_id desc for stable pagination.
+- Detail: `GET /api/jobs/{jobId}` (payload lives in detail, not list).
 
 ### Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
