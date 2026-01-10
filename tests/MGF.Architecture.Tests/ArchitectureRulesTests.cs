@@ -416,6 +416,10 @@ public sealed class ArchitectureRulesTests
                 Allowed: new[] { "Abstractions" },
                 Required: new[] { "Abstractions" },
                 Forbidden: new[] { "Docs", "Controllers", "Services", "Stores" }),
+            ["MGF.Hosting"] = new ShapeContract(
+                Allowed: new[] { "Configuration" },
+                Required: new[] { "Configuration" },
+                Forbidden: new[] { "Docs", "Controllers", "Services", "Stores" }),
             ["MGF.Domain"] = new ShapeContract(
                 Allowed: new[] { "Entities" },
                 Required: new[] { "Entities" },
