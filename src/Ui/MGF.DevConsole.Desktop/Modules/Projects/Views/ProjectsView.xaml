@@ -11,7 +11,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,8">
-            <TextBlock Text="Projects (latest 200 by created_at)" FontWeight="SemiBold" />
+            <TextBlock Text="Projects created in the last 24 hours" FontWeight="SemiBold" />
             <TextBlock Text="{Binding ConnectionStatusLine}" />
             <TextBlock Text="{Binding LastError}" TextWrapping="Wrap" />
         </StackPanel>

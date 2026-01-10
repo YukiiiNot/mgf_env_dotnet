@@ -232,7 +232,7 @@ public sealed class ProjectsViewModel : ObservableObject
         ProjectsApiClient.ProjectsListResponseDto response;
         try
         {
-            response = await projectsApi.GetProjectsAsync(200, null, cancellationToken);
+            response = await projectsApi.GetProjectsAsync(200, null, null, null, cancellationToken);
         }
         catch (ProjectsApiException ex)
         {

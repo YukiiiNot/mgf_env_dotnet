@@ -54,10 +54,12 @@ public sealed class ProjectsApiClient
 
     public async Task<ProjectsListResponseDto> GetProjectsAsync(
         int limit,
-        ProjectsListCursorDto? cursor,
+        DateTimeOffset? since,
+        DateTimeOffset? cursorCreatedAt,
+        string? cursorProjectId,
         CancellationToken cancellationToken)
     {
-        var url = BuildProjectsListUrl(limit, cursor);
+        var url = BuildProjectsListUrl(limit, since, cursorCreatedAt, cursorProjectId);
         using var response = await httpClient.GetAsync(url, cancellationToken);
         return await ReadResponseAsync<ProjectsListResponseDto>(response, cancellationToken, "projects list");
     }
@@ -69,14 +71,23 @@ public sealed class ProjectsApiClient
         return await ReadResponseAsync<ProjectDetailDto>(response, cancellationToken, "project detail");
     }
 
-    private static string BuildProjectsListUrl(int limit, ProjectsListCursorDto? cursor)
+    private static string BuildProjectsListUrl(
+        int limit,
+        DateTimeOffset? since,
+        DateTimeOffset? cursorCreatedAt,
+        string? cursorProjectId)
     {
         var query = new List<string> { $"limit={limit}" };
 
-        if (cursor is not null)
+        if (since.HasValue)
         {
-            query.Add($"cursorCreatedAt={Uri.EscapeDataString(cursor.CreatedAt.ToString("O"))}");
-            query.Add($"cursorProjectId={Uri.EscapeDataString(cursor.ProjectId)}");
+            query.Add($"since={Uri.EscapeDataString(since.Value.ToString("O"))}");
+        }
+
+        if (cursorCreatedAt.HasValue && !string.IsNullOrWhiteSpace(cursorProjectId))
+        {
+            query.Add($"cursorCreatedAt={Uri.EscapeDataString(cursorCreatedAt.Value.ToString("O"))}");
+            query.Add($"cursorProjectId={Uri.EscapeDataString(cursorProjectId)}");
         }
 
         return "api/projects?" + string.Join("&", query);
