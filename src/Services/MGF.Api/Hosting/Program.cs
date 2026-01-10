@@ -5,6 +5,7 @@ using MGF.Integrations.Square;
 using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
+using MGF.Hosting.Configuration;
 using MGF.UseCases.Integrations.Square.IngestWebhook;
 using MGF.UseCases.Operations.People.ListPeople;
 using MGF.UseCases.Projects.CreateProject;
@@ -16,9 +17,10 @@ var mgfDbMode = DatabaseConnection.GetDatabaseMode();
 Console.WriteLine($"MGF.Api: MGF_ENV={mgfEnv}");
 Console.WriteLine($"MGF.Api: MGF_DB_MODE={mgfDbMode}");
 
-builder.Configuration.Sources.Clear();
-builder.Configuration.AddMgfConfiguration(builder.Environment.EnvironmentName, typeof(AppDbContext).Assembly);
-builder.Configuration.AddEnvironmentVariables();
+builder.Host.ConfigureAppConfiguration((context, config) =>
+{
+    MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
+});
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();

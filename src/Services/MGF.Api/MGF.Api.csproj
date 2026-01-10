@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
     <ProjectReference Include="..\..\Core\MGF.Domain\MGF.Domain.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Hosting\MGF.Hosting.csproj" />
     <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
     <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Square\MGF.Integrations.Square.csproj" />
