@@ -85,6 +85,7 @@ public sealed class ProjectsService
     }
 
     public async Task<ProjectsListResponseDto> GetProjectsAsync(
+        DateTimeOffset since,
         int limit,
         DateTimeOffset? cursorCreatedAt,
         string? cursorProjectId,
@@ -92,7 +93,9 @@ public sealed class ProjectsService
     {
         var boundedLimit = Math.Clamp(limit, 1, MaxListLimit);
 
-        var query = db.Projects.AsNoTracking();
+        var query = db.Projects
+            .AsNoTracking()
+            .Where(p => p.CreatedAt >= since);
 
         if (cursorCreatedAt.HasValue && !string.IsNullOrWhiteSpace(cursorProjectId))
         {

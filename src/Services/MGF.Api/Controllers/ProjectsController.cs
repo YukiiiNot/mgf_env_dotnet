@@ -17,11 +17,23 @@ public sealed class ProjectsController : ControllerBase
 
     [HttpGet]
     public async Task<ActionResult<ProjectsService.ProjectsListResponseDto>> GetProjects(
+        [FromQuery] string? since = null,
         [FromQuery] string? limit = null,
         [FromQuery] string? cursorCreatedAt = null,
         [FromQuery] string? cursorProjectId = null,
         CancellationToken cancellationToken = default)
     {
+        var parsedSince = DateTimeOffset.UtcNow.AddHours(-24);
+        if (!string.IsNullOrWhiteSpace(since)
+            && !DateTimeOffset.TryParse(
+                since,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out parsedSince))
+        {
+            return BadRequest("since must be an ISO 8601 datetime.");
+        }
+
         var parsedLimit = 200;
         if (!string.IsNullOrWhiteSpace(limit)
             && !int.TryParse(limit, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsedLimit))
@@ -62,6 +74,7 @@ public sealed class ProjectsController : ControllerBase
         }
 
         var result = await projects.GetProjectsAsync(
+            parsedSince,
             parsedLimit,
             parsedCursorCreatedAt,
             parsedCursorProjectId,
