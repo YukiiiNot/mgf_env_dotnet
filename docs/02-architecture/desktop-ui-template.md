@@ -94,6 +94,12 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 - Polling guidance: list surfaces every 2-5 seconds; detail panels 5-10 seconds.
 - Keep polling in a ViewModel; keep transport in Api clients.
 
+### Jobs module precedent
+
+- List + detail via polling + selection fetch is the default pattern.
+- List endpoint excludes payload; detail endpoint includes payload.
+- Payload display must truncate at 50 KB and append "...(truncated)".
+
 ### API list endpoints for polled UIs
 
 - List endpoints MUST be bounded by default.

@@ -1,0 +1,71 @@
+<UserControl x:Class="MGF.DevConsole.Desktop.Modules.Jobs.Views.JobsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+            <TextBlock Text="{Binding ConnectionStatusLine}" />
+            <TextBlock Text="{Binding LastError}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+
+            <DataGrid Grid.Column="0"
+                      ItemsSource="{Binding Jobs}"
+                      SelectedItem="{Binding SelectedJob, Mode=TwoWay}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      Margin="0,0,8,0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding StatusKey}" />
+                    <DataGridTextColumn Header="Type" Binding="{Binding JobTypeKey}" />
+                    <DataGridTextColumn Header="Attempts" Binding="{Binding AttemptCount}" />
+                    <DataGridTextColumn Header="Locked Until" Binding="{Binding LockedUntil}" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Job Detail" FontWeight="SemiBold" Margin="0,0,0,6" />
+
+                    <TextBlock>
+                        <Run Text="JobId: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailJobId}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Status: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailStatusKey}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Type: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailJobTypeKey}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Attempts: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailAttemptCount}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Locked Until: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailLockedUntil}" />
+                    </TextBlock>
+
+                    <TextBlock Text="Payload" FontWeight="SemiBold" Margin="0,8,0,4" />
+                    <TextBlock Text="{Binding JobDetailJson}" TextWrapping="Wrap" />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

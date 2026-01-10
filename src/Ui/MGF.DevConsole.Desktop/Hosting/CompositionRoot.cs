@@ -1,7 +1,10 @@
 using System;
+using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.DevConsole.Desktop.Api;
+using MGF.DevConsole.Desktop.Modules.Jobs.ViewModels;
+using MGF.DevConsole.Desktop.Modules.Jobs.Views;
 using MGF.DevConsole.Desktop.Modules.Status.ViewModels;
 using MGF.DevConsole.Desktop.Modules.Status.Views;
 using MGF.Desktop.Views.Shells;
@@ -12,36 +15,8 @@ public static class CompositionRoot
 {
     public static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
-        services.AddHttpClient<MetaApiClient>(httpClient =>
-        {
-            var baseUrl = context.Configuration["Api:BaseUrl"];
-            if (string.IsNullOrWhiteSpace(baseUrl))
-            {
-                throw new InvalidOperationException("Api:BaseUrl is not configured. Set the API base URL before starting DevConsole.");
-            }
-
-            if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
-            {
-                throw new InvalidOperationException($"Api:BaseUrl is not a valid absolute URL: {baseUrl}");
-            }
-
-            httpClient.BaseAddress = baseUri;
-            httpClient.Timeout = TimeSpan.FromSeconds(3);
-
-            var apiKey = context.Configuration["Security:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                throw new InvalidOperationException("Security:ApiKey is not configured. Set the API key before starting DevConsole.");
-            }
-
-            httpClient.DefaultRequestHeaders.Add("X-MGF-API-KEY", apiKey);
-
-            var operatorName = context.Configuration["Security:Operator"];
-            if (!string.IsNullOrWhiteSpace(operatorName))
-            {
-                httpClient.DefaultRequestHeaders.Add("X-MGF-Operator", operatorName);
-            }
-        });
+        services.AddHttpClient<MetaApiClient>(httpClient => ConfigureApiHttpClient(context, httpClient));
+        services.AddHttpClient<JobsApiClient>(httpClient => ConfigureApiHttpClient(context, httpClient));
 
         services.AddSingleton<StatusViewModel>();
         services.AddSingleton<StatusView>(sp =>
@@ -50,15 +25,63 @@ public static class CompositionRoot
             view.DataContext = sp.GetRequiredService<StatusViewModel>();
             return view;
         });
+        services.AddSingleton<JobsViewModel>();
+        services.AddSingleton<JobsView>(sp =>
+        {
+            var view = new JobsView();
+            view.DataContext = sp.GetRequiredService<JobsViewModel>();
+            return view;
+        });
         services.AddSingleton<MainWindow>(sp =>
         {
             var window = new MainWindow();
-            var viewModel = sp.GetRequiredService<StatusViewModel>();
-            window.SetMainContent(sp.GetRequiredService<StatusView>());
-            window.Loaded += (_, _) => viewModel.Start();
-            window.Closed += (_, _) => viewModel.Stop();
+            var statusViewModel = sp.GetRequiredService<StatusViewModel>();
+            var jobsViewModel = sp.GetRequiredService<JobsViewModel>();
+            window.SetStatusContent(sp.GetRequiredService<StatusView>());
+            window.SetMainContent(sp.GetRequiredService<JobsView>());
+            window.Loaded += (_, _) =>
+            {
+                statusViewModel.Start();
+                jobsViewModel.Start();
+            };
+            window.Closed += (_, _) =>
+            {
+                statusViewModel.Stop();
+                jobsViewModel.Stop();
+            };
             return window;
         });
         services.AddSingleton<StartupGate>();
+    }
+
+    private static void ConfigureApiHttpClient(HostBuilderContext context, HttpClient httpClient)
+    {
+        var baseUrl = context.Configuration["Api:BaseUrl"];
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw new InvalidOperationException("Api:BaseUrl is not configured. Set the API base URL before starting DevConsole.");
+        }
+
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
+        {
+            throw new InvalidOperationException($"Api:BaseUrl is not a valid absolute URL: {baseUrl}");
+        }
+
+        httpClient.BaseAddress = baseUri;
+        httpClient.Timeout = TimeSpan.FromSeconds(3);
+
+        var apiKey = context.Configuration["Security:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new InvalidOperationException("Security:ApiKey is not configured. Set the API key before starting DevConsole.");
+        }
+
+        httpClient.DefaultRequestHeaders.Add("X-MGF-API-KEY", apiKey);
+
+        var operatorName = context.Configuration["Security:Operator"];
+        if (!string.IsNullOrWhiteSpace(operatorName))
+        {
+            httpClient.DefaultRequestHeaders.Add("X-MGF-Operator", operatorName);
+        }
     }
 }
