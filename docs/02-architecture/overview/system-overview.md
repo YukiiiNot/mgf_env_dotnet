@@ -60,9 +60,22 @@ People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
 - Detail: `GET /api/projects/{projectId}` (operator-safe fields only).
 - Jobs list uses created_at for the "last 24 hours" window (server UTC).
 - Jobs payload is detail-only and opt-in in the DevConsole UI (truncated at 50 KB).
-- /api/* requires X-MGF-API-KEY; X-MGF-Operator is optional for audit strings.
-- Local dev sets Security:ApiKey via config/appsettings.Development.json or SECURITY__APIKEY; DevConsole and MGF.Api must match.
-- DevConsole expects DOTNET_ENVIRONMENT=Development to load appsettings.Development.json; API uses ASPNETCORE_ENVIRONMENT=Development for the same reason.
+
+### Local dev config
+- Configuration loads repo-root `config/` by default; set `MGF_CONFIG_DIR` only for overrides.
+- Required: `config/appsettings.json`. Optional: `config/appsettings.{ENV}.json`.
+- Copy `config/appsettings.Development.sample.json` to `config/appsettings.Development.json` and set `Security:ApiKey` and `Api:BaseUrl`.
+- Environment variables override JSON (e.g., `SECURITY__APIKEY`).
+- `/api/*` requires `X-MGF-API-KEY`; `X-MGF-Operator` is optional for audit strings.
+- DevConsole runs with `DOTNET_ENVIRONMENT=Development`; API runs with `ASPNETCORE_ENVIRONMENT=Development` (or `DOTNET_ENVIRONMENT`).
+
+CLI (PowerShell):
+`$env:DOTNET_ENVIRONMENT="Development"`
+`$env:ASPNETCORE_ENVIRONMENT="Development"`
+
+CLI (CMD):
+`set DOTNET_ENVIRONMENT=Development`
+`set ASPNETCORE_ENVIRONMENT=Development`
 
 ### Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
@@ -126,5 +139,6 @@ This document explains the boundary and responsibilities for this area and how i
 
 ## Change Log
 - Date format: YYYY-MM-DD (see doc-enumerations.md)
+- 2026-01-10 - Added local dev config section and centralized env guidance.
 - 2026-01-06 - Reformatted into the new documentation standards format; content preserved.
 - 2026-01-02 - Reformatted to the documentation template.

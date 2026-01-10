@@ -10,7 +10,7 @@
 **Scope:** Covers prerequisites, execution steps, verification, and troubleshooting. Excludes system design rationale.
 **Doc Type:** Runbook
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -35,8 +35,9 @@ Set environment/config for Dev:
 ```powershell
 $env:MGF_ENV = "Dev"
 $env:MGF_DB_MODE = "direct"
-$env:MGF_CONFIG_DIR = "<repo_root>\config"
 ```
+
+Config loads from repo-root `config/` by default; set `MGF_CONFIG_DIR` only for overrides (see system-overview.md "Local dev config").
 
 Required secrets/config (set via user-secrets or env vars; do not commit secrets):
 
@@ -219,4 +220,5 @@ This runbook executes the delivery workflow that spans project state, storage pr
 - e2e-email-verification.md
 
 ## Change Log
+- 2026-01-10 - Updated local config prerequisite to match centralized bootstrap.
 - 2026-01-07 - Reformatted to documentation standards.
