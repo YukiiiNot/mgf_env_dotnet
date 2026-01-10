@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Hosting\MGF.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

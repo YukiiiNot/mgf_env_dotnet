@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Hosting\MGF.Hosting.csproj" />
     <ProjectReference Include="..\MGF.Data\MGF.Data.csproj" />
   </ItemGroup>
 

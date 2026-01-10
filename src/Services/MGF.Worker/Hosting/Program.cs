@@ -24,6 +24,7 @@ using MGF.UseCases.Operations.ProjectDelivery.RunProjectDelivery;
 using MGF.UseCases.Operations.ProjectBootstrap.BootstrapProject;
 using MGF.UseCases.Operations.RootIntegrity.RunRootIntegrity;
 using MGF.Worker;
+using MGF.Hosting.Configuration;
 
 var mgfEnv = DatabaseConnection.GetEnvironment();
 var mgfDbMode = DatabaseConnection.GetDatabaseMode();
@@ -33,8 +34,10 @@ Console.WriteLine($"MGF.Worker: MGF_DB_MODE={mgfDbMode}");
 var remainingArgs = ParseWorkerArgs(args, out var workerSettings);
 var builder = Host.CreateApplicationBuilder(remainingArgs);
 
-builder.Configuration.Sources.Clear();
-builder.Configuration.AddMgfConfiguration(builder.Environment.EnvironmentName, typeof(AppDbContext).Assembly);
+builder.Host.ConfigureAppConfiguration((context, config) =>
+{
+    MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
+});
 if (workerSettings.Count > 0)
 {
     builder.Configuration.AddInMemoryCollection(workerSettings);
