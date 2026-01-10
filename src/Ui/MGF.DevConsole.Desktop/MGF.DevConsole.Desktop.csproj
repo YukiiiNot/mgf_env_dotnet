@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\MGF.Desktop.Shared\MGF.Desktop.Shared.csproj" />
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Hosting\MGF.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>
