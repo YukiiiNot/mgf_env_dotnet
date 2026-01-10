@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "MGF.Api (Development)": {
+    "MGF.DevConsole.Desktop (Development)": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "DOTNET_ENVIRONMENT": "Development"
       }
     }
   }

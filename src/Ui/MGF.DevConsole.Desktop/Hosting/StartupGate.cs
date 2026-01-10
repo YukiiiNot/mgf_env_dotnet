@@ -2,17 +2,20 @@ namespace MGF.DevConsole.Desktop.Hosting;
 
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using MGF.DevConsole.Desktop.Api;
 
 public sealed class StartupGate
 {
     private readonly IConfiguration config;
     private readonly MetaApiClient metaClient;
+    private readonly IHostEnvironment environment;
 
-    public StartupGate(IConfiguration config, MetaApiClient metaClient)
+    public StartupGate(IConfiguration config, MetaApiClient metaClient, IHostEnvironment environment)
     {
         this.config = config;
         this.metaClient = metaClient;
+        this.environment = environment;
     }
 
     public async Task EnsureEnvironmentMatchesAsync(CancellationToken cancellationToken)
@@ -37,10 +40,14 @@ public sealed class StartupGate
         var apiKey = config["Security:ApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
         {
+            var envNote = string.Equals(environment.EnvironmentName, "Production", StringComparison.OrdinalIgnoreCase)
+                ? " DOTNET_ENVIRONMENT is not set to Development, so appsettings.Development.json will not load."
+                : string.Empty;
             throw new StartupGateException(
                 "Security:ApiKey is not configured. Copy config/appsettings.Development.sample.json to "
                 + "config/appsettings.Development.json and set Security:ApiKey, or set SECURITY__APIKEY. "
-                + "The same key must be configured for MGF.Api because it enforces X-MGF-API-KEY.");
+                + "The same key must be configured for MGF.Api because it enforces X-MGF-API-KEY."
+                + envNote);
         }
 
         MetaApiClient.MetaDto meta;
