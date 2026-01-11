@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 
-public sealed class JobsApiClient
+public sealed class JobsApiClient : IJobsApiClient
 {
     private readonly HttpClient httpClient;
 

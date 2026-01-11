@@ -9,6 +9,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock Text="{Binding EnvironmentLine}"
@@ -17,7 +18,12 @@
         <TextBlock Grid.Row="1"
                    Margin="0,8,0,0"
                    Text="{Binding ConnectionStatusLine}" />
-        <TextBlock Grid.Row="2"
+        <Button Grid.Row="2"
+                Margin="0,8,0,0"
+                Width="90"
+                Content="Retry"
+                Command="{Binding RetryCommand}" />
+        <TextBlock Grid.Row="3"
                    Margin="0,8,0,0"
                    Text="{Binding LastError}"
                    TextWrapping="Wrap" />

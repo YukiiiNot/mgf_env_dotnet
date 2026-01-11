@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.DevConsole.Desktop.Api;
+using MGF.DevConsole.Desktop.Hosting.Connection;
 using MGF.DevConsole.Desktop.Modules.Jobs.ViewModels;
 using MGF.DevConsole.Desktop.Modules.Jobs.Views;
 using MGF.DevConsole.Desktop.Modules.Projects.ViewModels;
@@ -19,8 +20,16 @@ public static class CompositionRoot
     public static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
         services.AddHttpClient<MetaApiClient>(httpClient => ConfigureApiHttpClient(context, httpClient));
+        services.AddSingleton<IMetaApiClient>(sp => sp.GetRequiredService<MetaApiClient>());
         services.AddHttpClient<JobsApiClient>(httpClient => ConfigureApiHttpClient(context, httpClient));
+        services.AddSingleton<IJobsApiClient>(sp => sp.GetRequiredService<JobsApiClient>());
         services.AddHttpClient<ProjectsApiClient>(httpClient => ConfigureApiHttpClient(context, httpClient));
+        services.AddSingleton<IProjectsApiClient>(sp => sp.GetRequiredService<ProjectsApiClient>());
+
+        services.AddSingleton<ApiConnectionStateStore>();
+        services.AddSingleton<IApiConnectionStateStore>(sp => sp.GetRequiredService<ApiConnectionStateStore>());
+        services.AddSingleton<IApiConnectionProbe, ApiConnectionProbe>();
+        services.AddSingleton<IApiConnectionMonitor, ApiConnectionMonitor>();
 
         services.AddSingleton<StatusViewModel>();
         services.AddSingleton<StatusView>(sp =>
@@ -49,6 +58,7 @@ public static class CompositionRoot
             var statusViewModel = sp.GetRequiredService<StatusViewModel>();
             var jobsViewModel = sp.GetRequiredService<JobsViewModel>();
             var projectsViewModel = sp.GetRequiredService<ProjectsViewModel>();
+            var connectionMonitor = sp.GetRequiredService<IApiConnectionMonitor>();
             window.SetStatusContent(sp.GetRequiredService<StatusView>());
             var tabControl = new TabControl();
             tabControl.Items.Add(new TabItem
@@ -64,6 +74,7 @@ public static class CompositionRoot
             window.SetMainContent(tabControl);
             window.Loaded += (_, _) =>
             {
+                connectionMonitor.Start();
                 statusViewModel.Start();
                 jobsViewModel.Start();
                 projectsViewModel.Start();
@@ -73,6 +84,7 @@ public static class CompositionRoot
                 statusViewModel.Stop();
                 jobsViewModel.Stop();
                 projectsViewModel.Stop();
+                connectionMonitor.Stop();
             };
             return window;
         });
@@ -82,17 +94,10 @@ public static class CompositionRoot
     private static void ConfigureApiHttpClient(HostBuilderContext context, HttpClient httpClient)
     {
         var baseUrl = context.Configuration["Api:BaseUrl"];
-        if (string.IsNullOrWhiteSpace(baseUrl))
+        if (Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
         {
-            throw new InvalidOperationException("Api:BaseUrl is not configured. Set the API base URL before starting DevConsole.");
+            httpClient.BaseAddress = baseUri;
         }
-
-        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
-        {
-            throw new InvalidOperationException($"Api:BaseUrl is not a valid absolute URL: {baseUrl}");
-        }
-
-        httpClient.BaseAddress = baseUri;
         httpClient.Timeout = TimeSpan.FromSeconds(3);
 
         var apiKey = context.Configuration["Security:ApiKey"];

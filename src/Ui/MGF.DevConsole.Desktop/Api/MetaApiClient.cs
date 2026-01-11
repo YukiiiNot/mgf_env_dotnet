@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 
-public sealed class MetaApiClient
+public sealed class MetaApiClient : IMetaApiClient
 {
     private readonly HttpClient httpClient;
 
@@ -36,7 +36,8 @@ public sealed class MetaApiClient
         {
             throw new MetaApiException(
                 MetaApiFailure.HttpError,
-                $"Unexpected status code {(int)response.StatusCode}.");
+                $"Unexpected status code {(int)response.StatusCode}.",
+                response.StatusCode);
         }
 
         var meta = await response.Content.ReadFromJsonAsync<MetaDto>(cancellationToken: cancellationToken);
@@ -51,13 +52,16 @@ public sealed class MetaApiClient
 
 public sealed class MetaApiException : Exception
 {
-    public MetaApiException(MetaApiFailure failure, string message)
+    public MetaApiException(MetaApiFailure failure, string message, HttpStatusCode? statusCode = null)
         : base(message)
     {
         Failure = failure;
+        StatusCode = statusCode;
     }
 
     public MetaApiFailure Failure { get; }
+
+    public HttpStatusCode? StatusCode { get; }
 }
 
 public enum MetaApiFailure

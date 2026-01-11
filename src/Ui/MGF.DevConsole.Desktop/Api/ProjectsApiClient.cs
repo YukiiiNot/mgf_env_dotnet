@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 
-public sealed class ProjectsApiClient
+public sealed class ProjectsApiClient : IProjectsApiClient
 {
     private readonly HttpClient httpClient;
 

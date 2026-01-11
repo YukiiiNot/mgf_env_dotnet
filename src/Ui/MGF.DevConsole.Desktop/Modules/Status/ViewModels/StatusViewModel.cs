@@ -1,30 +1,32 @@
 namespace MGF.DevConsole.Desktop.Modules.Status.ViewModels;
 
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Configuration;
-using MGF.DevConsole.Desktop.Api;
+using MGF.DevConsole.Desktop.Hosting.Connection;
 
 // Lifecycle: started by host when the main window opens; stopped on window close.
 public sealed class StatusViewModel : ObservableObject
 {
     private readonly IConfiguration config;
-    private readonly MetaApiClient metaClient;
-    private readonly TimeSpan pollInterval = TimeSpan.FromSeconds(5);
-    private CancellationTokenSource? pollCts;
+    private readonly IApiConnectionStateStore stateStore;
+    private readonly IApiConnectionMonitor connectionMonitor;
     private int stopRequested;
     private string environmentLine = "Loading environment...";
-    private string connectionStatusLine = "Disconnected";
+    private string connectionStatusLine = "Checking API...";
     private string? lastError;
-    private string? lastKnownApiEnv;
 
-    public StatusViewModel(IConfiguration config, MetaApiClient metaClient)
+    public StatusViewModel(
+        IConfiguration config,
+        IApiConnectionStateStore stateStore,
+        IApiConnectionMonitor connectionMonitor)
     {
         this.config = config;
-        this.metaClient = metaClient;
+        this.stateStore = stateStore;
+        this.connectionMonitor = connectionMonitor;
+        RetryCommand = new RelayCommand(() => connectionMonitor.RequestProbe());
     }
 
     public string EnvironmentLine
@@ -45,101 +47,52 @@ public sealed class StatusViewModel : ObservableObject
         private set => SetProperty(ref lastError, value);
     }
 
+    public ICommand RetryCommand { get; }
+
     public void Start()
     {
-        if (pollCts is not null || Volatile.Read(ref stopRequested) == 1)
+        if (Volatile.Read(ref stopRequested) == 1)
         {
             return;
         }
 
-        pollCts = new CancellationTokenSource();
-        _ = RunAsync(pollCts.Token);
+        stateStore.StateChanged += OnStateChanged;
+        UpdateUi(() => UpdateFromState(stateStore.CurrentState));
     }
 
     public void Stop()
     {
         Interlocked.Exchange(ref stopRequested, 1);
-        var cts = Interlocked.Exchange(ref pollCts, null);
-        if (cts is null)
-        {
-            return;
-        }
-
-        cts.Cancel();
-        cts.Dispose();
+        stateStore.StateChanged -= OnStateChanged;
     }
 
-    private async Task RunAsync(CancellationToken cancellationToken)
+    private void OnStateChanged(object? sender, ApiConnectionState state)
     {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            try
-            {
-                await UpdateOnceAsync(cancellationToken);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                UpdateUi(() =>
-                {
-                    ConnectionStatusLine = "Disconnected";
-                    LastError = $"Polling failed: {ex.Message}";
-                });
-            }
-
-            try
-            {
-                await Task.Delay(pollInterval, cancellationToken);
-            }
-            catch (TaskCanceledException)
-            {
-                break;
-            }
-        }
+        UpdateUi(() => UpdateFromState(state));
     }
 
-    private async Task UpdateOnceAsync(CancellationToken cancellationToken)
+    private void UpdateFromState(ApiConnectionState state)
     {
         var localEnv = Environment.GetEnvironmentVariable("MGF_ENV") ?? "(unset)";
         var baseUrl = config["Api:BaseUrl"] ?? "(missing)";
+        var apiEnv = string.IsNullOrWhiteSpace(state.ApiEnvironment) ? "unknown" : state.ApiEnvironment;
 
-        try
-        {
-            var meta = await metaClient.GetMetaAsync(cancellationToken);
-            lastKnownApiEnv = meta.MgfEnv;
+        EnvironmentLine = $"Local MGF_ENV={localEnv} | API MGF_ENV={apiEnv} | Api:BaseUrl={baseUrl}";
+        ConnectionStatusLine = FormatStatus(state.Status);
+        LastError = state.Status == ApiConnectionStatus.Connected ? null : state.Message;
+    }
 
-            UpdateUi(() =>
-            {
-                ConnectionStatusLine = "Connected";
-                LastError = null;
-                EnvironmentLine = $"Local MGF_ENV={localEnv} | API MGF_ENV={meta.MgfEnv} | Api:BaseUrl={baseUrl}";
-            });
-        }
-        catch (TaskCanceledException) when (cancellationToken.IsCancellationRequested)
+    private static string FormatStatus(ApiConnectionStatus status)
+    {
+        return status switch
         {
-            throw;
-        }
-        catch (Exception ex) when (ex is MetaApiException or HttpRequestException or TaskCanceledException)
-        {
-            var apiEnv = string.IsNullOrWhiteSpace(lastKnownApiEnv) ? "unknown" : lastKnownApiEnv;
-            var message = ex switch
-            {
-                MetaApiException metaEx => metaEx.Message,
-                TaskCanceledException => "API request timed out.",
-                HttpRequestException httpEx => httpEx.Message,
-                _ => ex.Message
-            };
-
-            UpdateUi(() =>
-            {
-                ConnectionStatusLine = "Disconnected";
-                LastError = message;
-                EnvironmentLine = $"Local MGF_ENV={localEnv} | API MGF_ENV={apiEnv} | Api:BaseUrl={baseUrl}";
-            });
-        }
+            ApiConnectionStatus.Connected => "Connected",
+            ApiConnectionStatus.Unauthorized => "Unauthorized",
+            ApiConnectionStatus.Misconfigured => "Misconfigured",
+            ApiConnectionStatus.Offline => "Offline",
+            ApiConnectionStatus.Degraded => "Degraded",
+            _ => "Unknown"
+        };
     }
 
     private void UpdateUi(Action update)
