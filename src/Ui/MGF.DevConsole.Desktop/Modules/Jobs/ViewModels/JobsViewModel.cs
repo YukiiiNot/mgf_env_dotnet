@@ -20,6 +20,7 @@ public sealed class JobsViewModel : ObservableObject
     private readonly TimeSpan pollInterval = TimeSpan.FromSeconds(3);
     private CancellationTokenSource? pollCts;
     private CancellationTokenSource? detailCts;
+    private bool started;
     private int stopRequested;
     private JobListItem? selectedJob;
     private bool showPayload;
@@ -197,17 +198,29 @@ public sealed class JobsViewModel : ObservableObject
 
     public void Start()
     {
+        if (started)
+        {
+            return;
+        }
+
         if (Volatile.Read(ref stopRequested) == 1)
         {
             return;
         }
 
+        started = true;
         connectionStore.StateChanged += OnConnectionStateChanged;
         UpdateUi(() => HandleConnectionState(connectionStore.CurrentState));
     }
 
     public void Stop()
     {
+        if (!started)
+        {
+            return;
+        }
+
+        started = false;
         Interlocked.Exchange(ref stopRequested, 1);
         connectionStore.StateChanged -= OnConnectionStateChanged;
         StopPolling();

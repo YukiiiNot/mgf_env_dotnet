@@ -13,6 +13,7 @@ public sealed class StatusViewModel : ObservableObject
     private readonly IConfiguration config;
     private readonly IApiConnectionStateStore stateStore;
     private readonly IApiConnectionMonitor connectionMonitor;
+    private bool started;
     private int stopRequested;
     private string environmentLine = "Loading environment...";
     private string connectionStatusLine = "Checking API...";
@@ -51,17 +52,29 @@ public sealed class StatusViewModel : ObservableObject
 
     public void Start()
     {
+        if (started)
+        {
+            return;
+        }
+
         if (Volatile.Read(ref stopRequested) == 1)
         {
             return;
         }
 
+        started = true;
         stateStore.StateChanged += OnStateChanged;
         UpdateUi(() => UpdateFromState(stateStore.CurrentState));
     }
 
     public void Stop()
     {
+        if (!started)
+        {
+            return;
+        }
+
+        started = false;
         Interlocked.Exchange(ref stopRequested, 1);
         stateStore.StateChanged -= OnStateChanged;
     }

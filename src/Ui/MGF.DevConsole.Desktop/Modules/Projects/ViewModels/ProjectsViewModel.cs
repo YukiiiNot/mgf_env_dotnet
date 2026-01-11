@@ -17,6 +17,7 @@ public sealed class ProjectsViewModel : ObservableObject
     private readonly TimeSpan pollInterval = TimeSpan.FromSeconds(5);
     private CancellationTokenSource? pollCts;
     private CancellationTokenSource? detailCts;
+    private bool started;
     private int stopRequested;
     private ProjectListItem? selectedProject;
     private ApiConnectionState currentConnectionState = ApiConnectionState.Initial();
@@ -177,17 +178,29 @@ public sealed class ProjectsViewModel : ObservableObject
 
     public void Start()
     {
+        if (started)
+        {
+            return;
+        }
+
         if (Volatile.Read(ref stopRequested) == 1)
         {
             return;
         }
 
+        started = true;
         connectionStore.StateChanged += OnConnectionStateChanged;
         UpdateUi(() => HandleConnectionState(connectionStore.CurrentState));
     }
 
     public void Stop()
     {
+        if (!started)
+        {
+            return;
+        }
+
+        started = false;
         Interlocked.Exchange(ref stopRequested, 1);
         connectionStore.StateChanged -= OnConnectionStateChanged;
         StopPolling();

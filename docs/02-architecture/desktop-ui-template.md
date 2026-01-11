@@ -10,7 +10,7 @@
 **Scope:** Covers folder structure, ownership boundaries, and hard rules for desktop UI projects. Excludes feature implementation guidance.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-10
+**Last Updated:** 2026-01-11
 
 ---
 
@@ -61,6 +61,10 @@ Polling lifecycle ownership:
 - Poll intervals live in the ViewModel as explicit TimeSpan values.
 - Status module is the canonical example.
 
+#### DevConsole offline contract
+
+DevConsole must never hard-gate startup on API availability; the shell always opens. Connection failures (offline/unauthorized/misconfigured) surface as a banner/status message with a Retry action. Polling viewmodels (Jobs/Projects) only run while `ApiConnectionStatus == Connected` and must stop immediately when the state changes.
+
 #### Resources
 - App-specific resource dictionaries, styles, and theme overrides.
 - Localized strings or visual assets scoped to this tool.
@@ -89,7 +93,7 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 
 ### Local dev setup
 
-- Canonical local dev secrets workflow lives in dev-secrets.md.
+- Canonical local dev secrets workflow lives in docs/03-contracts/configuration/dev-secrets.md.
 - Use that guidance for Api:BaseUrl, Security:ApiKey, and environment variables.
 
 ### First read-only slice pattern
@@ -167,10 +171,11 @@ Desktop executables are thin hosts that compose shared UI assets and tool-specif
 
 ## Related Documents
 
-- project-shapes.md
-- application-layer-conventions.md
+- docs/02-architecture/layers/project-shapes.md
+- docs/02-architecture/layers/application-layer-conventions.md
 
 ## Change Log
 
+- 2026-01-11 - Documented DevConsole offline contract and normalized doc links.
 - 2026-01-10 - Pointed local dev setup to dev-secrets.md.
 - 2026-01-07 - Initial template definition.
