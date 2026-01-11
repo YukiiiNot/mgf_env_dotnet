@@ -24,7 +24,12 @@ public static class MgfHostConfiguration
 
         config.Sources.Clear();
 
-        var environmentName = context.HostingEnvironment.EnvironmentName;
+        var canonicalEnvironment = ResolveCanonicalEnvironment();
+        var explicitHostEnvironment = GetExplicitHostEnvironmentValue();
+        var hostEnvironmentName = ResolveHostEnvironmentName(
+            canonicalEnvironment,
+            explicitHostEnvironment,
+            context.HostingEnvironment.EnvironmentName);
         var configDir = ResolveConfigDirectory();
         var loadedJsonFiles = new List<string>();
         string? configDirUsed = null;
@@ -40,7 +45,7 @@ public static class MgfHostConfiguration
 
             config.AddJsonFile(rootAppSettings, optional: false, reloadOnChange: false);
             loadedJsonFiles.Add(rootAppSettings);
-            var envAppSettings = Path.Combine(configDir, $"appsettings.{environmentName}.json");
+            var envAppSettings = Path.Combine(configDir, $"appsettings.{hostEnvironmentName}.json");
             config.AddJsonFile(
                 envAppSettings,
                 optional: true,
@@ -53,14 +58,14 @@ public static class MgfHostConfiguration
         else
         {
             var currentDir = Directory.GetCurrentDirectory();
-            if (TryAddRequiredJson(config, currentDir, environmentName, loadedJsonFiles))
+            if (TryAddRequiredJson(config, currentDir, hostEnvironmentName, loadedJsonFiles))
             {
                 configDirUsed = currentDir;
             }
             else
             {
                 var baseDir = AppContext.BaseDirectory;
-                if (TryAddRequiredJson(config, baseDir, environmentName, loadedJsonFiles))
+                if (TryAddRequiredJson(config, baseDir, hostEnvironmentName, loadedJsonFiles))
                 {
                     configDirUsed = baseDir;
                 }
@@ -70,8 +75,8 @@ public static class MgfHostConfiguration
                     var rootAppSettings = Path.Combine(currentDir, "appsettings.json");
                     config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
                     loadedJsonFiles.Add(rootAppSettings);
-                    var envAppSettings = Path.Combine(currentDir, $"appsettings.{environmentName}.json");
-                    config.AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: false);
+                    var envAppSettings = Path.Combine(currentDir, $"appsettings.{hostEnvironmentName}.json");
+                    config.AddJsonFile($"appsettings.{hostEnvironmentName}.json", optional: true, reloadOnChange: false);
                     if (File.Exists(envAppSettings))
                     {
                         loadedJsonFiles.Add(envAppSettings);
@@ -82,6 +87,28 @@ public static class MgfHostConfiguration
 
         config.AddEnvironmentVariables();
         TryLogDevelopmentDiagnostics(context, configDirUsed, loadedJsonFiles, config);
+    }
+
+    public static string ResolveHostEnvironmentName(
+        string canonicalEnvironment,
+        string? explicitHostEnvironmentValue,
+        string actualHostEnvironment)
+    {
+        var normalizedCanonical = NormalizeCanonicalEnvironment(canonicalEnvironment);
+        var expectedHostEnvironment = MapCanonicalToHostEnvironment(normalizedCanonical);
+
+        if (!string.IsNullOrWhiteSpace(explicitHostEnvironmentValue)
+            && !string.Equals(actualHostEnvironment, expectedHostEnvironment, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Host environment mismatch. Canonical MGF_ENV={normalizedCanonical}; host env={actualHostEnvironment}; expected host env={expectedHostEnvironment}. " +
+                $"Set DOTNET_ENVIRONMENT or ASPNETCORE_ENVIRONMENT to \"{expectedHostEnvironment}\" to match MGF_ENV. " +
+                "See docs/config-environment-contract.md.");
+        }
+
+        return string.IsNullOrWhiteSpace(explicitHostEnvironmentValue)
+            ? expectedHostEnvironment
+            : actualHostEnvironment;
     }
 
     private static string? ResolveConfigDirectory()
@@ -108,6 +135,64 @@ public static class MgfHostConfiguration
             }
 
             current = current.Parent;
+        }
+
+        return null;
+    }
+
+    private static string ResolveCanonicalEnvironment()
+    {
+        var value = Environment.GetEnvironmentVariable("MGF_ENV");
+        return NormalizeCanonicalEnvironment(value);
+    }
+
+    private static string NormalizeCanonicalEnvironment(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Dev";
+        }
+
+        if (string.Equals(value, "Dev", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Dev";
+        }
+
+        if (string.Equals(value, "Staging", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Staging";
+        }
+
+        if (string.Equals(value, "Prod", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Prod";
+        }
+
+        return "Dev";
+    }
+
+    private static string MapCanonicalToHostEnvironment(string canonicalEnvironment)
+    {
+        return canonicalEnvironment switch
+        {
+            "Staging" => "Staging",
+            "Prod" => "Production",
+            _ => "Development",
+        };
+    }
+
+    private static string? GetExplicitHostEnvironmentValue()
+    {
+        var dotnetEnv = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+        if (!string.IsNullOrWhiteSpace(dotnetEnv))
+        {
+            return dotnetEnv;
+        }
+
+        var aspnetEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        if (!string.IsNullOrWhiteSpace(aspnetEnv))
+        {
+            return aspnetEnv;
         }
 
         return null;
