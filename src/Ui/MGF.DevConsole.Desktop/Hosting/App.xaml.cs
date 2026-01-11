@@ -29,24 +29,6 @@ public partial class App : System.Windows.Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         await Host.StartAsync();
-        try
-        {
-            var gate = Host.Services.GetRequiredService<StartupGate>();
-            await gate.EnsureEnvironmentMatchesAsync(CancellationToken.None);
-        }
-        catch (StartupGateException ex)
-        {
-            MessageBox.Show(ex.Message, "DevConsole startup blocked", MessageBoxButton.OK, MessageBoxImage.Error);
-            Shutdown(-1);
-            return;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"DevConsole startup failed: {ex.Message}", "DevConsole startup blocked", MessageBoxButton.OK, MessageBoxImage.Error);
-            Shutdown(-1);
-            return;
-        }
-
         var window = Host.Services.GetRequiredService<MainWindow>();
         window.Show();
         base.OnStartup(e);
