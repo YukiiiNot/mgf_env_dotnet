@@ -40,7 +40,7 @@
 
   <ItemGroup>
     <Content Include="Assets\Icons\MGF_Corp_Logo_White.ico" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Assets\Icons\MGF_Corp_Logo_Black.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Resource Include="Assets\Icons\MGF_Corp_Logo_Black.ico" />
   </ItemGroup>
 
 </Project>
