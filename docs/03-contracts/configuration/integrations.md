@@ -10,13 +10,13 @@
 **Scope:** Covers config key ownership and expectations for integrations. Excludes host wiring and provider implementation details.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
 ## TL;DR
 
-- Integrations are configured via appsettings, env vars, and user-secrets.
+- Integrations are configured via appsettings (including local dev config) and env vars.
 - Keys must align with dev secrets policy.
 - Update this doc when integration config keys or behavior change.
 
@@ -27,7 +27,7 @@
 Source of truth: `src/Integrations/MGF.Integrations.Dropbox/**`, `src/Integrations/MGF.Integrations.Email.*`, `src/Integrations/MGF.Integrations.Square/**`, `src/Platform/MGF.Email/**`, `config/appsettings*.json`, `tools/dev-secrets/secrets.required.json`
 
 ## Scope
-- Dropbox, Email, and Square integration settings are configured via appsettings, env vars, and user-secrets.
+- Dropbox, Email, and Square integration settings are configured via appsettings and env vars.
 - Keys must comply with the dev secrets allowlist and policy.
 
 ## Related configuration contracts
@@ -77,4 +77,4 @@ Integration configuration keys are shared contract inputs consumed by services a
 - config-reference.md
 
 ## Change Log
-- 2026-01-07 - Reformatted to documentation standards.
+- 2026-01-10 - Removed user-secrets references in favor of repo-root dev config.

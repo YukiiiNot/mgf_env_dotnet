@@ -28,7 +28,7 @@
 - Getting started: [01-onboarding/overview/getting-started.md](01-onboarding/overview/getting-started.md)
 - System overview: [02-architecture/overview/system-overview.md](02-architecture/overview/system-overview.md)
 - Repo workflow: [05-runbooks/operations/repo-workflow.md](05-runbooks/operations/repo-workflow.md)
-- Local dev config: [02-architecture/overview/system-overview.md#local-dev-config](02-architecture/overview/system-overview.md#local-dev-config)
+- Local dev config: [03-contracts/configuration/dev-secrets.md](03-contracts/configuration/dev-secrets.md)
 
 ### Orientation
 - Developer guide: [01-onboarding/workflows/dev-guide.md](01-onboarding/workflows/dev-guide.md)
@@ -107,5 +107,5 @@ Use this index to navigate the canonical documentation set.
 
 ## Change Log
 
-- 2026-01-10 - Added link to centralized local dev config section.
+- 2026-01-10 - Pointed local dev config entry to dev-secrets.md.
 - 2026-01-07 - Reformatted to documentation standards and removed missing references.

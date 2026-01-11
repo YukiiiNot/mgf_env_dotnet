@@ -10,21 +10,21 @@
 **Scope:** Covers export, import, validation, wrapper scripts, and troubleshooting. Excludes policy details.
 **Doc Type:** How-To
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
 ## TL;DR
 
-- Export or import secrets with the DevSecrets CLI.
-- Validate keys against the required inventory before use.
-- Follow the dev secrets policy for allowed keys.
+- DevSecretsCli reads/writes `config/appsettings.Development.json`.
+- Import is the onboarding step; export is used to produce a bundle.
+- Required keys are validated against `tools/dev-secrets/secrets.required.json`.
 
 ---
 
 ## Main Content
 
-This tool exports and imports .NET User Secrets based on `tools/dev-secrets/secrets.required.json`.
+This tool imports/exports local dev secrets from `config/appsettings.Development.json`.
 Policy and allowed keys: dev-secrets.md.
 
 ## Commands
@@ -44,13 +44,19 @@ dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- 
 ### Import (on a new dev machine)
 
 ```powershell
-dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in dev-secrets.export.json
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --file dev-secrets.export.json
 ```
 
 Dry run:
 
 ```powershell
-dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in dev-secrets.export.json --dry-run
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --file dev-secrets.export.json --dry-run
+```
+
+Overwrite existing values:
+
+```powershell
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --file dev-secrets.export.json --force
 ```
 
 ### Validate (required keys present)
@@ -65,35 +71,42 @@ Windows (PowerShell):
 
 ```powershell
 tools\dev-secrets\export.ps1 --out dev-secrets.export.json
-tools\dev-secrets\import.ps1 --in dev-secrets.export.json
+tools\dev-secrets\import.ps1 --file dev-secrets.export.json
 ```
 
 macOS/Linux (bash):
 
 ```bash
 tools/dev-secrets/export.sh --out dev-secrets.export.json
-tools/dev-secrets/import.sh --in dev-secrets.export.json
+tools/dev-secrets/import.sh --file dev-secrets.export.json
 ```
 
 ## Troubleshooting
 
 - dotnet missing: install the .NET SDK and ensure dotnet is on PATH.
-- Missing UserSecretsId: check the project's csproj or secrets.required.json.
 - Missing required keys: run devsecrets validate and set the missing keys.
 - Validation errors: ensure your export JSON only includes keys from secrets.required.json.
 - Policy violations: see dev-secrets.md.
 
 ## Smoke test (fake values)
 
+Create a fake export bundle and validate import without writing:
+
 ```powershell
-# Set fake values for a quick round-trip test
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "Host=localhost;Database=postgres;Username=postgres;Password=fake" --id 8f8e4093-a213-4629-bbd1-2a67c4e9000e
+@'
+{
+  "schemaVersion": 2,
+  "toolVersion": "test",
+  "exportedAtUtc": "2026-01-01T00:00:00Z",
+  "secrets": {
+    "Database:Dev:DirectConnectionString": "Host=localhost;Database=postgres;Username=postgres;Password=fake",
+    "Security:ApiKey": "dev-fake-key",
+    "Api:BaseUrl": "http://localhost:5048"
+  }
+}
+'@ | Set-Content dev-secrets.export.json
 
-# Export
-dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- export --out dev-secrets.export.json
-
-# Import (dry-run)
-dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --in dev-secrets.export.json --dry-run
+dotnet run --project src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj -- import --file dev-secrets.export.json --dry-run
 ```
 
 ---
@@ -137,4 +150,4 @@ This guide supports local developer configuration workflows without exposing pro
 - config-reference.md
 
 ## Change Log
-- 2026-01-07 - Reformatted to documentation standards.
+- 2026-01-10 - Updated to repo-root appsettings.Development.json workflow.

@@ -6,85 +6,108 @@
 
 ## MetaData
 
-**Purpose:** Define which secrets are allowed for local development and the export/import policy.
-**Scope:** Covers required/optional keys and allowed patterns for dev secrets. Excludes production or staging secrets.
+**Purpose:** Define the allowed dev secrets keys and the export/import policy.
+**Scope:** Covers required/optional keys and local dev workflow. Excludes prod/staging secrets.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
 ## TL;DR
 
-- Dev secrets export/import is local-only; prod/staging/CI secrets are never allowed.
-- The only allowed DB secret is `Database:Dev:DirectConnectionString`.
-- Export/import is limited to keys listed in `tools/dev-secrets/secrets.required.json`.
+- Dev secrets live only in repo-root `config/appsettings.Development.json` (git-ignored).
+- DevSecretsCli import populates that file from a bundle; export creates a bundle.
+- Allowed keys are defined in `tools/dev-secrets/secrets.required.json`.
+
+---
+
+## Policy (local dev secrets)
+
+- Dev secrets live in repo-root `config/appsettings.Development.json` (git-ignored).
+- Environment variables are overrides for CI/prod or debugging, not the baseline.
+- .NET user-secrets are not used for runtime.
+- DevSecretsCli is onboarding-only (import once, then use the local config file).
 
 ---
 
 ## Main Content
 
-Source of truth: `tools/dev-secrets/secrets.required.json`, `src/DevTools/MGF.DevSecretsCli/MGF.DevSecretsCli.csproj`
+Source of truth: `tools/dev-secrets/secrets.required.json`, `src/DevTools/MGF.DevSecretsCli`
 
 This inventory lists the developer secrets that can be exported/imported for local dev only.
 
-## Projects with user secrets
+## Local dev secrets file
 
-### MGF.Data
-- **UserSecretsId:** `8f8e4093-a213-4629-bbd1-2a67c4e9000e`
-- **Required keys**
-  - `Database:Dev:DirectConnectionString`
-    - **Why:** Required for local database access (Dev only).
-    - **Example:** `Host=db.<ref>.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=...;Ssl Mode=Require;Pooling=false`
-- **Optional keys** (only if you need these local workflows)
-  - `Security:ApiKey` (API auth for local requests)
-  - `Integrations:Dropbox:*` (share links + API root mode)
-  - `Integrations:Email:*` (SMTP relay or Gmail API)
+- Single source of truth: `config/appsettings.Development.json` (git-ignored).
+- Initialize by copying `config/appsettings.Development.sample.json` or by running DevSecretsCli import.
+- .NET user-secrets are not used at runtime.
 
-### MGF.Worker
-- **UserSecretsId:** `dotnet-MGF.Worker-41014bcc-815d-45c3-8f59-a2c2649897b2`
-- **Required keys**
-  - `Database:Dev:DirectConnectionString`
-- **Optional keys**
-  - `Integrations:Dropbox:*`
-  - `Integrations:Email:*`
+## Required keys (local dev)
 
-Note: The worker loads configuration via MGF.Data's UserSecretsId by default, but the Worker ID is listed so local tooling can remain consistent if secrets are stored there.
-
-## Global policy
-
-Allowed DB key (case-insensitive, exact match required):
 - `Database:Dev:DirectConnectionString`
+- `Security:ApiKey`
+- `Api:BaseUrl`
 
-Disallowed key patterns:
-- `*Prod*`, `*Production*`, `*Staging*`, `*CI*`, `*Github*`, `*GitHub*`
+## Optional keys (local dev)
+
+- `Security:Operator`
+- `Integrations:Dropbox:*`
+- `Integrations:Email:*`
 
 ## Export and import behavior
 
-- Export includes only keys listed in `tools/dev-secrets/secrets.required.json`.
-- Keys matching disallowed patterns are never exported/imported.
-- DB secrets are only allowed if they match `Database:Dev:DirectConnectionString` (case-insensitive).
+- Export reads `config/appsettings.Development.json` and writes `dev-secrets.export.json`.
+- Import merges a bundle into `config/appsettings.Development.json`.
+- Use `--force` to overwrite existing values.
+- Validate reports missing keys by name only (never values).
+- Export/import is local-only; prod/staging/CI secrets are never allowed.
+
+## Smoke checklist (local dev)
+
+1) Run API (Development):
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT = "Development"
+dotnet run --project src/Services/MGF.Api
+```
+
+2) Verify API responds (use the key from config/appsettings.Development.json):
+
+```powershell
+Invoke-WebRequest http://localhost:5048/api/meta -Headers @{ "X-MGF-API-KEY" = "<your key>" }
+```
+
+3) Run DevConsole (Development):
+
+```powershell
+$env:DOTNET_ENVIRONMENT = "Development"
+dotnet run --project src/Ui/MGF.DevConsole.Desktop
+```
+
+Expected: StartupGate passes and DevConsole shows Connected.
 
 ## Where keys are used
 
-- **Database:** `Database:Dev:DirectConnectionString` is used by all local tools and services.
-- **Dropbox:** keys are used by delivery/share-link flows.
-- **Email:** keys are used by SMTP relay or Gmail API in the delivery email workflow.
+- **Database:** `Database:Dev:DirectConnectionString` is used by local services and tools.
+- **API key:** `Security:ApiKey` is required by API and DevConsole for `/api/*`.
+- **Api base URL:** `Api:BaseUrl` is used by DevConsole to reach the API.
+- **Integrations:** Dropbox/Email keys are used by delivery workflows.
 
-No production or staging secrets should appear in local developer exports.
+No production or staging secrets should appear in local developer config.
 
 ---
 
 ## System Context
 
-Dev secrets define the local-only configuration boundary used by tools and service hosts without exposing production credentials.
+Dev secrets define the local-only configuration boundary used by hosts and tools without exposing production credentials.
 
 ---
 
 ## Core Concepts
 
 - Dev secrets are constrained to a small, explicit allowlist.
-- Export/import is driven by a required keys inventory and a denylist of patterns.
+- Export/import is driven by the required keys inventory and policy checks.
 
 ---
 
@@ -97,7 +120,7 @@ Dev secrets define the local-only configuration boundary used by tools and servi
 
 ## Common Pitfalls and Anti-Patterns
 
-- Exporting secrets outside the required keys list.
+- Adding secrets outside the allowlist.
 - Introducing prod or staging keys into local exports.
 
 ---
@@ -112,8 +135,10 @@ Dev secrets define the local-only configuration boundary used by tools and servi
 ## Related Documents
 - dev-secrets-tool.md
 - env-vars.md
-- integrations.md
 - config-reference.md
+- integrations.md
 
 ## Change Log
-- 2026-01-07 - Reformatted to documentation standards.
+- 2026-01-10 - Added smoke checklist and clarified validate output.
+- 2026-01-10 - Added explicit policy block for local dev secrets handling.
+- 2026-01-10 - Updated to single-source local dev secrets file and CLI import/export workflow.

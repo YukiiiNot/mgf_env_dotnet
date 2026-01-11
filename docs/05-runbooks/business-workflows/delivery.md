@@ -39,7 +39,7 @@ $env:MGF_DB_MODE = "direct"
 
 Config loads from repo-root `config/` by default; set `MGF_CONFIG_DIR` only for overrides (see system-overview.md "Local dev config").
 
-Required secrets/config (set via user-secrets or env vars; do not commit secrets):
+Required secrets/config (set in config/appsettings.Development.json or env vars; do not commit secrets):
 
 Dropbox
 
@@ -153,7 +153,7 @@ Filesystem:
 Dropbox token/auth
 
 Log: MGF.Worker: Dropbox auth mode=refresh_token source=...
-- If missing: ensure Integrations__Dropbox__RefreshToken or AccessToken is set in env/user-secrets.
+- If missing: ensure Integrations__Dropbox__RefreshToken or AccessToken is set in env or config/appsettings.Development.json.
 
 Share link path
 
@@ -220,5 +220,5 @@ This runbook executes the delivery workflow that spans project state, storage pr
 - e2e-email-verification.md
 
 ## Change Log
-- 2026-01-10 - Updated local config prerequisite to match centralized bootstrap.
+- 2026-01-10 - Updated local config prerequisite to repo-root config file workflow.
 - 2026-01-07 - Reformatted to documentation standards.

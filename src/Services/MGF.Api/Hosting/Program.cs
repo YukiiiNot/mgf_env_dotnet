@@ -22,6 +22,14 @@ builder.Host.ConfigureAppConfiguration((context, config) =>
     MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
 });
 
+if (builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(builder.Configuration["Security:ApiKey"]))
+{
+    throw new InvalidOperationException(
+        "MGF.Api: Security:ApiKey is not configured. " +
+        "Set it in config/appsettings.Development.json (or run devsecrets import; see dev-secrets.md) " +
+        "or set SECURITY__APIKEY.");
+}
+
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
 

@@ -45,7 +45,8 @@ public sealed class StartupGate
                 : string.Empty;
             throw new StartupGateException(
                 "Security:ApiKey is not configured. Copy config/appsettings.Development.sample.json to "
-                + "config/appsettings.Development.json and set Security:ApiKey, or set SECURITY__APIKEY. "
+                + "config/appsettings.Development.json and set Security:ApiKey (or run devsecrets import), "
+                + "or set SECURITY__APIKEY. See dev-secrets.md. "
                 + "The same key must be configured for MGF.Api because it enforces X-MGF-API-KEY."
                 + envNote);
         }

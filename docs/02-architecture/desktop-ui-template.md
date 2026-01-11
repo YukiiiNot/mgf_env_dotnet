@@ -89,7 +89,7 @@ MGF.Desktop.Shared is for reusable WPF assets only:
 
 ### Local dev setup
 
-- Canonical local dev config lives in system-overview.md under "Local dev config".
+- Canonical local dev secrets workflow lives in dev-secrets.md.
 - Use that guidance for Api:BaseUrl, Security:ApiKey, and environment variables.
 
 ### First read-only slice pattern
@@ -172,5 +172,5 @@ Desktop executables are thin hosts that compose shared UI assets and tool-specif
 
 ## Change Log
 
-- 2026-01-10 - Pointed local dev setup to the centralized config section.
+- 2026-01-10 - Pointed local dev setup to dev-secrets.md.
 - 2026-01-07 - Initial template definition.
