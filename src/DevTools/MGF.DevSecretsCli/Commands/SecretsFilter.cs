@@ -13,8 +13,7 @@ internal static class SecretsFilter
 {
     public static SecretsFilterResult Filter(
         IReadOnlyDictionary<string, string> source,
-        ProjectSecretsConfig project,
-        GlobalPolicy policy)
+        SecretsRequiredConfig required)
     {
         var allowed = new SortedDictionary<string, string>(StringComparer.Ordinal);
         var missingRequired = new List<string>();
@@ -22,14 +21,14 @@ internal static class SecretsFilter
 
         var lookup = new Dictionary<string, string>(source, StringComparer.OrdinalIgnoreCase);
         var allowedKeySet = new HashSet<string>(
-            project.RequiredKeys.Concat(project.OptionalKeys),
+            required.RequiredKeys.Concat(required.OptionalKeys),
             StringComparer.OrdinalIgnoreCase);
 
-        foreach (var key in project.RequiredKeys)
+        foreach (var key in required.RequiredKeys)
         {
             if (TryGetValue(lookup, key, out var value))
             {
-                if (SecretsPolicy.IsAllowedKey(key, policy))
+                if (SecretsPolicy.IsAllowedKey(key, required.GlobalPolicy))
                 {
                     allowed[key] = value;
                 }
@@ -45,11 +44,11 @@ internal static class SecretsFilter
             }
         }
 
-        foreach (var key in project.OptionalKeys)
+        foreach (var key in required.OptionalKeys)
         {
             if (TryGetValue(lookup, key, out var value))
             {
-                if (SecretsPolicy.IsAllowedKey(key, policy))
+                if (SecretsPolicy.IsAllowedKey(key, required.GlobalPolicy))
                 {
                     allowed[key] = value;
                 }
@@ -62,7 +61,7 @@ internal static class SecretsFilter
 
         foreach (var key in lookup.Keys)
         {
-            if (!allowedKeySet.Contains(key) && SecretsPolicy.IsDisallowedKey(key, policy))
+            if (!allowedKeySet.Contains(key) && SecretsPolicy.IsDisallowedKey(key, required.GlobalPolicy))
             {
                 skipped.Add(key);
             }
@@ -72,16 +71,15 @@ internal static class SecretsFilter
     }
 
     public static SecretsValidationResult ValidateExport(
-        ProjectSecretsExport export,
-        ProjectSecretsConfig project,
-        GlobalPolicy policy)
+        SecretsExportFile export,
+        SecretsRequiredConfig required)
     {
         var allowedKeys = new HashSet<string>(
-            project.RequiredKeys.Concat(project.OptionalKeys),
+            required.RequiredKeys.Concat(required.OptionalKeys),
             StringComparer.OrdinalIgnoreCase);
 
-        var missingRequired = project.RequiredKeys
-            .Where(required => !export.Secrets.ContainsKey(required))
+        var missingRequired = required.RequiredKeys
+            .Where(requiredKey => !export.Secrets.ContainsKey(requiredKey))
             .ToArray();
         if (missingRequired.Length > 0)
         {
@@ -92,10 +90,10 @@ internal static class SecretsFilter
         {
             if (!allowedKeys.Contains(key))
             {
-                return new SecretsValidationResult(false, $"Key '{key}' is not allowed for project {project.Name}.");
+                return new SecretsValidationResult(false, $"Key '{key}' is not allowed by secrets.required.json.");
             }
 
-            if (!SecretsPolicy.IsAllowedKey(key, policy))
+            if (!SecretsPolicy.IsAllowedKey(key, required.GlobalPolicy))
             {
                 return new SecretsValidationResult(false, $"Key '{key}' violates policy filters.");
             }

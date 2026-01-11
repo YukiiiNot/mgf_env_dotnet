@@ -4,7 +4,7 @@ using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using MGF.DevSecretsCli;
 
-var root = new RootCommand("MGF developer secrets export/import tool");
+var root = new RootCommand("MGF developer secrets export/import tool (appsettings.Development.json)");
 root.AddCommand(CreateExportCommand());
 root.AddCommand(CreateImportCommand());
 root.AddCommand(CreateValidateCommand());
@@ -14,7 +14,7 @@ return await parser.InvokeAsync(args);
 
 static Command CreateExportCommand()
 {
-    var command = new Command("export", "export required user-secrets for local dev (filtered).");
+    var command = new Command("export", "export allowed keys from config/appsettings.Development.json.");
 
     var outOption = new Option<string?>("--out")
     {
@@ -53,9 +53,9 @@ static Command CreateExportCommand()
 
 static Command CreateImportCommand()
 {
-    var command = new Command("import", "import dev-secrets.export.json into dotnet user-secrets.");
+    var command = new Command("import", "import dev-secrets.export.json into config/appsettings.Development.json.");
 
-    var inOption = new Option<string>("--in")
+    var fileOption = new Option<string>(new[] { "--file", "--in" })
     {
         Description = "Path to dev-secrets.export.json.",
         IsRequired = true
@@ -79,19 +79,27 @@ static Command CreateImportCommand()
         IsRequired = false
     };
 
-    command.AddOption(inOption);
+    var forceOption = new Option<bool>("--force")
+    {
+        Description = "Overwrite existing values in appsettings.Development.json.",
+        IsRequired = false
+    };
+
+    command.AddOption(fileOption);
     command.AddOption(requiredOption);
     command.AddOption(dryRunOption);
     command.AddOption(verboseOption);
+    command.AddOption(forceOption);
 
     command.SetHandler(async context =>
     {
-        var inPath = context.ParseResult.GetValueForOption(inOption) ?? string.Empty;
+        var inPath = context.ParseResult.GetValueForOption(fileOption) ?? string.Empty;
         var requiredPath = context.ParseResult.GetValueForOption(requiredOption);
         var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
         var verbose = context.ParseResult.GetValueForOption(verboseOption);
+        var force = context.ParseResult.GetValueForOption(forceOption);
 
-        var exitCode = await DevSecretsCommands.ImportAsync(inPath, requiredPath, dryRun, verbose, CancellationToken.None);
+        var exitCode = await DevSecretsCommands.ImportAsync(inPath, requiredPath, dryRun, verbose, force, CancellationToken.None);
         context.ExitCode = exitCode;
     });
 
@@ -100,7 +108,7 @@ static Command CreateImportCommand()
 
 static Command CreateValidateCommand()
 {
-    var command = new Command("validate", "validate required user-secrets exist for local dev.");
+    var command = new Command("validate", "validate required keys in config/appsettings.Development.json.");
 
     var requiredOption = new Option<string?>("--required")
     {

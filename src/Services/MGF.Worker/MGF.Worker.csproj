@@ -6,7 +6,6 @@
     <RootNamespace>MGF.Worker</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-MGF.Worker-41014bcc-815d-45c3-8f59-a2c2649897b2</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

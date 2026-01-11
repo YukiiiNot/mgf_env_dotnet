@@ -4,11 +4,11 @@ using System.Text.Json;
 
 internal sealed class SecretsExportFile
 {
-    public int SchemaVersion { get; init; } = 1;
+    public int SchemaVersion { get; init; } = 2;
     public string ToolVersion { get; init; } = string.Empty;
     public string ExportedAtUtc { get; init; } = string.Empty;
     public string? RepoCommit { get; init; }
-    public List<ProjectSecretsExport> Projects { get; init; } = new();
+    public SortedDictionary<string, string> Secrets { get; init; } = new(StringComparer.Ordinal);
 
     public static async Task<SecretsExportFile> LoadAsync(string path, CancellationToken cancellationToken)
     {
@@ -23,25 +23,17 @@ internal sealed class SecretsExportFile
             PropertyNameCaseInsensitive = true
         });
 
-        if (export is null || export.Projects.Count == 0)
+        if (export is null || export.Secrets.Count == 0)
         {
-            throw new InvalidOperationException("Export file missing projects.");
+            throw new InvalidOperationException("Export file missing secrets.");
         }
 
-        if (export.SchemaVersion != 1)
+        if (export.SchemaVersion != 2)
         {
             throw new InvalidOperationException($"Export file schemaVersion {export.SchemaVersion} is not supported.");
         }
 
         return export;
     }
-}
-
-internal sealed class ProjectSecretsExport
-{
-    public string Name { get; init; } = string.Empty;
-    public string Path { get; init; } = string.Empty;
-    public string UserSecretsId { get; init; } = string.Empty;
-    public SortedDictionary<string, string> Secrets { get; init; } = new(StringComparer.Ordinal);
 }
 
