@@ -10,7 +10,7 @@
 **Scope:** Links to canonical docs by bucket and topic. Does not replace the content of those docs.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-10
+**Last Updated:** 2026-01-11
 
 ---
 
@@ -36,6 +36,7 @@
 
 ### Architecture
 - System overview: [02-architecture/overview/system-overview.md](02-architecture/overview/system-overview.md)
+- Config + environment contract: [config-environment-contract.md](config-environment-contract.md)
 - Layer conventions: [02-architecture/layers/application-layer-conventions.md](02-architecture/layers/application-layer-conventions.md)
 - Business concepts catalog: [02-architecture/overview/business-concepts-catalog.md](02-architecture/overview/business-concepts-catalog.md)
 - Domain/persistence map: [02-architecture/persistence/domain-persistence-map.md](02-architecture/persistence/domain-persistence-map.md)
@@ -107,5 +108,6 @@ Use this index to navigate the canonical documentation set.
 
 ## Change Log
 
+- 2026-01-11 - Added config/environment contract.
 - 2026-01-10 - Pointed local dev config entry to dev-secrets.md.
 - 2026-01-07 - Reformatted to documentation standards and removed missing references.
