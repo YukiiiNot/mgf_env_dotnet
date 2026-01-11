@@ -7,16 +7,19 @@ using System.Threading.Tasks;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MGF.DevConsole.Desktop.Api;
+using MGF.DevConsole.Desktop.Hosting.Connection;
 
 // Lifecycle: started by host when the main window opens; stopped on window close.
 public sealed class ProjectsViewModel : ObservableObject
 {
-    private readonly ProjectsApiClient projectsApi;
+    private readonly IProjectsApiClient projectsApi;
+    private readonly IApiConnectionStateStore connectionStore;
     private readonly TimeSpan pollInterval = TimeSpan.FromSeconds(5);
     private CancellationTokenSource? pollCts;
     private CancellationTokenSource? detailCts;
     private int stopRequested;
     private ProjectListItem? selectedProject;
+    private ApiConnectionState currentConnectionState = ApiConnectionState.Initial();
     private string connectionStatusLine = "Disconnected";
     private string? lastError;
     private string? detailError;
@@ -34,9 +37,10 @@ public sealed class ProjectsViewModel : ObservableObject
     private string? detailCreatedAt;
     private string? detailUpdatedAt;
 
-    public ProjectsViewModel(ProjectsApiClient projectsApi)
+    public ProjectsViewModel(IProjectsApiClient projectsApi, IApiConnectionStateStore connectionStore)
     {
         this.projectsApi = projectsApi;
+        this.connectionStore = connectionStore;
         Projects = new ObservableCollection<ProjectListItem>();
     }
 
@@ -62,6 +66,12 @@ public sealed class ProjectsViewModel : ObservableObject
 
             if (selectedProject is null)
             {
+                return;
+            }
+
+            if (currentConnectionState.Status != ApiConnectionStatus.Connected)
+            {
+                DetailError = currentConnectionState.Message;
                 return;
             }
 
@@ -167,6 +177,63 @@ public sealed class ProjectsViewModel : ObservableObject
 
     public void Start()
     {
+        if (Volatile.Read(ref stopRequested) == 1)
+        {
+            return;
+        }
+
+        connectionStore.StateChanged += OnConnectionStateChanged;
+        UpdateUi(() => HandleConnectionState(connectionStore.CurrentState));
+    }
+
+    public void Stop()
+    {
+        Interlocked.Exchange(ref stopRequested, 1);
+        connectionStore.StateChanged -= OnConnectionStateChanged;
+        StopPolling();
+        StopDetail();
+    }
+
+    private void OnConnectionStateChanged(object? sender, ApiConnectionState state)
+    {
+        UpdateUi(() => HandleConnectionState(state));
+    }
+
+    private void HandleConnectionState(ApiConnectionState state)
+    {
+        currentConnectionState = state;
+        ConnectionStatusLine = FormatStatus(state.Status);
+
+        if (state.Status == ApiConnectionStatus.Connected)
+        {
+            LastError = null;
+            DetailError = null;
+            StartPolling();
+            return;
+        }
+
+        LastError = state.Message;
+        DetailError = state.Message;
+        StopPolling();
+        StopDetail();
+        ClearDetailFields();
+    }
+
+    private static string FormatStatus(ApiConnectionStatus status)
+    {
+        return status switch
+        {
+            ApiConnectionStatus.Connected => "Connected",
+            ApiConnectionStatus.Unauthorized => "Unauthorized",
+            ApiConnectionStatus.Misconfigured => "Misconfigured",
+            ApiConnectionStatus.Offline => "Offline",
+            ApiConnectionStatus.Degraded => "Degraded",
+            _ => "Unknown"
+        };
+    }
+
+    private void StartPolling()
+    {
         if (pollCts is not null || Volatile.Read(ref stopRequested) == 1)
         {
             return;
@@ -176,23 +243,28 @@ public sealed class ProjectsViewModel : ObservableObject
         _ = RunAsync(pollCts.Token);
     }
 
-    public void Stop()
+    private void StopPolling()
     {
-        Interlocked.Exchange(ref stopRequested, 1);
-
         var poll = Interlocked.Exchange(ref pollCts, null);
-        if (poll is not null)
+        if (poll is null)
         {
-            poll.Cancel();
-            poll.Dispose();
+            return;
         }
 
+        poll.Cancel();
+        poll.Dispose();
+    }
+
+    private void StopDetail()
+    {
         var detail = Interlocked.Exchange(ref detailCts, null);
-        if (detail is not null)
+        if (detail is null)
         {
-            detail.Cancel();
-            detail.Dispose();
+            return;
         }
+
+        detail.Cancel();
+        detail.Dispose();
     }
 
     private async Task RunAsync(CancellationToken cancellationToken)
@@ -238,7 +310,6 @@ public sealed class ProjectsViewModel : ObservableObject
         {
             UpdateUi(() =>
             {
-                ConnectionStatusLine = "Disconnected";
                 LastError = ex.Failure == ProjectsApiFailure.Unauthorized
                     ? "Unauthorized (X-MGF-API-KEY rejected)."
                     : ex.Message;
@@ -253,7 +324,6 @@ public sealed class ProjectsViewModel : ObservableObject
         {
             UpdateUi(() =>
             {
-                ConnectionStatusLine = "Disconnected";
                 LastError = ex is TaskCanceledException
                     ? "API request timed out."
                     : ex.Message;
@@ -285,7 +355,6 @@ public sealed class ProjectsViewModel : ObservableObject
                 Projects.Add(item);
             }
 
-            ConnectionStatusLine = "Connected";
             LastError = null;
 
             if (selectedId is null)
