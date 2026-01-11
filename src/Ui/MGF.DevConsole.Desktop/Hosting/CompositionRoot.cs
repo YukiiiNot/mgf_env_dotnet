@@ -1,6 +1,8 @@
 using System;
 using System.Net.Http;
+using System.IO;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.DevConsole.Desktop.Api;
@@ -46,6 +48,11 @@ public static class CompositionRoot
         services.AddSingleton<MainWindow>(sp =>
         {
             var window = new MainWindow();
+            var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Icons", "MGF_Corp_Logo_White.ico");
+            if (File.Exists(iconPath))
+            {
+                window.Icon = BitmapFrame.Create(new Uri(iconPath, UriKind.Absolute));
+            }
             var statusViewModel = sp.GetRequiredService<StatusViewModel>();
             var jobsViewModel = sp.GetRequiredService<JobsViewModel>();
             var projectsViewModel = sp.GetRequiredService<ProjectsViewModel>();

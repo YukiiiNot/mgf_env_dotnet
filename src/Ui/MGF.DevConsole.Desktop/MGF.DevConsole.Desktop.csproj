@@ -8,6 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\Icons\MGF_Corp_Logo_White.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +36,11 @@
           Link="config\appsettings.Development.json"
           CopyToOutputDirectory="PreserveNewest"
           Condition="!Exists('..\..\..\config\appsettings.Development.json')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Icons\MGF_Corp_Logo_White.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Icons\MGF_Corp_Logo_Black.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
