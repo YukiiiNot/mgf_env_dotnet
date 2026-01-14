@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
+using MGF.Hosting.Configuration;
 using MGF.SquareImportCli.Reporting;
 using Npgsql;
 
@@ -30,10 +31,7 @@ internal static class SquareImportCommandRunner
             using var host = Host.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((context, config) =>
                 {
-                    config.Sources.Clear();
-
-                    var env = context.HostingEnvironment.EnvironmentName;
-                    config.AddMgfConfiguration(env, typeof(AppDbContext).Assembly);
+                    MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
                 })
                 .ConfigureServices((context, services) =>
                 {

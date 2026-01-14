@@ -3,8 +3,10 @@ namespace MGF.SquareImportCli.Commands;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MGF.Data.Configuration;
-using MGF.Data.Data;
+using MGF.Hosting.Configuration;
 using MGF.SquareImportCli.Importers;
 using MGF.SquareImportCli.Guards;
 using MGF.SquareImportCli.Reporting;
@@ -134,7 +136,7 @@ internal static class CustomersCommand
                     string connectionString;
                     try
                     {
-                        connectionString = ResolveConnectionString(env);
+                        connectionString = ResolveConnectionString();
                     }
                     catch (Exception ex)
                     {
@@ -245,13 +247,17 @@ internal static class CustomersCommand
         return command;
     }
 
-    private static string ResolveConnectionString(MgfEnvironment env)
+    private static string ResolveConnectionString()
     {
-        var config = new ConfigurationBuilder()
-            .AddMgfConfiguration(env.ToString(), typeof(AppDbContext).Assembly)
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
+            })
             .Build();
 
-        return DatabaseConnection.ResolveConnectionString(config);
+        var configuration = host.Services.GetRequiredService<IConfiguration>();
+        return DatabaseConnection.ResolveConnectionString(configuration);
     }
 
     private static bool LooksLikeNonDevConnectionString(string? connectionString)

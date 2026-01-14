@@ -10,7 +10,7 @@
 **Scope:** Covers branch model, CI rules, staging/prod migration workflows, and safety rules. Excludes system design rationale.
 **Doc Type:** Runbook
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -38,19 +38,9 @@ Migrations are created locally, reviewed in PRs, validated by CI, applied automa
 
 ## Local dev setup (lead dev machine)
 
-### 1) Set Dev DB user-secrets (recommended)
+### 1) Set local dev config (recommended)
 
-Secrets are stored under the MGF.Data project.
-
-```powershell
-cd <repo_root>
-
-# Dev DB (direct host recommended for migrations)
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-
-# Optional: app/runtime API key (needed to call /api/* endpoints)
-dotnet user-secrets set "Security:ApiKey" "<long random string>" --project src/Data/MGF.Data
-```
+Follow dev-secrets.md to populate `config/appsettings.Development.json`.
 
 ### 2) Required env vars for local dev
 
@@ -273,4 +263,4 @@ This runbook governs operational workflows for repo branches, CI, and database m
 - delivery.md
 
 ## Change Log
-- 2026-01-07 - Reformatted to documentation standards.
+- 2026-01-10 - Updated local dev setup to repo-root config file workflow.

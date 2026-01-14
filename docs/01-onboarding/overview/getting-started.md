@@ -10,7 +10,7 @@
 **Scope:** Local setup, repo orientation, and safe first verification steps. Does not replace runbooks or deep architecture guides.
 **Doc Type:** Guide
 **Status:** Active
-**Last Updated:** 2026-01-06
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -29,8 +29,9 @@
 ```powershell
 $env:MGF_ENV = 'Dev'
 $env:MGF_DB_MODE = 'direct'
-$env:MGF_CONFIG_DIR = 'C:\dev\mgf_env_dotnet\config'
 ```
+
+Configuration loading is standardized. See system-overview.md "Local dev config" for DOTNET_ENVIRONMENT and config file setup.
 
 2. Bootstrap secrets using DevSecrets (preferred)
 
@@ -41,9 +42,7 @@ Read and follow:
 
 *Configuration precedence (overview)*
 
-Configuration is built by `AddMgfConfiguration`. The precedence rules are documented here:
-- configuration
-- Optional code path reference: src/Data/MGF.Data/Configuration/MgfConfiguration.cs
+Configuration is built by MgfHostConfiguration (MGF.Hosting). The canonical rules live in system-overview.md "Local dev config".
 
 3. First verification steps (before you change code)
 
@@ -110,5 +109,6 @@ This guide sits at the entry point of the repo documentation. It points readers 
 
 ## Change Log
 - Date format: YYYY-MM-DD (see doc-enumerations.md)
+- 2026-01-10 - Updated local config guidance to reference centralized bootstrap.
 - 2026-01-06 - Reformatted into the new documentation standards format; content preserved.
 - 2026-01-02 - Reformatted to the documentation template.

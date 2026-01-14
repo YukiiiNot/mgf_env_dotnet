@@ -1,10 +1,10 @@
-using System.IO;
+using System.Threading;
 using System.Windows;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MGF.DevConsole.Desktop.Hosting;
 using MGF.Desktop.Views.Shells;
+using MGF.Hosting.Configuration;
 
 namespace MGF.DevConsole.Desktop;
 
@@ -17,11 +17,7 @@ public partial class App : System.Windows.Application
         Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
             .ConfigureAppConfiguration((context, config) =>
             {
-                config.Sources.Clear();
-                var env = context.HostingEnvironment;
-                config.AddJsonFile(Path.Combine("config", "appsettings.json"), optional: false, reloadOnChange: true);
-                config.AddJsonFile(Path.Combine("config", $"appsettings.{env.EnvironmentName}.json"), optional: true, reloadOnChange: true);
-                config.AddEnvironmentVariables();
+                MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
             })
             .ConfigureServices((context, services) =>
             {

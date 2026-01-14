@@ -1,0 +1,105 @@
+<UserControl x:Class="MGF.DevConsole.Desktop.Modules.Projects.Views.ProjectsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+            <TextBlock Text="Projects created in the last 24 hours" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding ConnectionStatusLine}" />
+            <TextBlock Text="{Binding LastError}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+
+            <DataGrid Grid.Column="0"
+                      ItemsSource="{Binding Projects}"
+                      SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      Margin="0,0,8,0">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Created" Binding="{Binding CreatedAt}" />
+                    <DataGridTextColumn Header="Code" Binding="{Binding ProjectCode}" />
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding StatusKey}" />
+                    <DataGridTextColumn Header="Phase" Binding="{Binding PhaseKey}" />
+                    <DataGridTextColumn Header="Client" Binding="{Binding ClientId}" />
+                    <DataGridTextColumn Header="Due Date" Binding="{Binding DueDate}" />
+                    <DataGridTextColumn Header="Archived" Binding="{Binding ArchivedAt}" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Project Detail" FontWeight="SemiBold" Margin="0,0,0,6" />
+                    <TextBlock Text="{Binding DetailError}" TextWrapping="Wrap" />
+
+                    <TextBlock>
+                        <Run Text="ProjectId: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailProjectId, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Project Code: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailProjectCode, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Name: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailName, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="ClientId: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailClientId, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Status: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailStatusKey, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Phase: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailPhaseKey, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Priority: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailPriorityKey, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Due Date: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailDueDate, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Archived At: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailArchivedAt, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Data Profile: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailDataProfile, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Current Invoice: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailCurrentInvoiceId, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Created At: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailCreatedAt, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock>
+                        <Run Text="Updated At: " FontWeight="SemiBold" />
+                        <Run Text="{Binding DetailUpdatedAt, Mode=OneWay}" />
+                    </TextBlock>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

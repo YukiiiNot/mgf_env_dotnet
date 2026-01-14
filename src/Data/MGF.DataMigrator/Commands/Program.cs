@@ -9,6 +9,7 @@ using MGF.Data;
 using MGF.Data.Configuration;
 using MGF.Data.Data;
 using MGF.Data.Data.Seeding;
+using MGF.Hosting.Configuration;
 using Npgsql;
 
 namespace MGF.DataMigrator;
@@ -58,10 +59,7 @@ public static class Program
             using var host = Host.CreateDefaultBuilder(parsed.HostArgs)
                 .ConfigureAppConfiguration((context, config) =>
                 {
-                    config.Sources.Clear();
-
-                    var env = context.HostingEnvironment.EnvironmentName;
-                    config.AddMgfConfiguration(env, typeof(AppDbContext).Assembly);
+                    MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
                 })
                 .ConfigureServices((context, services) =>
                 {

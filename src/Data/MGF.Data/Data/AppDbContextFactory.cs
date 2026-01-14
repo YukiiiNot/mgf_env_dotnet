@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MGF.Data.Configuration;
+using MGF.Hosting.Configuration;
 
 namespace MGF.Data.Data;
 
@@ -9,14 +12,14 @@ public sealed class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var environmentName =
-            Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
-            ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-            ?? "Production";
-
-        var config = new ConfigurationBuilder()
-            .AddMgfConfiguration(environmentName, typeof(AppDbContextFactory).Assembly)
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
+            })
             .Build();
+
+        var config = host.Services.GetRequiredService<IConfiguration>();
 
         var connectionString = DatabaseConnection.ResolveConnectionString(config);
 

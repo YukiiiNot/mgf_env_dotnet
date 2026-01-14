@@ -6,7 +6,6 @@
     <RootNamespace>MGF.Worker</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-MGF.Worker-41014bcc-815d-45c3-8f59-a2c2649897b2</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Hosting\MGF.Hosting.csproj" />
     <ProjectReference Include="..\..\Platform\MGF.Email\MGF.Email.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Gmail\MGF.Integrations.Email.Gmail.csproj" />
     <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Smtp\MGF.Integrations.Email.Smtp.csproj" />

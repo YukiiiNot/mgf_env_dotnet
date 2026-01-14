@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MGF.Data.Data;
 using MGF.Data.Configuration;
+using MGF.Hosting.Configuration;
 
 namespace MGF.Data.IntegrationTests;
 
@@ -24,14 +27,14 @@ internal static class TestDb
 
     private static IConfigurationRoot BuildConfiguration()
     {
-        var environmentName =
-            Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
-            ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-            ?? "Production";
-
-        return new ConfigurationBuilder()
-            .AddMgfConfiguration(environmentName, typeof(AppDbContext).Assembly)
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
+            })
             .Build();
+
+        return (IConfigurationRoot)host.Services.GetRequiredService<IConfiguration>();
     }
 }
 

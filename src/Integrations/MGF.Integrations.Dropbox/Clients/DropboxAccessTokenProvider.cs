@@ -178,7 +178,7 @@ public sealed class DropboxAccessTokenProvider : IDropboxAccessTokenProvider
         if (!string.IsNullOrWhiteSpace(value))
         {
             var env = Environment.GetEnvironmentVariable(envPrimary);
-            var source = !string.IsNullOrWhiteSpace(env) ? $"env:{envPrimary}" : "config/user-secrets";
+            var source = !string.IsNullOrWhiteSpace(env) ? $"env:{envPrimary}" : "config/appsettings";
             return new ResolvedValue(value, source);
         }
 
@@ -186,7 +186,7 @@ public sealed class DropboxAccessTokenProvider : IDropboxAccessTokenProvider
         if (!string.IsNullOrWhiteSpace(value))
         {
             var env = Environment.GetEnvironmentVariable(envFallback);
-            var source = !string.IsNullOrWhiteSpace(env) ? $"env:{envFallback}" : "config/user-secrets";
+            var source = !string.IsNullOrWhiteSpace(env) ? $"env:{envFallback}" : "config/appsettings";
             return new ResolvedValue(value, source);
         }
 

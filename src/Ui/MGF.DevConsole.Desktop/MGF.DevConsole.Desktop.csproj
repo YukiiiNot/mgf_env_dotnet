@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -8,16 +8,20 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\Icons\MGF_Corp_Logo_White.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MGF.Desktop.Shared\MGF.Desktop.Shared.csproj" />
     <ProjectReference Include="..\..\Core\MGF.Contracts\MGF.Contracts.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Hosting\MGF.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.1" />
   </ItemGroup>
@@ -32,6 +36,11 @@
           Link="config\appsettings.Development.json"
           CopyToOutputDirectory="PreserveNewest"
           Condition="!Exists('..\..\..\config\appsettings.Development.json')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Icons\MGF_Corp_Logo_White.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Resource Include="Assets\Icons\MGF_Corp_Logo_Black.ico" />
   </ItemGroup>
 
 </Project>

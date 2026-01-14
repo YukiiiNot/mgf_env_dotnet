@@ -39,4 +39,4 @@ YYYY-MM-DD
 
 Example:
 
-2026-01-02 - *Initial creation*
+2026-01-02 - *Initial creation* (Include bolding)
