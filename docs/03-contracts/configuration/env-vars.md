@@ -10,7 +10,7 @@
 **Scope:** Covers MGF_ENV, MGF_DB_MODE, and Database:* connection string keys. Excludes host wiring and appsettings defaults.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -19,6 +19,7 @@
 - Use `MGF_ENV` to select Dev, Staging, or Prod.
 - Use the `Database:<Env>:*ConnectionString` keys; legacy keys are fallback only.
 - Destructive operations are guarded and blocked for non-Dev environments.
+- Local dev secrets live in config/appsettings.Development.json; env vars override for CI/prod.
 
 ---
 
@@ -44,20 +45,10 @@ Legacy fallback (only used when env-specific keys are missing):
 
 - `Database:ConnectionString`
 
-## Recommended: store secrets in user-secrets (local)
+## Local dev secrets file
 
-User-secrets are per-developer and are not committed to git.
-
-```powershell
-dotnet user-secrets init --project src/Data/MGF.Data
-
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-dotnet user-secrets set "Database:Staging:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-dotnet user-secrets set "Database:Staging:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-dotnet user-secrets set "Database:Prod:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-dotnet user-secrets set "Database:Prod:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-```
+Local dev secrets live in `config/appsettings.Development.json` (git-ignored).
+See dev-secrets.md for the canonical workflow.
 
 Example (Npgsql format):
 
@@ -68,7 +59,7 @@ Host=YOUR_PROJECT.pooler.supabase.com;Port=5432;Database=postgres;Username=postg
 
 ## Environment variables
 
-Environment variables override config files and user-secrets.
+Environment variables override config files.
 
 ```powershell
 $env:MGF_DB_MODE = "direct"
@@ -176,4 +167,4 @@ Configuration contracts define the shared keys used by hosts, tools, and tests t
 - repo-workflow.md
 
 ## Change Log
-- 2026-01-07 - Reformatted to documentation standards.
+- 2026-01-10 - Replaced user-secrets guidance with repo-root dev config workflow.

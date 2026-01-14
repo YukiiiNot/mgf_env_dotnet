@@ -8,7 +8,7 @@
 **Scope:** Covers boundaries, ownership, and dependency direction. Does not include operational steps.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-06
+**Last Updated:** 2026-01-10
 **Review Cadence:** on major architecture change
 
 ---
@@ -45,6 +45,37 @@ Worker/API/CLI -> UseCases -> Contracts -> Data/Integrations (CLIs call UseCases
 Project bootstrap: Worker -> `IBootstrapProjectUseCase` -> Contracts store -> Data + `IProjectBootstrapProvisioningGateway` (Services adapter: `src/Services/MGF.Worker/Adapters/Storage/ProjectBootstrap/`).
 Square webhooks: API -> `IIngestSquareWebhookUseCase` -> Contracts store -> Data.
 People list: API -> `IListPeopleUseCase` -> Contracts store -> Data.
+
+### DevConsole Jobs surface
+- Endpoint: `GET /api/jobs` (list) with cursorCreatedAt + cursorJobId pagination.
+- Default since: server UTC now - 24h, based on created_at (job creation time).
+- Ordering: created_at desc, job_id desc for stable pagination.
+- Detail: `GET /api/jobs/{jobId}` (payload lives in detail, not list).
+
+### DevConsole Projects surface
+- Endpoint: `GET /api/projects` (list) with cursorCreatedAt + cursorProjectId pagination.
+- Default limit: 200 (bounded list, newest-first).
+- Default since: server UTC now - 24h, based on created_at (project creation time).
+- Ordering: created_at desc, project_id desc for stable pagination.
+- Detail: `GET /api/projects/{projectId}` (operator-safe fields only).
+- Jobs list uses created_at for the "last 24 hours" window (server UTC).
+- Jobs payload is detail-only and opt-in in the DevConsole UI (truncated at 50 KB).
+
+### Local dev config
+- Configuration loads repo-root `config/` by default; set `MGF_CONFIG_DIR` only for overrides.
+- Required: `config/appsettings.json`. Optional: `config/appsettings.{ENV}.json`.
+- Canonical local dev secrets workflow lives in dev-secrets.md.
+- Environment variables override JSON (e.g., `SECURITY__APIKEY`), primarily for CI/prod or troubleshooting.
+- `/api/*` requires `X-MGF-API-KEY`; `X-MGF-Operator` is optional for audit strings.
+- DevConsole runs with `DOTNET_ENVIRONMENT=Development`; API runs with `ASPNETCORE_ENVIRONMENT=Development` (or `DOTNET_ENVIRONMENT`).
+
+CLI (PowerShell):
+`$env:DOTNET_ENVIRONMENT="Development"`
+`$env:ASPNETCORE_ENVIRONMENT="Development"`
+
+CLI (CMD):
+`set DOTNET_ENVIRONMENT=Development`
+`set ASPNETCORE_ENVIRONMENT=Development`
 
 ### Use-case boundary (MGF.UseCases)
 MGF.UseCases is the boundary project for business use-cases and workflows; all business writes flow through use-cases.
@@ -108,5 +139,7 @@ This document explains the boundary and responsibilities for this area and how i
 
 ## Change Log
 - Date format: YYYY-MM-DD (see doc-enumerations.md)
+- 2026-01-10 - Added local dev config section and centralized env guidance.
+- 2026-01-10 - Pointed local dev secrets workflow to dev-secrets.md.
 - 2026-01-06 - Reformatted into the new documentation standards format; content preserved.
 - 2026-01-02 - Reformatted to the documentation template.

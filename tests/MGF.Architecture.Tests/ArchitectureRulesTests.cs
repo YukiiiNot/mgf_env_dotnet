@@ -158,6 +158,36 @@ public sealed class ArchitectureRulesTests
     }
 
     [Fact]
+    public void Ui_DoesNotUse_AdHoc_HttpClient()
+    {
+        var uiRoot = Path.Combine(SrcRoot, "Ui");
+        if (!Directory.Exists(uiRoot))
+        {
+            return;
+        }
+
+        var sourceFiles = Directory.GetFiles(uiRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        var offenders = new List<string>();
+        foreach (var file in sourceFiles)
+        {
+            var text = File.ReadAllText(file);
+            if (text.Contains("new HttpClient(", StringComparison.Ordinal))
+            {
+                offenders.Add(Path.GetRelativePath(RepoRoot, file));
+            }
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "Ad-hoc HttpClient construction is forbidden in src/Ui. Offenders:" + Environment.NewLine
+            + string.Join(Environment.NewLine, offenders));
+    }
+
+    [Fact]
     public void Markdown_Outside_Docs_Is_Forbidden()
     {
         var markdownFiles = Directory.GetFiles(RepoRoot, "*.md", SearchOption.AllDirectories)
@@ -386,6 +416,10 @@ public sealed class ArchitectureRulesTests
                 Allowed: new[] { "Abstractions" },
                 Required: new[] { "Abstractions" },
                 Forbidden: new[] { "Docs", "Controllers", "Services", "Stores" }),
+            ["MGF.Hosting"] = new ShapeContract(
+                Allowed: new[] { "Configuration" },
+                Required: new[] { "Configuration" },
+                Forbidden: new[] { "Docs", "Controllers", "Services", "Stores" }),
             ["MGF.Domain"] = new ShapeContract(
                 Allowed: new[] { "Entities" },
                 Required: new[] { "Entities" },
@@ -475,7 +509,7 @@ public sealed class ArchitectureRulesTests
                 Required: new[] { "Views", "Properties" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
             ["MGF.DevConsole.Desktop"] = new ShapeContract(
-                Allowed: new[] { "Hosting", "Api", "Modules", "Resources", "Diagnostics" },
+                Allowed: new[] { "Hosting", "Api", "Modules", "Resources", "Diagnostics", "Properties" },
                 Required: new[] { "Hosting", "Api", "Modules" },
                 Forbidden: new[] { "Docs", "Controllers", "Stores" }),
             ["MGF.Website"] = new ShapeContract(

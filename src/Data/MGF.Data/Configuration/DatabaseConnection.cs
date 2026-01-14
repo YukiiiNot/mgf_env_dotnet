@@ -104,6 +104,13 @@ public static class DatabaseConnection
             throw new InvalidOperationException(GetMissingConnectionStringMessage(envName));
         }
 
+        if (env == MgfEnvironment.Dev && ContainsPlaceholderToken(connectionString))
+        {
+            throw new InvalidOperationException(
+                $"Database connection string for MGF_ENV={envName} contains placeholder tokens. " +
+                "Update config/appsettings.Development.json (or run devsecrets import) before starting.");
+        }
+
         return connectionString;
     }
 
@@ -154,12 +161,22 @@ public static class DatabaseConnection
     {
         return
             $"Database connection string not found for MGF_ENV={envName}. "
-            + $"Set user-secrets `Database:{envName}:ConnectionString` (preferred), "
+            + $"Set `Database:{envName}:ConnectionString` (preferred), "
             + $"or `Database:{envName}:DirectConnectionString` / `Database:{envName}:PoolerConnectionString` (when using `MGF_DB_MODE`), "
-            + "or legacy `Database:ConnectionString`, "
-            + $"or set env var `Database__{envName}__ConnectionString` (preferred), "
+            + "in config/appsettings.Development.json (or run devsecrets import; see dev-secrets.md), "
+            + $"or set env var `Database__{envName}__ConnectionString`, "
             + $"or `Database__{envName}__DirectConnectionString` / `Database__{envName}__PoolerConnectionString` (when using `MGF_DB_MODE`), "
             + "or legacy `Database__ConnectionString`.";
     }
+
+    private static bool ContainsPlaceholderToken(string connectionString)
+    {
+        return ContainsToken(connectionString, "YOUR_REF")
+            || ContainsToken(connectionString, "YOUR_PROJECT")
+            || ContainsToken(connectionString, "YOUR_PASSWORD");
+    }
+
+    private static bool ContainsToken(string value, string token)
+        => value.Contains(token, StringComparison.OrdinalIgnoreCase);
 }
 

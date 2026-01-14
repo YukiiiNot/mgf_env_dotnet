@@ -10,7 +10,7 @@
 **Scope:** Covers config file locations, option bindings, and key ownership. Excludes runtime wiring details.
 **Doc Type:** Reference
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -18,7 +18,7 @@
 
 - Defaults live under `config/` and per-app `appsettings*.json`.
 - Option bindings live in `src/Data/MGF.Data/Options/Options.cs`.
-- Env vars and user-secrets override config files.
+- Env vars override config files; local dev secrets live in config/appsettings.Development.json.
 
 ---
 
@@ -28,6 +28,7 @@ Source of truth: `config/appsettings*.json`, `src/Services/MGF.Api/appsettings*.
 
 ## Scope
 - App configuration defaults live under `config/` and per-app `appsettings*.json` files.
+- Local dev secrets live in `config/appsettings.Development.json` (git-ignored).
 - Options bindings live in `src/Data/MGF.Data/Options/Options.cs`.
 
 ## Related configuration contracts
@@ -77,4 +78,4 @@ Configuration contracts define how hosts and tools load settings in a consistent
 - integrations.md
 
 ## Change Log
-- 2026-01-07 - Reformatted to documentation standards.
+- 2026-01-10 - Updated dev secrets source of truth to repo-root config file.

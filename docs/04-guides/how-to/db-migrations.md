@@ -10,7 +10,7 @@
 **Scope:** Covers configuration, migration commands, and CI usage. Excludes schema design rationale.
 **Doc Type:** How-To
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -40,20 +40,14 @@ The MGF.DataMigrator project is the only migration runner; the WPF host does not
 Both dotnet ef (design-time) and MGF.DataMigrator (runtime) load config in this order:
 
 1. config/appsettings.json (committed defaults)
-2. config/appsettings.{Environment}.json (committed, non-secret overrides)
-3. user-secrets (local dev)
-4. environment variables (CI/prod)
+2. config/appsettings.{Environment}.json (local dev secrets when Environment=Development)
+3. environment variables (CI/prod)
 
 For the canonical key list (MGF_ENV, MGF_DB_MODE, and Database connection strings), see env-vars.md.
 
-## Local dev setup (recommended: user-secrets)
+## Local dev setup (recommended: config/appsettings.Development.json)
 
-1) Set a local connection string (Npgsql format):
-
-```powershell
-dotnet user-secrets set "Database:Dev:DirectConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-dotnet user-secrets set "Database:Dev:PoolerConnectionString" "<Npgsql connection string>" --project src/Data/MGF.Data
-```
+1) Populate `config/appsettings.Development.json` per dev-secrets.md (ensure Database:Dev:* keys are set).
 
 Example formats (do not commit real secrets; see config/appsettings.Development.sample.json):
 
@@ -231,4 +225,5 @@ This guide governs how schema changes are created, reviewed, and applied across 
 - destructive-ops-audit.md
 
 ## Change Log
+- 2026-01-10 - Updated local dev secrets workflow to repo-root config file.
 - 2026-01-07 - Reformatted to documentation standards.

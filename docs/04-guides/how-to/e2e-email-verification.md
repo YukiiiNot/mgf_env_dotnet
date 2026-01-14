@@ -10,7 +10,7 @@
 **Scope:** Covers prerequisites, steps, and verification checks. Excludes implementation details.
 **Doc Type:** How-To
 **Status:** Active
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-10
 
 ---
 
@@ -28,7 +28,7 @@ This procedure verifies delivery email end-to-end without loosening recipient gu
 uses canonical recipients from the database.
 
 ## Prereqs
-- Dev configuration loaded (MGF_ENV, MGF_DB_MODE, MGF_CONFIG_DIR).
+- Dev configuration loaded (MGF_ENV, MGF_DB_MODE; config auto-detected from repo-root config/ unless MGF_CONFIG_DIR overrides).
 - Email enabled: Integrations:Email:Enabled=true.
 - Preview provider (recommended for dev): Integrations:Email:Provider=preview.
   - Optional output path: Integrations:Email:Preview:OutputDir.
@@ -132,4 +132,5 @@ This guide validates the delivery email workflow across use-cases, worker jobs, 
 - dev-secrets.md
 
 ## Change Log
+- 2026-01-10 - Updated local config prerequisite to match centralized bootstrap.
 - 2026-01-07 - Reformatted to documentation standards.

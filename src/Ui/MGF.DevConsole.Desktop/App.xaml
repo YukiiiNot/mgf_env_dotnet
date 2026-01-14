@@ -3,6 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:MGF.DevConsole.Desktop">
     <Application.Resources>
-         
+        <Style TargetType="Window">
+            <Setter Property="Icon" Value="Assets/Icons/MGF_Corp_Logo_Black.ico" />
+        </Style>
     </Application.Resources>
 </Application>

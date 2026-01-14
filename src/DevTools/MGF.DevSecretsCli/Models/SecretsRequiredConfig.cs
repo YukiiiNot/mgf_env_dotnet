@@ -4,7 +4,9 @@ using System.Text.Json;
 
 internal sealed class SecretsRequiredConfig
 {
-    public List<ProjectSecretsConfig> Projects { get; init; } = new();
+    public int SchemaVersion { get; init; } = 2;
+    public List<string> RequiredKeys { get; init; } = new();
+    public List<string> OptionalKeys { get; init; } = new();
     public GlobalPolicy GlobalPolicy { get; init; } = new();
 
     public static SecretsRequiredConfig Load(string path)
@@ -20,26 +22,13 @@ internal sealed class SecretsRequiredConfig
             PropertyNameCaseInsensitive = true
         });
 
-        if (config is null || config.Projects.Count == 0)
+        if (config is null || config.RequiredKeys.Count == 0)
         {
-            throw new InvalidOperationException("secrets.required.json is missing required project entries.");
+            throw new InvalidOperationException("secrets.required.json is missing required keys.");
         }
 
         return config;
     }
-
-    public ProjectSecretsConfig? FindByUserSecretsId(string userSecretsId)
-        => Projects.FirstOrDefault(project =>
-            string.Equals(project.UserSecretsId, userSecretsId, StringComparison.OrdinalIgnoreCase));
-}
-
-internal sealed class ProjectSecretsConfig
-{
-    public string Name { get; init; } = string.Empty;
-    public string Path { get; init; } = string.Empty;
-    public string UserSecretsId { get; init; } = string.Empty;
-    public List<string> RequiredKeys { get; init; } = new();
-    public List<string> OptionalKeys { get; init; } = new();
 }
 
 internal sealed class GlobalPolicy

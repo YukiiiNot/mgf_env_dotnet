@@ -1,10 +1,12 @@
 namespace MGF.Operations.Runtime;
 
 using Microsoft.Extensions.Configuration;
-using MGF.Data.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MGF.Data.Data;
 using MGF.Data.Stores.Operations;
 using MGF.Contracts.Abstractions.Operations.StorageRoots;
+using MGF.Hosting.Configuration;
 using MGF.UseCases.Operations.Jobs.EnqueueProjectArchiveJob;
 using MGF.UseCases.Operations.Jobs.EnqueueProjectBootstrapJob;
 using MGF.UseCases.Operations.Jobs.EnqueueProjectDeliveryEmailJob;
@@ -23,13 +25,14 @@ public static class OperationsRuntimeConfiguration
 {
     public static IConfiguration BuildConfiguration()
     {
-        var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
-            ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-            ?? "Development";
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                MgfHostConfiguration.ConfigureMgfConfiguration(context, config);
+            })
+            .Build();
 
-        var builder = new ConfigurationBuilder();
-        builder.AddMgfConfiguration(env, typeof(AppDbContext).Assembly);
-        return builder.Build();
+        return host.Services.GetRequiredService<IConfiguration>();
     }
 }
 
