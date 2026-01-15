@@ -41,7 +41,7 @@ public sealed class TemplateSchemaValidationTests
     private static IReadOnlyList<string> GetTemplatePaths()
     {
         var repoRoot = RepoRootFinder.FindRepoRoot();
-        var templatesDir = Path.Combine(repoRoot, "docs", "templates");
+        var templatesDir = Path.Combine(repoRoot, "artifacts", "templates");
 
         return Directory.EnumerateFiles(templatesDir, "*.json", SearchOption.TopDirectoryOnly)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)

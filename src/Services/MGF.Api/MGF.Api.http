@@ -1,0 +1,49 @@
+@MGF.Api_HostAddress = http://localhost:5048
+@MGF.Api_Key = YOUR_API_KEY
+
+GET {{MGF.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{MGF.Api_HostAddress}}/api/meta
+X-MGF-API-KEY: {{MGF.Api_Key}}
+Accept: application/json
+
+###
+
+GET {{MGF.Api_HostAddress}}/api/jobs?since=2026-01-01T00:00:00Z&limit=200
+X-MGF-API-KEY: {{MGF.Api_Key}}
+Accept: application/json
+
+###
+
+GET {{MGF.Api_HostAddress}}/api/jobs?since=2026-01-01T00:00:00Z&limit=200&cursorCreatedAt=2026-01-01T12:00:00Z&cursorJobId=job_01H9ZQ0H9ZQ0H9ZQ0H9ZQ0H9ZQ
+X-MGF-API-KEY: {{MGF.Api_Key}}
+Accept: application/json
+
+###
+
+GET {{MGF.Api_HostAddress}}/api/projects?limit=200
+X-MGF-API-KEY: {{MGF.Api_Key}}
+Accept: application/json
+
+###
+
+GET {{MGF.Api_HostAddress}}/api/projects?since=2026-01-01T00:00:00Z&limit=200
+X-MGF-API-KEY: {{MGF.Api_Key}}
+Accept: application/json
+
+###
+
+GET {{MGF.Api_HostAddress}}/api/projects?since=2026-01-01T00:00:00Z&limit=200&cursorCreatedAt=2026-01-01T12:00:00Z&cursorProjectId=project_01H9ZQ0H9ZQ0H9ZQ0H9ZQ0H9ZQ
+X-MGF-API-KEY: {{MGF.Api_Key}}
+Accept: application/json
+
+###
+
+GET {{MGF.Api_HostAddress}}/api/projects/project_01H9ZQ0H9ZQ0H9ZQ0H9ZQ0H9ZQ
+X-MGF-API-KEY: {{MGF.Api_Key}}
+Accept: application/json
+
+###

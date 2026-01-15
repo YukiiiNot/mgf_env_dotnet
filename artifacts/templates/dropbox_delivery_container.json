@@ -1,0 +1,38 @@
+{
+  "$schema": "../schemas/mgf.folderTemplate.schema.json",
+  "templateKey": "dropbox_delivery_container",
+  "displayName": "Dropbox Delivery Container",
+  "description": "Client-facing delivery container (final exports + manifest).",
+  "root": {
+    "name": "{PROJECT_CODE}_{PROJECT_NAME}",
+    "children": [
+      {
+        "name": "00_Admin",
+        "kind": "folder",
+        "children": [
+          {
+            "name": ".mgf",
+            "kind": "folder",
+            "children": [
+              {
+                "name": "manifest",
+                "kind": "folder",
+                "children": [
+                  { "kind": "file", "name": "folder_manifest.json" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "01_Deliverables",
+        "kind": "folder",
+        "children": [
+          { "name": "Final" }
+        ]
+      },
+      { "name": "99_Dump" }
+    ]
+  }
+}

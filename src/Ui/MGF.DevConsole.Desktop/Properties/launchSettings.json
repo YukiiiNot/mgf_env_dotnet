@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MGF.DevConsole.Desktop (Development)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

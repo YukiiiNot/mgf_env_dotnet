@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>MGF.Worker</AssemblyName>
+    <RootNamespace>MGF.Worker</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.1" />
+    <PackageReference Include="Scriban" Version="5.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Data\MGF.Data\MGF.Data.csproj" />
+    <ProjectReference Include="..\..\Core\MGF.Hosting\MGF.Hosting.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.Email\MGF.Email.csproj" />
+    <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Gmail\MGF.Integrations.Email.Gmail.csproj" />
+    <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Smtp\MGF.Integrations.Email.Smtp.csproj" />
+    <ProjectReference Include="..\..\Integrations\MGF.Integrations.Email.Preview\MGF.Integrations.Email.Preview.csproj" />
+    <ProjectReference Include="..\..\Integrations\MGF.Integrations.Dropbox\MGF.Integrations.Dropbox.csproj" />
+    <ProjectReference Include="..\..\Integrations\MGF.Integrations.Square\MGF.Integrations.Square.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.Storage\MGF.Storage.csproj" />
+    <ProjectReference Include="..\..\Platform\MGF.FolderProvisioning\MGF.FolderProvisioning.csproj" />
+    <ProjectReference Include="..\..\Application\MGF.UseCases\MGF.UseCases.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\Platform\MGF.Email\Composition\Templates\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <TargetPath>Email\Templates\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
+    <Content Include="..\..\..\artifacts\templates\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <TargetPath>artifacts\templates\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
+    <Content Include="..\..\..\artifacts\schemas\**\*.*" CopyToOutputDirectory="PreserveNewest">
+      <TargetPath>artifacts\schemas\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
+  </ItemGroup>
+</Project>
+
+
+

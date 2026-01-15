@@ -1,0 +1,39 @@
+{
+  "projectCode": "MGF25-0210",
+  "projectName": "Deliverables Package for Brand Launch",
+  "clientName": "MGF Delivery Client",
+  "shareUrl": "https://www.dropbox.com/scl/fo/abcdefghijklmnopqrstuvwxyz1234567890/ABCDEFGHIJKLMNopqrstuvwxyz?rlkey=verylongkeystringwithparams1234567890&dl=0&preview=deliverable_final_master_v1.mp4&extra=tracking_param_example",
+  "versionLabel": "v2",
+  "retentionUntilUtc": "2026-07-15T00:00:00Z",
+  "files": [
+    {
+      "relativePath": "deliverable_v2_master.mp4",
+      "sizeBytes": 2097152,
+      "lastWriteTimeUtc": "2026-03-20T00:00:00Z"
+    },
+    {
+      "relativePath": "deliverable_v2_social_9x16.mp4",
+      "sizeBytes": 1048576,
+      "lastWriteTimeUtc": "2026-03-20T00:00:00Z"
+    },
+    {
+      "relativePath": "deliverable_v2_captions.srt",
+      "sizeBytes": 4096,
+      "lastWriteTimeUtc": "2026-03-20T00:00:00Z"
+    },
+    {
+      "relativePath": "deliverable_v2_audio_mix.wav",
+      "sizeBytes": 8192,
+      "lastWriteTimeUtc": "2026-03-20T00:00:00Z"
+    },
+    {
+      "relativePath": "deliverable_v2_notes.pdf",
+      "sizeBytes": 2048,
+      "lastWriteTimeUtc": "2026-03-20T00:00:00Z"
+    }
+  ],
+  "recipients": [
+    "client@example.com"
+  ],
+  "logoUrl": "https://yukiiinot.github.io/mgf_env_dotnet/assets/email/mg_sig_logo_white.png"
+}

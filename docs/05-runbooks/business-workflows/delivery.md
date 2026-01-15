@@ -1,0 +1,224 @@
+# Delivery
+
+> Runbook for executing the delivery workflow in Dev or Test.
+
+---
+
+## MetaData
+
+**Purpose:** Provide the approved operational procedure for the delivery workflow.
+**Scope:** Covers prerequisites, execution steps, verification, and troubleshooting. Excludes system design rationale.
+**Doc Type:** Runbook
+**Status:** Active
+**Last Updated:** 2026-01-10
+
+---
+
+## TL;DR
+
+- Ensure Dev configuration and required secrets are set.
+- Run the Golden Path steps to enqueue and process delivery jobs.
+- Verify delivery metadata and Dropbox folder outputs.
+
+---
+
+## Main Content
+
+Source of truth: `src/Operations/MGF.ProjectBootstrapCli`, `src/DevTools/MGF.ProjectBootstrapDevCli`, `src/Services/MGF.Worker`, `src/Platform/MGF.Email`
+
+Use this runbook to verify the delivery pipeline end-to-end in Dev without touching production.
+
+## Prereqs
+
+Set environment/config for Dev:
+
+```powershell
+$env:MGF_ENV = "Dev"
+$env:MGF_DB_MODE = "direct"
+```
+
+Config loads from repo-root `config/` by default; set `MGF_CONFIG_DIR` only for overrides (see system-overview.md "Local dev config").
+
+Required secrets/config (set in config/appsettings.Development.json or env vars; do not commit secrets):
+
+Dropbox
+
+- Integrations:Dropbox:AccessToken or Integrations:Dropbox:RefreshToken (plus AppKey/AppSecret)
+- Integrations:Dropbox:UseApiRootFolder = true (bot-root mode)
+- Integrations:Dropbox:ApiRootFolder = MGFILMS.DELIVERIES
+
+Email (SMTP relay)
+
+- Integrations:Email:Enabled = true
+- Integrations:Email:Provider = smtp
+- Integrations:Email:Smtp:Host = smtp-relay.gmail.com
+- Integrations:Email:Smtp:Port = 587
+- Integrations:Email:Smtp:UseSsl = true
+- From allowlist includes deliveries@mgfilms.pro and info@mgfilms.pro
+
+## Golden Path (copy and paste)
+
+Pick a test project (must be data_profile=real). Use a known test project ID.
+
+### 1) Mark ready_to_deliver (if needed)
+
+```powershell
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- to-deliver --projectId <PROJECT_ID>
+```
+
+### 2) Seed a deliverable into LucidLink Final_Masters
+
+```powershell
+dotnet run --project src\DevTools\MGF.ProjectBootstrapDevCli -- seed-deliverables `
+  --projectId <PROJECT_ID> `
+  --file "<local_path_to_deliverable>" `
+  --target final-masters `
+  --testMode
+```
+
+### 3) Enqueue delivery (creates v1 + share link)
+
+```powershell
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- deliver `
+  --projectId <PROJECT_ID> `
+  --editorInitials TE `
+  --testMode true `
+  --allowTestCleanup false `
+  --refreshShareLink
+```
+
+Process exactly one job:
+
+```powershell
+dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 1
+```
+
+### 4) Re-run delivery (should reuse share link + no v2)
+
+```powershell
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- deliver `
+  --projectId <PROJECT_ID> `
+  --editorInitials TE `
+  --testMode true `
+  --allowTestCleanup false
+```
+
+Process exactly one job:
+
+```powershell
+dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 1
+```
+
+### 5) Send delivery email
+
+```powershell
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- delivery-email `
+  --projectId <PROJECT_ID> `
+  --to "info@mgfilms.pro" `
+  --from "deliveries@mgfilms.pro" `
+  --replyTo "info@mgfilms.pro"
+```
+
+Process exactly one job:
+
+```powershell
+dotnet run -c Release --project src\Services\MGF.Worker --no-build -- --maxJobs 1
+```
+
+### 6) Verify
+
+```powershell
+dotnet run --project src\Operations\MGF.ProjectBootstrapCli -- show --projectId <PROJECT_ID>
+```
+
+## Expected outputs
+
+In show output:
+
+- delivery.current.stableShareUrl present (Dropbox link)
+- delivery.current.shareStatus = created on first run, reused on second
+- delivery.current.stablePath ends with \01_Deliverables\Final
+- delivery.current.currentVersion = v1
+- delivery.runs[].email.status = sent (or failed with reason)
+
+Filesystem:
+
+- Dropbox delivery container contains:
+  ...\01_Deliverables\Final\v1\deliverable_v1.mp4
+- Manifest at:
+  00_Admin\.mgf\manifest\delivery_manifest.json
+
+## Troubleshooting (match logs)
+
+Dropbox token/auth
+
+Log: MGF.Worker: Dropbox auth mode=refresh_token source=...
+- If missing: ensure Integrations__Dropbox__RefreshToken or AccessToken is set in env or config/appsettings.Development.json.
+
+Share link path
+
+Log: MGF.Worker: Dropbox share link path=/MGFILMS.DELIVERIES/./docs/01_Deliverables/Final
+- If missing or incorrect: check ApiRootFolder and UseApiRootFolder.
+
+Share link failures
+
+Log: Dropbox token validation failed or Dropbox API error 409
+- Check token validity and share path exists in bot root.
+
+Email disabled
+
+Log: Email sending disabled (Integrations:Email:Enabled=false)
+- Set Integrations__Email__Enabled=true.
+
+SMTP missing
+
+Log: SMTP host not configured (Integrations:Email:Smtp:Host)
+- Set Integrations__Email__Smtp__Host.
+
+Preview output
+
+email-preview writes preview.html, preview.txt, preview.json into the --out folder.
+
+---
+
+## System Context
+
+This runbook executes the delivery workflow that spans project state, storage provisioning, and email delivery.
+
+---
+
+## Core Concepts
+
+- Delivery creates a stable share link and a versioned delivery folder.
+- Delivery emails are dispatched through jobs processed by the worker.
+
+---
+
+## How This Evolves Over Time
+
+- Update when CLI flags, job flow, or email requirements change.
+- Add new verification checks when failure modes appear.
+
+---
+
+## Common Pitfalls and Anti-Patterns
+
+- Running against the wrong environment.
+- Skipping the share link refresh when required.
+
+---
+
+## When to Change This Document
+
+- Delivery steps, prerequisites, or outputs change.
+
+---
+
+## Related Documents
+- jobs.md
+- repo-workflow.md
+- e2e-email-verification.md
+
+## Change Log
+- 2026-01-10 - Updated local config prerequisite to repo-root config file workflow.
+- 2026-01-07 - Reformatted to documentation standards.

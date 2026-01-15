@@ -34,8 +34,23 @@ _ReSharper*/
 
 ## Runtime
 runtime/
+runtime/email_preview/
 TestResults/
+
+## Validation artifacts (transient)
+docs/validation/
+
+## Dev secrets export files (never commit)
+dev-secrets.export.json
+*.export.json
 
 ## OS
 Thumbs.db
 .DS_Store
+
+## Local Dropbox debug payloads
+dbx_body.json
+dbx_share.json
+
+## Local dev config (machine-specific)
+config/appsettings.Development.json

@@ -1,6 +1,0 @@
-@MGF.Api_HostAddress = http://localhost:5048
-
-GET {{MGF.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
